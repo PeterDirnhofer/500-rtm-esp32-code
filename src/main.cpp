@@ -38,7 +38,7 @@
 //Main application
 extern "C" void app_main(void)
 {
-    printf("\n\n+++++ app_main START +++\n\n");
+    printf("\n\n++++ app_main START +++\n\n");
     uartStart();
    
     //init and start HSPI connection to Raspberry Pi
