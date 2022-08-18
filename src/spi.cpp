@@ -176,14 +176,6 @@ void hspiLoop(void *unused)
             memcpy(&sendbufferHspi[5], &Z, 2);
         }
 
-        // PeDi wieder deaktivieren
-        // printf("send: ");
-        // for(int i = 9; i >= tHspi.trans_len/8; i--){
-        //    printf("%x", ((uint8_t*) tHspi.tx_buffer)[i]);
-        //}
-        // printf("\n");
-        // END
-
         // Set up a transaction of 10 bytes to send/receive
         tHspi.length = 10 * 8;
         tHspi.tx_buffer = sendbufferHspi;
@@ -197,14 +189,14 @@ void hspiLoop(void *unused)
         if ((!std::equal(std::begin(sendbufferHspi), std::end(sendbufferHspi), std::begin(oldSendbufferHspi))) ||
             (!std::equal(std::begin(recvbufferHspi), std::end(recvbufferHspi), std::begin(oldRecvbufferHspi))))
         {
-            //uartSendData("Neu in spiSend: \n");
+            // uartSendData("Neu in spiSend: \n");
             char help[10];
             uartSendData("ESP Send ");
-            //for (int i = 0; i < tHspi.trans_len / 8; i++)
+            // for (int i = 0; i < tHspi.trans_len / 8; i++)
             for (int i = 0; i < 10; i++)
             {
                 sprintf(help, "%2X", ((uint8_t *)tHspi.tx_buffer)[i]);
-                
+
                 uartSendData(help);
             }
             uartSendData("\n");
@@ -213,20 +205,12 @@ void hspiLoop(void *unused)
             for (int i = 0; i < 80; i++)
             {
                 sprintf(help, "%2x", ((uint8_t *)tHspi.rx_buffer)[i]);
-                
+
                 uartSendData(help);
             }
             uartSendData("\n");
 
-            // printf("\n");
-            // printf("Received %d bytes:  \n", tHspi.trans_len / 8);
-            // printf("recv: ");
-            // for (int i = 0; i < tHspi.trans_len / 8; i++)
-            //{
-            //     printf("%x", ((uint8_t *)tHspi.rx_buffer)[i]);
-            // }
-            // printf("\n");
-
+            
             memcpy(oldSendbufferHspi, sendbufferHspi, 10);
             memcpy(oldRecvbufferHspi, recvbufferHspi, 10);
         }
@@ -235,7 +219,7 @@ void hspiLoop(void *unused)
 
 void vspiStart()
 {
-    
+
     vspiInit();
     // printf("vspiStart Core: %d \n", xPortGetCoreID());
     xTaskCreatePinnedToCore(vspiLoop, "vspiloop", 10000, NULL, 3, &handleVspiLoop, 1);
