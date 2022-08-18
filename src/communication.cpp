@@ -34,7 +34,7 @@ protocolElement::protocolElement(uint8_t *dataBytewise)
     {
         // fills configExisting 00000000 0000001 00000011 00000111 00001111 etc.
         configExisting |= (1 << dataBytewise[1]);
-        printf("configExisting: %04x dataBytewise[1]: %d\n", configExisting,dataBytewise[1]);
+        printf("configExisting: %04X dataBytewise[1]: %d\n", configExisting,dataBytewise[1]);
                
         lastConfigExisting = configExisting;
         lastConfigByte = configByte;
@@ -44,11 +44,11 @@ protocolElement::protocolElement(uint8_t *dataBytewise)
         printf("dataBytewise: ");
         for (size_t i = 2; i < 2+8; i++)
         {
-            printf("%d ",dataBytewise[i]);
+            printf("%02X ",dataBytewise[i]);
         }
         printf(" param: %4f",param);
 
-        printf("\n");
+        printf("\n\n");
 
         
 
