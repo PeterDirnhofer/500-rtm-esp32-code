@@ -11,8 +11,9 @@
 
 void controllerStart(){
 
+    printf("*** controllerStart\n");
     esp_err_t errTemp = i2cInit(); //Init ADC
-    printf("I2C Init returncode: %d\n", errTemp);
+    printf("I2C Init returncode must be 0: %d\n", errTemp);
     vspiStart(); //Init and loop for DACs
     //xTaskCreatePinnedToCore(sendDatasets, "sendDatasets", 10000, NULL, 3, &handleSendDatasets, 0);
     //timer_tg0_initialise(1000000); //ns -> 

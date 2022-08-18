@@ -235,12 +235,10 @@ void hspiLoop(void *unused)
 
 void vspiStart()
 {
-    printf("VSPI start \n");
+    
     vspiInit();
-    printf("start VSPI Loop \n");
-    printf("vspiStart Core: %d \n", xPortGetCoreID());
+    // printf("vspiStart Core: %d \n", xPortGetCoreID());
     xTaskCreatePinnedToCore(vspiLoop, "vspiloop", 10000, NULL, 3, &handleVspiLoop, 1);
-    printf("started VSPI Loop \n");
 }
 
 void vspiInit()
@@ -320,7 +318,7 @@ void vspiInit()
 
 void vspiLoop(void *unused)
 {
-    printf("++++++++++++++++++++++ vspiLoop Prio: %d \n", xPortGetCoreID());
+    printf("*** vspiLoop started on coreID: %d \n", xPortGetCoreID());
 
     std::unique_ptr<uint16_t> buffer = std::make_unique<uint16_t>();
 
