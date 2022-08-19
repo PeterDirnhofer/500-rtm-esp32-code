@@ -9,6 +9,8 @@
 #include "globalVariables.h"
 #include "timer.h"
 
+// https://esp32developer.com/programming-in-c-c/timing/hardware-timers
+
 // #define TIMER_DIVIDER         16  //  Hardware timer clock divider
 // #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 // #define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
@@ -95,6 +97,7 @@ void timer_tg0_isr(void* arg)
 	//gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
 	//gpio_set_level(GPIO_NUM_5, io_state);
     //printf("INT \n");
+    //printf("*** controllerLoop resume in timer");
     vTaskResume(handleControllerLoop);
     //vTaskResume(handleTask);
 }
@@ -150,5 +153,5 @@ void timer_tg0_initialise (int timer_period_us)
     timer_isr_register(TIMER_GROUP_0, TIMER_0, &timer_tg0_isr, NULL, 0, &s_timer_handle);
     //printf("done init \n");
     timer_start(TIMER_GROUP_0, TIMER_0);
-    printf("TIMER_GROUP_0, TIMER_0 started\n");
+    printf("*** TIMER_GROUP_0, TIMER_0 started\n");
 }

@@ -12,7 +12,7 @@
 void controllerStart()
 {
 
-    printf("*** controllerStart\n");
+    
     esp_err_t errTemp = i2cInit(); // Init ADC
     if (errTemp != 0)
     {
@@ -28,6 +28,8 @@ void controllerStart()
 
 void controllerLoop(void *unused)
 {
+
+    printf("*** controllerLoop started\n");
     static double e, w, r, y, eOld, yOld = 0;
     uint16_t ySaturate = 0;
     w = destinationTunnelCurrentnA;

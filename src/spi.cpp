@@ -101,7 +101,8 @@ void hspiStart()
 
 void hspiLoop(void *unused)
 {
-    uartSendData("HSPI Loop started\n");
+    printf("HSPI Loop started\n");
+   
     // printf("HSPI Loop started\n");
     bool dataReadyLastCycle = false;
     while (1)
@@ -112,7 +113,7 @@ void hspiLoop(void *unused)
 
         if (dataReadyLastCycle)
         {
-            printf("suspend last cycle");
+            printf("*** controllerLoop Resume. suspend last cycle");
             // handshake line high
             gpio_set_level(GPIO_HANDSHAKE_HSPI, 1);
             dataReadyLastCycle = false;
@@ -128,7 +129,6 @@ void hspiLoop(void *unused)
             // handshake line high
             gpio_set_level(GPIO_HANDSHAKE_HSPI, 1);
             configNeeded = false;
-            printf("HSPI Loop suspend \n");
             printf("%f \n", kI);
             printf("%f \n", kP);
             printf("%f \n", destinationTunnelCurrentnA);
@@ -139,6 +139,7 @@ void hspiLoop(void *unused)
             printf("%d \n", rtmGrid.getMaxX());
             printf("%d \n", rtmGrid.getMaxY());
 
+            printf("HSPI Loop suspend \n");
             controllerStart();
             vTaskSuspend(NULL);
         }
@@ -150,8 +151,11 @@ void hspiLoop(void *unused)
         }
         else if (dataReady)
         {
+
+            printf("*** controllerLoop suspend");
             vTaskSuspend(handleControllerLoop);
             dataQueue.front();
+
             uint16_t X = dataQueue.front().getDataX();
             uint16_t Y = dataQueue.front().getDataY();
             uint16_t Z = dataQueue.front().getDataZ();
@@ -185,35 +189,6 @@ void hspiLoop(void *unused)
         // spi_slave_transmit does not return until the master has done a transmission, so by here we have sent our data and
         // received data from the master. Print it.
         spiSend(HSPI_HOST, &tHspi, portMAX_DELAY, &tPreviousHspi);
-
-        if ((!std::equal(std::begin(sendbufferHspi), std::end(sendbufferHspi), std::begin(oldSendbufferHspi))) ||
-            (!std::equal(std::begin(recvbufferHspi), std::end(recvbufferHspi), std::begin(oldRecvbufferHspi))))
-        {
-            // uartSendData("Neu in spiSend: \n");
-            char help[10];
-            uartSendData("ESP Send ");
-            // for (int i = 0; i < tHspi.trans_len / 8; i++)
-            for (int i = 0; i < 10; i++)
-            {
-                sprintf(help, "%2X", ((uint8_t *)tHspi.tx_buffer)[i]);
-
-                uartSendData(help);
-            }
-            uartSendData("\n");
-            uartSendData("Received ");
-
-            for (int i = 0; i < 80; i++)
-            {
-                sprintf(help, "%2x", ((uint8_t *)tHspi.rx_buffer)[i]);
-
-                uartSendData(help);
-            }
-            uartSendData("\n");
-
-            
-            memcpy(oldSendbufferHspi, sendbufferHspi, 10);
-            memcpy(oldRecvbufferHspi, recvbufferHspi, 10);
-        }
     }
 }
 
@@ -221,13 +196,13 @@ void vspiStart()
 {
 
     vspiInit();
-    // printf("vspiStart Core: %d \n", xPortGetCoreID());
+    // printf("*** vspiStart Core: %d \n", xPortGetCoreID());
     xTaskCreatePinnedToCore(vspiLoop, "vspiloop", 10000, NULL, 3, &handleVspiLoop, 1);
 }
 
 void vspiInit()
 {
-    printf("start VSPI INIT");
+
     // Connection to DACs
     // Configuration for the SPI bus
     spi_bus_config_t buscfg = {
@@ -272,7 +247,7 @@ void vspiInit()
         .spics_io_num = GPIO_CS_VSPI_DACZ,
         .queue_size = 3};
 
-    printf("test3 \n");
+    // printf("test3 \n");
     // Configuration for the CS lines
     gpio_config_t io_conf = {
         .pin_bit_mask = (1 << GPIO_CS_VSPI_DACX) | (1 << GPIO_CS_VSPI_DACY) | (1 << GPIO_CS_VSPI_DACZ),
@@ -297,12 +272,12 @@ void vspiInit()
     memset(recvbufferVspi, 0, 3);
 
     memset(&tVspi, 0, sizeof(tVspi));
-    printf("VSPI INIT    ++++++++++++ OK\n");
+    // printf("VSPI INIT    ++++++++++++ OK\n");
 }
 
 void vspiLoop(void *unused)
 {
-    printf("*** vspiLoop started on coreID: %d \n", xPortGetCoreID());
+    printf("*** vspiLoop started\n");
 
     std::unique_ptr<uint16_t> buffer = std::make_unique<uint16_t>();
 
@@ -314,10 +289,12 @@ void vspiLoop(void *unused)
 
     vspiSendDac(currentXDac, buffer.get(), handleDacX); // Dac X
     vspiSendDac(currentYDac, buffer.get(), handleDacY); // Dac Y
-    vTaskSuspend(NULL);                                 // will be resumed by controller
+    printf("*** vspiLoop suspend. resume by controller\n");
+    vTaskSuspend(NULL); // will be resumed by controller
+
+    printf("*** vspiLoop RESUMED by controller. Entering while loop \n");
     while (1)
     {
-        // printf("vspiLoop");
         printf("X, new: %d, old: %d \n", currentXDac, lastXDac);
 
         if (currentXDac != lastXDac)

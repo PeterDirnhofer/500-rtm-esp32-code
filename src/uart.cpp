@@ -66,7 +66,7 @@ void uartStart()
     xTaskCreatePinnedToCore(uartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &handleUartRcvLoop, 0);
 }
 
-int uartSendData(const char *data)
+int logMonitor(const char *data)
 {
     const int len = strlen(data);
     const int txBytes = uart_write_bytes(UART_NUM_1, data, len);
@@ -102,7 +102,7 @@ void uartRcvLoop(void *unused)
     int stIndex = 0;
     char st[100];
 
-    // uartSendData("uartRcvLoop gestartet\n");
+    
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
     printf("GESTARTET \n");
@@ -151,7 +151,7 @@ void uartRcvLoop(void *unused)
                             cnt++; // for next word
                             if (cnt > 9)
                             {
-                                // uartSendData("ERROR. maximum 9 Data");
+                                // logMonitor ("ERROR. maximum 9 Data");
                                 printf("ERROR. maximum 9 Data");
                                 return;
                             }
@@ -189,8 +189,8 @@ void uartRcvLoop(void *unused)
                     //    printf("%s\n", splitStrings[i]);
 
                     // std::unique_ptr<protocolElement> currentReceivedCommand = std::make_unique<protocolElement>((uint8_t*) st); //create protocolElement, constructor will proceed
-                    uartSendData(st); 
-                    uartSendData("nach protocolElemet erzeugen\n");
+                    logMonitor(st); 
+                    logMonitor("nach protocolElemet erzeugen\n");
                     stIndex = 0;
                 }
             }
@@ -220,7 +220,7 @@ void uartLoop(void *unused)
         if (dataReadyLastCycle)
         {
             printf("suspend last cycle");
-            uartSendData("suspend last cycle\n");
+            logMonitor("suspend last cycle\n");
             // handshake line high
             gpio_set_level(GPIO_HANDSHAKE_HSPI, 1);
             dataReadyLastCycle = false;
@@ -237,7 +237,7 @@ void uartLoop(void *unused)
             gpio_set_level(GPIO_HANDSHAKE_HSPI, 1);
             configNeeded = false;
             printf("UART Loop suspend \n");
-            uartSendData("UART Loop suspend \n");
+            logMonitor("UART Loop suspend \n");
             printf("%f \n", kI);
             printf("%f \n", kP);
             printf("%f \n", destinationTunnelCurrentnA);
@@ -257,7 +257,7 @@ void uartLoop(void *unused)
         {
             if (lastConfigStatus != (uint8_t)(1 << POSITION_ESP_READY_CONFIGFILE))
             {
-                uartSendData("config Needed \n");
+                logMonitor("config Needed \n");
             }
             lastConfigStatus = (uint8_t)(1 << POSITION_ESP_READY_CONFIGFILE);
 
@@ -272,7 +272,7 @@ void uartLoop(void *unused)
             uint16_t Z = dataQueue.front().getDataZ();
             printf("%d %d %d\n", X, Y, Z);
 
-            uartSendData("%d %d %d\n");
+            //logMonitor("%d %d %d\n");
 
             dataQueue.pop(); // remove from queue
 
@@ -294,6 +294,5 @@ void uartLoop(void *unused)
         }
 
         vTaskDelay(1); // Verhindert wdt overflow
-        // uartSendData("sendBufferUart NOCH Mit Sinn füllen");
     }
-}
+}        

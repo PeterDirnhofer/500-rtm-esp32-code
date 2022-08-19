@@ -3,11 +3,6 @@
 void uartLoop(void *arg);
 void uartInit();
 void uartStart();
-int uartSendData(const char *data);
+int logMonitor(const char *data);
 void uartRcvLoop(void *unused);
-
-
-
-
-
 #endif
