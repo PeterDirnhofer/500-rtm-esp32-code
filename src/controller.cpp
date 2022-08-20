@@ -9,6 +9,7 @@
 #include "dataStoring.h"
 #include "timer.h"
 
+
 void controllerStart()
 {
 
@@ -29,7 +30,6 @@ void controllerStart()
 void controllerLoop(void *unused)
 {
 
-    printf("*** controllerLoop started\n");
     static double e, w, r, y, eOld, yOld = 0;
     uint16_t ySaturate = 0;
     w = destinationTunnelCurrentnA;
@@ -40,19 +40,19 @@ void controllerLoop(void *unused)
     // timer_start(TIMER_GROUP_0, TIMER_0);
     while (1)
     {
-        // vTaskDelayUntil( &xLastWakeTime, xFrequency );
         vTaskSuspend(NULL);
-        // printf("controllerLoop");
+        
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
-        // printf("%d\n", adcValue);
-        // vTaskDelay(10);
+ 
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM); // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
         r = currentTunnelCurrentnA;                                                                           // conversion from voltage to equivalent current
 
         e = w - r; // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
-        // printf("e: %f, remaining: %f \n", e, remainingTunnelCurrentDifferencenA);
+        
+        
         if (std::abs(e) <= remainingTunnelCurrentDifferencenA)
         {
+            printf("regeldifferenz: kleiner remainingTunnelCurrentDifferencenA\n");
             // save to queue
             dataQueue.emplace(dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac)); // add dateElememt to queue
             unsentDatasets++;                                                                          // increment
@@ -92,11 +92,13 @@ void controllerLoop(void *unused)
         }
         else
         {
+            
             y = kP * e + kI * eOld + yOld; // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt
 
             eOld = e;
             ySaturate = saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
             currentZDac = ySaturate;                                  // set new z height
+            printf("+++ resume vspiLoop (controller)\n");
             vTaskResume(handleVspiLoop);                              // will suspend itself
         }
         yOld = ySaturate;

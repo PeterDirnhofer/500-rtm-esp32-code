@@ -289,10 +289,9 @@ void vspiLoop(void *unused)
 
     vspiSendDac(currentXDac, buffer.get(), handleDacX); // Dac X
     vspiSendDac(currentYDac, buffer.get(), handleDacY); // Dac Y
-    printf("*** vspiLoop suspend. resume by controller\n");
+    printf("--- suspend vspiLoop (self)\n");
     vTaskSuspend(NULL); // will be resumed by controller
 
-    printf("*** vspiLoop RESUMED by controller. Entering while loop \n");
     while (1)
     {
         printf("X, new: %d, old: %d \n", currentXDac, lastXDac);
@@ -311,7 +310,7 @@ void vspiLoop(void *unused)
         }
 
         vspiSendDac(currentZDac, buffer.get(), handleDacZ); // Dac Z
-        printf("cccc Z: %d\n", currentZDac);
+        printf("--- Suspend vspiLoop (self)\n");
         vTaskSuspend(NULL); // will be resumed by controller
     }
 }

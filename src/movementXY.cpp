@@ -3,101 +3,142 @@
 #include "stdio.h"
 
 scanGrid::scanGrid(uint16_t widthX, uint16_t widthY)
-: maxX(widthX -1), maxY(widthY -1),currentX(0), currentY(0),currentDirection(0)
-{}
-
+    : maxX(widthX - 1), maxY(widthY - 1), currentX(0), currentY(0), currentDirection(0)
+{
+}
 
 scanGrid::scanGrid(uint16_t maxX, uint16_t maxY, uint16_t startX, uint16_t startY)
-: maxX(maxX), maxY(maxY),currentX(startX), currentY(startY), currentDirection(0)
-{}
+    : maxX(maxX), maxY(maxY), currentX(startX), currentY(startY), currentDirection(0)
+{
+}
 
-bool scanGrid::moveOn(){
-    switch(currentDirection){
-        case false: 
-            if(currentX<maxX){
-                currentX++; //rightwise
-                currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
-            }else{
-                if(currentY != maxY){
-                    currentY++; //next row
-                    currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
-                    currentDirection = true; //direction change
-                }else{
-                    return true; //all points scanned
-                }
+
+/**
+ * @brief Methode erzeugt globale Werte currentXDac und currentYDac
+ * Bei jedem Aufruf ein Schritt weiter im Scan:    
+ * x++ (X hin)    
+ * if x = maximum dann y ++    
+ * x-- (x zurueck)    
+ * if x=0 dann y ++    
+ * wenn y = max sind alle Punkte angefahren.    
+ * @return false, wenn grid komplett abgefahren ist
+ */
+bool scanGrid::moveOn()
+{
+
+    switch (currentDirection)
+    {
+    case false:
+        if (currentX < maxX)
+        {
+            currentX++; // rightwise
+            printf("moveOn currentX++ %d", currentX);
+
+            currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
+        }
+        else
+        {
+            if (currentY != maxY)
+            {
+                currentY++; // next row
+                currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
+                currentDirection = true; // direction change
             }
-            return false; 
-            break;
-        case true: 
-            if(currentX>0){
-                currentX--; //leftwise
-                currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
-            }else{
-                if(currentY != maxY){   
-                    currentY++; //next row
-                    currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
-                    currentDirection = false; //direction change
-                }else{
-                    return true; //all points scanned
-                }
+            else
+            {
+                return true; // all points scanned
             }
-            return false;
-            break;
-        default:
-            printf("error move \n");
-            return false;
-            
+        }
+        return false;
+        break;
+    case true:
+        if (currentX > 0)
+        {
+            currentX--; // leftwise
+            currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
+        }
+        else
+        {
+            if (currentY != maxY)
+            {
+                currentY++; // next row
+                currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
+                currentDirection = false; // direction change
+            }
+            else
+            {
+                return true; // all points scanned
+            }
+        }
+        return false;
+        break;
+    default:
+        printf("error move \n");
+        return false;
     }
 }
 
-uint16_t scanGrid::getCurrentX(){
+uint16_t scanGrid::getCurrentX()
+{
     return currentX;
 }
 
-uint16_t scanGrid::getCurrentY(){
+uint16_t scanGrid::getCurrentY()
+{
     return currentY;
 }
 
-void scanGrid::setMaxX(uint16_t maxX){
+void scanGrid::setMaxX(uint16_t maxX)
+{
     this->maxX = maxX;
 }
 
-void scanGrid::setMaxY(uint16_t maxY){
+void scanGrid::setMaxY(uint16_t maxY)
+{
     this->maxY = maxY;
 }
 
-void scanGrid::setStartX(uint16_t startX){
+void scanGrid::setStartX(uint16_t startX)
+{
     this->currentX = startX;
 }
 
-void scanGrid::setStartY(uint16_t startY){
+void scanGrid::setStartY(uint16_t startY)
+{
     this->currentY = startY;
 }
 
-void scanGrid::setDirection(bool direction){
+void scanGrid::setDirection(bool direction)
+{
     this->currentDirection = direction;
 }
 
-void scanGrid::setMultiplicatorGridAdc(uint16_t multiplicator){
+void scanGrid::setMultiplicatorGridAdc(uint16_t multiplicator)
+{
     this->multiplicatorGridAdc = multiplicator;
 }
 
-uint16_t scanGrid::getMaxX(){
+uint16_t scanGrid::getMaxX()
+{
     return this->maxX;
 }
 
-uint16_t scanGrid::getMaxY(){
+uint16_t scanGrid::getMaxY()
+{
     return this->maxY;
 }
 
-bool scanGrid::getCurrentDirection(){
+bool scanGrid::getCurrentDirection()
+{
     return this->currentDirection;
 }
 
-uint16_t scanGrid::getMultiplicatorGridAdc(){
+uint16_t scanGrid::getMultiplicatorGridAdc()
+{
     return this->multiplicatorGridAdc;
 }
 
-uint16_t gridToDacValue(uint16_t currentGridValue, uint16_t maxGridValue, uint16_t maxValueDac, uint16_t multiplicator){
-    return maxValueDac/2 + (currentGridValue - (maxGridValue/2 + 1))*multiplicator;
+uint16_t gridToDacValue(uint16_t currentGridValue, uint16_t maxGridValue, uint16_t maxValueDac, uint16_t multiplicator)
+{
+    return maxValueDac / 2 + (currentGridValue - (maxGridValue / 2 + 1)) * multiplicator;
 }

@@ -105,7 +105,7 @@ void uartRcvLoop(void *unused)
     
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
-    printf("GESTARTET \n");
+    printf("uartRcvLoop GESTARTET \n");
     while (1)
     {
 
@@ -206,7 +206,7 @@ void uartLoop(void *unused)
     // Raspberry receives
     // spiReceiveCommand(uint16_t sizeBytes, uint8_t* transmitBuffer, uint8_t* receiveBuffer);
 
-    printf("GESTARTET\n");
+    printf("uartLoop GESTARTET\n");
     bool dataReadyLastCycle = false;
     u_int8_t lastConfigStatus = 0;
 
