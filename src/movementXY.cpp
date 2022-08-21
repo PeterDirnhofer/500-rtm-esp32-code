@@ -14,13 +14,17 @@ scanGrid::scanGrid(uint16_t maxX, uint16_t maxY, uint16_t startX, uint16_t start
 
 
 /**
- * @brief Methode erzeugt globale Werte currentXDac und currentYDac
- * Bei jedem Aufruf ein Schritt weiter im Scan:    
- * x++ (X hin)    
- * if x = maximum dann y ++    
- * x-- (x zurueck)    
- * if x=0 dann y ++    
- * wenn y = max sind alle Punkte angefahren.    
+ * @brief Berechnung der Piezo-DAC Werte 'currentXDac' und 'currentYDac' für die nächste anzusteuernde Position.      
+ * Es werden lediglich die DAC Werte berechnet. Die eigentliche Ansteuerung des Piezo erfolgt später in der vspiLoop. 
+ * 
+ *    
+ * Scanmuster:   
+ * x+ >>>>>>>>>>>>>>>> ↓\n           
+ * x- ↓ <<<<<<<<<<<<<<<<\n        
+ * x+ >>>>>>>>>>>>>>>> ↓\n         
+ * x- ↓ <<<<<<<<<<<<<<<<\n         
+ * x+ >>>>>>>>>>>>>>>> ↓
+ * usw. bis Y max erreicht ist   
  * @return false, wenn grid komplett abgefahren ist
  */
 bool scanGrid::moveOn()
@@ -138,6 +142,15 @@ uint16_t scanGrid::getMultiplicatorGridAdc()
     return this->multiplicatorGridAdc;
 }
 
+/**
+ * @brief Berechnung Piezo DAC Wert aus gewünschter Piezo Koordinate (X oder Y)
+ * 
+ * @param currentGridValue Gewünschte X oder Y Koordinate im Grid   
+ * @param maxGridValue 
+ * @param maxValueDac 
+ * @param multiplicator 
+ * @return uint16_t ADC Wert für eine Koordinate, der an Piezo übergeben werden kann 
+ */
 uint16_t gridToDacValue(uint16_t currentGridValue, uint16_t maxGridValue, uint16_t maxValueDac, uint16_t multiplicator)
 {
     return maxValueDac / 2 + (currentGridValue - (maxGridValue / 2 + 1)) * multiplicator;

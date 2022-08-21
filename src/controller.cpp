@@ -10,10 +10,19 @@
 #include "timer.h"
 
 
+/**
+ * @brief Initialisiering vspi und i2c. Start Controllerloop. Initialisierung 1 ms Timer tG0
+ * Initialisiering vspi zur X,Y,Z DAC Piezo Ansteuerung.
+ * Initialisierung i2c zur ADC Tunnelstrom Abfrage.
+ * Start  Controllerloop.
+ * Initialisierung 1 ms Timer tG0 zum retriggern der ControllerLoop.
+ */
+
+
+/// @brief Initialisiering vspi und i2c. Start Controllerloop. Initialisierung 1 ms Timer\n 
 void controllerStart()
 {
 
-    
     esp_err_t errTemp = i2cInit(); // Init ADC
     if (errTemp != 0)
     {
@@ -27,6 +36,24 @@ void controllerStart()
     timer_tg0_initialise(1200); // us -> 10^6us/860SPS = 1162 -> 1200
 }
 
+/* *********************************************************************************************************
+ * controllerLoop
+ *
+ * Steuerung des RTM. Berechnen der nächsten Piezo Position. Messung Tunnelstrom. Berechnung neuer Abstand Z zur Probe
+ * Die while Schleife unterbricht sich selbst (mit vTaskSuspend) und wird vom 1 ms Timer oder die hspiLoop retriggert
+ *  
+ * Ablauf:
+ * Lesen Tunnelstrom 'adcValue'. Berechnung der Regeldifferenz 
+ * 
+ * Falls die Regeldifferenz nicht zu gross ist, werden die Messwerte CurrentX, CurrentY und CurrentZac in der Queue gespeichert  
+ * Wurden genügend Messwerte in der queue gespeichert, wird der 1 ms Timer gestoppt und die Daten in der HspiLoop an den Raspberry gesendet  
+ * Gibt es noch nicht genügend Messwerte, wird die nächste Piezo Position im grid berechnet und der Timer gestoppt. 
+ * Die neue Piezo Position wird dann in der vpsiLoop angefahren
+ * 
+ * War die Regeldifferenz zu gross (der Tunnelstron weicht zu sehr ab) wird eine korrigierte Z position 'currentZDac'
+ * berechnet und die vpsLoop gestartet um diesen neuen Z Wert einzustellen.
+ */
+
 void controllerLoop(void *unused)
 {
 
@@ -34,28 +61,26 @@ void controllerLoop(void *unused)
     uint16_t ySaturate = 0;
     w = destinationTunnelCurrentnA;
     uint16_t unsentDatasets = 0;
-    // TickType_t xLastWakeTime = xTaskGetTickCount(); //set current for vTaskDelayUntil
-
-    // TickType_t xFrequency = 10 / portTICK_PERIOD_MS; //1ms
-    // timer_start(TIMER_GROUP_0, TIMER_0);
+    
     while (1)
     {
         vTaskSuspend(NULL);
-        
+
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
- 
+
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM); // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
         r = currentTunnelCurrentnA;                                                                           // conversion from voltage to equivalent current
 
         e = w - r; // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
-        
-        
+
         if (std::abs(e) <= remainingTunnelCurrentDifferencenA)
         {
             printf("regeldifferenz: kleiner remainingTunnelCurrentDifferencenA\n");
             // save to queue
             dataQueue.emplace(dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac)); // add dateElememt to queue
-            unsentDatasets++;                                                                          // increment
+            unsentDatasets++;  
+            
+            // Genügend Messwerte aufgenommen                                                                        // increment
             if (unsentDatasets >= sendDataAfterXDatasets)
             {
                 // printf("enough datasets to send \n");
@@ -73,7 +98,7 @@ void controllerLoop(void *unused)
                 // printf("Not enough datasets to send %d\n", unsentDatasets);
             }
 
-            // move tip
+            // Berechne nächste X,Y Piezo Position. move tip
             if (rtmGrid.moveOn()) // moveTip
             {
                 timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer, will be resumed at next new scan
@@ -92,18 +117,19 @@ void controllerLoop(void *unused)
         }
         else
         {
-            
+
             y = kP * e + kI * eOld + yOld; // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt
 
             eOld = e;
             ySaturate = saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
             currentZDac = ySaturate;                                  // set new z height
             printf("+++ resume vspiLoop (controller)\n");
-            vTaskResume(handleVspiLoop);                              // will suspend itself
+            vTaskResume(handleVspiLoop); // will suspend itself
         }
         yOld = ySaturate;
     }
 }
+
 
 uint16_t saturate16bit(uint32_t input, uint16_t min, uint16_t max)
 {
