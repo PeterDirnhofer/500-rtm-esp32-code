@@ -9,26 +9,21 @@
 #include "dataStoring.h"
 #include "timer.h"
 
-
-/**
- * @brief Initialisiering vspi und i2c. Start Controllerloop. Initialisierung 1 ms Timer tG0
- * Initialisiering vspi zur X,Y,Z DAC Piezo Ansteuerung.
- * Initialisierung i2c zur ADC Tunnelstrom Abfrage.
- * Start  Controllerloop.
- * Initialisierung 1 ms Timer tG0 zum retriggern der ControllerLoop.
- */
-
-
-/// @brief Initialisiering vspi und i2c. Start Controllerloop. Initialisierung 1 ms Timer\n 
+/**@brief Initialisiering vspi und i2c. Start controllerLoop. Initialisierung 1 ms Timer für restart controllerLoop
+ * @details 
+ * Initialisiering vspi zur X,Y,Z DAC Piezo Ansteuerung.   
+ * Initialisierung i2c zur ADC Tunnelstrom Abfrage.   
+ * Start  Controllerloop.   
+ * Initialisierung 1 ms Timer tG0 zum retriggern der ControllerLoop.   
+*/
 void controllerStart()
 {
 
     esp_err_t errTemp = i2cInit(); // Init ADC
     if (errTemp != 0)
     {
-        printf("ERROR. Cannot init I2C. Retruncode != 0. Retruncode is : %d\n", errTemp);
+        printf("ERROR. Cannot init I2C. Returncode != 0. Retruncode is : %d\n", errTemp);
     }
-    // printf("I2C Init returncode must be 0: %d\n", errTemp);
     vspiStart(); // Init and loop for DACs
     // xTaskCreatePinnedToCore(sendDatasets, "sendDatasets", 10000, NULL, 3, &handleSendDatasets, 0);
     // timer_tg0_initialise(1000000); //ns ->
@@ -36,24 +31,26 @@ void controllerStart()
     timer_tg0_initialise(1200); // us -> 10^6us/860SPS = 1162 -> 1200
 }
 
-/* *********************************************************************************************************
- * controllerLoop
- *
- * Steuerung des RTM. Berechnen der nächsten Piezo Position. Messung Tunnelstrom. Berechnung neuer Abstand Z zur Probe
+
+/**
+ * @brief Steuerung des RTM. Messen Tunnelstrom. Berechnen neue Piezoposition für X,Y und Z. Speichern Messdaten
+ * 
+ * @details 
+ * Messung Tunnelstrom. Berechnung neuer Abstand Z zur Probe   
+ * 
  * Die while Schleife unterbricht sich selbst (mit vTaskSuspend) und wird vom 1 ms Timer oder die hspiLoop retriggert
  *  
- * Ablauf:
- * Lesen Tunnelstrom 'adcValue'. Berechnung der Regeldifferenz 
- * 
- * Falls die Regeldifferenz nicht zu gross ist, werden die Messwerte CurrentX, CurrentY und CurrentZac in der Queue gespeichert  
- * Wurden genügend Messwerte in der queue gespeichert, wird der 1 ms Timer gestoppt und die Daten in der HspiLoop an den Raspberry gesendet  
+ * @Ablauf:   
+ * Lesen Tunnelstrom 'adcValue'. Daraus Berechnung der Regeldifferenz    
+ * Falls die Regeldifferenz nicht zu gross ist, werden die Messwerte 'CurrentX', 'CurrentY' und 'CurrentZac' in der queue gespeichert.  
+ * Wurden genügend Messwerte in der queue gespeichert, wird der 1 ms Timer gestoppt und die hspiLoop getartet,
+ * um die Daten an den Raspberry zu senden.     
  * Gibt es noch nicht genügend Messwerte, wird die nächste Piezo Position im grid berechnet und der Timer gestoppt. 
  * Die neue Piezo Position wird dann in der vpsiLoop angefahren
  * 
  * War die Regeldifferenz zu gross (der Tunnelstron weicht zu sehr ab) wird eine korrigierte Z position 'currentZDac'
- * berechnet und die vpsLoop gestartet um diesen neuen Z Wert einzustellen.
+ * berechnet und die vspiLoop gestartet um diesen neuen Z Wert einzustellen.
  */
-
 void controllerLoop(void *unused)
 {
 
