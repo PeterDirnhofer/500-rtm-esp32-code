@@ -62,7 +62,6 @@ void uartStart()
     //printf("Starting uartLoop ... ");
     //xTaskCreatePinnedToCore(uartLoop, "uartLoop", 10000, NULL, 4, &handleUartLoop, 0);
 
-    printf("Starting uartRcvLoop ... ");
     xTaskCreatePinnedToCore(uartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &handleUartRcvLoop, 0);
 }
 
@@ -105,7 +104,7 @@ void uartRcvLoop(void *unused)
     
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
-    printf("uartRcvLoop GESTARTET \n");
+    printf("*** uartRcvLoop started \n");
     while (1)
     {
 
@@ -231,7 +230,7 @@ void uartLoop(void *unused)
         // check if transaction is necessary or datasets are waiting for being sent, otherwise suspend and wait for
         // printf("config: %02x \n", configExisting);
 
-        if ((configExisting == 0x1FF) && !dataReady)
+        if ((configExisting == 0x1FF) && !rtmDataReady)
         { // 0x1FF is 0b111111111 -> nine ones
             // handshake line high
             gpio_set_level(GPIO_HANDSHAKE_HSPI, 1);
@@ -263,7 +262,7 @@ void uartLoop(void *unused)
 
             sendbufferUart[0] = (uint8_t)(1 << POSITION_ESP_READY_CONFIGFILE); // 0x04
         }
-        else if (dataReady)
+        else if (rtmDataReady)
         {
             vTaskSuspend(handleControllerLoop);
             dataQueue.front();
@@ -279,7 +278,7 @@ void uartLoop(void *unused)
             // decide whether last dataset to send or not, effects endtag in configbyte
             if (dataQueue.empty())
             {
-                dataReady = false;
+                rtmDataReady = false;
                 dataReadyLastCycle = true;
                 // printf("Last dataset to send\n");
                 sendbufferUart[0] = (uint8_t)((1 << POSITION_ESP_SEND_DATA) | (1 << POSITION_ESP_ENDTAG)); // 0x11

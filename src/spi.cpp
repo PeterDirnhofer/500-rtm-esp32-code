@@ -99,6 +99,28 @@ void hspiStart()
     xTaskCreatePinnedToCore(hspiLoop, "hspiloop", 10000, NULL, 4, &handleHspiLoop, 0);
 }
 
+/**
+ * @brief Lesen config data von raspberry via spi. Start controller wenn Daten komplett sind.
+ * @details 
+ * 
+ * Lesen der Configdaten vom raspi
+ * 
+ * 
+ * Lese spi Pakete von Raspberry über die HSPI Schnittstelle.
+ * Fordert Daten von Raspberry an, indem es die Kennung SEND_DATA versendet   
+ * Raspberry reagiert, indem er Datenpakete schickt, die jewls einen Parameter enthalten.   
+ * Also insgesamt 9 Datenpakete mit Parametern.    
+ * Format 0x4 | Nummer des Parameters | Wert des parameters   
+ * Bei jedem empfangenen Parameter wird ein Bit in 'configExisting' gesetzt.    
+ * Das passiert im Hintergrund, wenn spiSend das 'currentReceivedCommand' als class 'protocolElement' instanziiert.  
+ * 
+ * Sind alle Bits in 'configExisting' gesetzt (==0x01FF) wird hspiLoop gestoppt und der controller gestartet.
+ * 
+ * Wenn der controller alle Daten erfasst und in die queue gespeichert hat setzt der controller 'dataready' == true.
+ * 
+ * 
+ * @param unused 
+ */
 void hspiLoop(void *unused)
 {
     printf("HSPI Loop started\n");
@@ -124,11 +146,13 @@ void hspiLoop(void *unused)
         // check if transaction is necessary or datasets are waiting for being sent, otherwise suspend and wait for
         // printf("config: %02x \n", configExisting);
 
-        if ((configExisting == 0x1FF) && !dataReady)
+        if ((configExisting == 0x1FF) && !rtmDataReady)
         { // 0x1FF is 0b111111111 -> nine ones
             // handshake line high
             gpio_set_level(GPIO_HANDSHAKE_HSPI, 1);
             configNeeded = false;
+
+            printf("Config received from raspberry:\n");
             printf("%f \n", kI);
             printf("%f \n", kP);
             printf("%f \n", destinationTunnelCurrentnA);
@@ -139,7 +163,7 @@ void hspiLoop(void *unused)
             printf("%d \n", rtmGrid.getMaxX());
             printf("%d \n", rtmGrid.getMaxY());
 
-            printf("HSPI Loop suspend \n");
+            printf("\nHSPI Loop suspend \n");
             controllerStart();
             vTaskSuspend(NULL);
         }
@@ -149,7 +173,7 @@ void hspiLoop(void *unused)
         {
             sendbufferHspi[0] = (uint8_t)(1 << POSITION_ESP_READY_CONFIGFILE); // 0x04
         }
-        else if (dataReady)
+        else if (rtmDataReady)  // Messdaten sind verfügbar. Von controller gesetzt
         {
 
             printf("*** controllerLoop suspend");
@@ -166,7 +190,7 @@ void hspiLoop(void *unused)
             // decide whether last dataset to send or not, effects endtag in configbyte
             if (dataQueue.empty())
             {
-                dataReady = false;
+                rtmDataReady = false;
                 dataReadyLastCycle = true;
                 // printf("Last dataset to send\n");
                 sendbufferHspi[0] = (uint8_t)((1 << POSITION_ESP_SEND_DATA) | (1 << POSITION_ESP_ENDTAG)); // 0x11
@@ -195,6 +219,7 @@ void hspiLoop(void *unused)
 void vspiStart()
 {
 
+    printf("+++ vspiStart\n");
     vspiInit();
     // printf("*** vspiStart Core: %d \n", xPortGetCoreID());
     xTaskCreatePinnedToCore(vspiLoop, "vspiloop", 10000, NULL, 3, &handleVspiLoop, 1);
@@ -272,12 +297,12 @@ void vspiInit()
     memset(recvbufferVspi, 0, 3);
 
     memset(&tVspi, 0, sizeof(tVspi));
-    // printf("VSPI INIT    ++++++++++++ OK\n");
+    
 }
 
 void vspiLoop(void *unused)
 {
-    printf("*** vspiLoop started\n");
+    printf("+++ vspiLoop started\n");
 
     std::unique_ptr<uint16_t> buffer = std::make_unique<uint16_t>();
 

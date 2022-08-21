@@ -32,26 +32,24 @@
 
 #include "uart.h"
 
-// C:\Users\peter\git-esp-idf\UART\src
-
-// Main application
-extern "C" void app_main(void)
+/**
+ * @brief Set default data when useing without raspberry
+ *
+ */
+void setupDefaultData()
 {
-    printf("\n\n+++ app_main START +++\n\n");
-    //uartStart();
-    // init and start HSPI connection to Raspberry Pi
 
+    //printf("Setup defaul data\n");
     // Simulation data configExisting
-    configNeeded = false;
-    kI = 100;
-    kP = 1000;
-    destinationTunnelCurrentnA = 10.0;
-    remainingTunnelCurrentDifferencenA = 0.01;
-    //rtmGrid.getCurrentX());
-    //rtmGrid.getCurrentY());
+    configNeeded = false;   
+    
+    kI = 50;
+    kP = 100;
+    destinationTunnelCurrentnA = 20.0;
+    remainingTunnelCurrentDifferencenA = 0.1;
     rtmGrid.setDirection(false);
-    rtmGrid.setMaxX(99);
-    rtmGrid.setMaxY(111);
+    rtmGrid.setMaxX(199);
+    rtmGrid.setMaxY(199);
 
 
     printf("%f \n", kI);
@@ -64,45 +62,33 @@ extern "C" void app_main(void)
     printf("%d \n", rtmGrid.getMaxX());
     printf("%d \n", rtmGrid.getMaxY());
 
+
+
+}
+
+// Main application
+extern "C" void app_main(void)
+{
+    printf("\n\n+++ app_main START +++\n\n");
+    //setupDefaultData();
+
+    // wird nur verwendet, wenn Parameter üer UART übergeben werden sollen
+    //uartStart(); 
+   
+    hspiStart();
     
-    controllerStart();
-    //vTaskSuspend(NULL);
+    //controllerStart();
 
 
-    //uartStart();
-
-    // hspiStart();
-
-    // xTaskCreate(&null_task,"Printing VOID Logs ",2048 , NULL , 3, &handleTask);
-    // timer_tg0_initialise(1000000);
-
-    // esp_err_t i2cInitErr = i2cInit();
-    // printf("%s \n", (char*) &i2cInitErr);
-
-    remainingTunnelCurrentDifferencenA = 0.1;
-    destinationTunnelCurrentnA = 20.0;
-    kP = 100;
-    kI = 50;
-
-    // controllerStart();
-
-    // long count = 1;
-    // vTaskSuspend(NULL);
+        
+    
 
     while (1)
     {
         printf("TICK main\n");
 
-        // vTaskDelay(5000 / portTICK_PERIOD_MS);
-
         // https://esp32.com/viewtopic.php?t=10411
         // Delete task to omit task_wdt timeout error
-
         vTaskDelete(NULL);
-
-        // printf("main \n");
-        // i2cInit();
-        // uint16_t temp = readAdc();
-        // count++;
     }
 }

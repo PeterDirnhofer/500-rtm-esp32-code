@@ -18,6 +18,7 @@
 */
 void controllerStart()
 {
+    printf("+++ controllerStart\n");
 
     esp_err_t errTemp = i2cInit(); // Init ADC
     if (errTemp != 0)
@@ -38,7 +39,7 @@ void controllerStart()
  * @details 
  * Messung Tunnelstrom. Berechnung neuer Abstand Z zur Probe   
  * 
- * Die while Schleife unterbricht sich selbst (mit vTaskSuspend) und wird vom 1 ms Timer oder die hspiLoop retriggert
+ * Tick 1 Sekunde: Die while Schleife unterbricht sich selbst (mit vTaskSuspend) und wird vom 1 sekunden Timer oder von der hspiLoop retriggert
  *  
  * @Ablauf:   
  * Lesen Tunnelstrom 'adcValue'. Daraus Berechnung der Regeldifferenz    
@@ -53,16 +54,17 @@ void controllerStart()
  */
 void controllerLoop(void *unused)
 {
-
+    printf("+++ controllerLoopStart\n");
     static double e, w, r, y, eOld, yOld = 0;
     uint16_t ySaturate = 0;
     w = destinationTunnelCurrentnA;
     uint16_t unsentDatasets = 0;
     
+    // wird im Sekundentakt ausgeführt
     while (1)
     {
         vTaskSuspend(NULL);
-
+        
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
 
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM); // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
@@ -83,7 +85,7 @@ void controllerLoop(void *unused)
                 // printf("enough datasets to send \n");
                 timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer during dataset sending
                 unsentDatasets = 0;
-                dataReady = true;
+                rtmDataReady = true; // damit weiss hspiLoop, dass Daten verfügbar sind
 
                 vTaskResume(handleHspiLoop); // sends datasets to raspberry pi, will resume after task for sending suspends itself
                 vTaskSuspend(NULL);
@@ -112,6 +114,7 @@ void controllerLoop(void *unused)
                 vTaskDelete(NULL);
             }
         }
+        // regeldifferenz ist zu gross
         else
         {
 
@@ -120,7 +123,7 @@ void controllerLoop(void *unused)
             eOld = e;
             ySaturate = saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
             currentZDac = ySaturate;                                  // set new z height
-            printf("+++ resume vspiLoop (controller)\n");
+            printf("+++ resume vspiLoop for new z/regelDiffernz zu gross (by controllerLoop)\n");
             vTaskResume(handleVspiLoop); // will suspend itself
         }
         yOld = ySaturate;

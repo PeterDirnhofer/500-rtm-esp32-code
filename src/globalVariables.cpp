@@ -60,12 +60,15 @@ std::queue<dataElement> dataQueue;
 scanGrid rtmGrid(200,200); //default grid
 
 bool configNeeded = true;
-bool dataReady = false;
+uint8_t lastConfigByte=100;
+
+/**
+ * @brief Kompletter Messdatensatz verfügbar in queue. Wird von controller gesetzt
+ */
+bool rtmDataReady = false;
 uint16_t configExisting = 0;
-uint16_t lastConfigExisting=1000;
+uint16_t lastConfigExisting = 1000;
 
 uint16_t maxNumberAttemptsSPI = 10;
 
 intr_handle_t s_timer_handle;
-
-uint8_t lastConfigByte=1000;
