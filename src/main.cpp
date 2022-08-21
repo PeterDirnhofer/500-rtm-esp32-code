@@ -70,14 +70,19 @@ void setupDefaultData()
 extern "C" void app_main(void)
 {
     printf("\n\n+++ app_main START +++\n\n");
-    //setupDefaultData();
-
     // wird nur verwendet, wenn Parameter üer UART übergeben werden sollen
-    //uartStart(); 
-   
+    
+    
+    setupDefaultData();
+    uartStart(); 
+    
+    // Bei uartStart wird nur vspi gebraucht
+    
     hspiStart();
     
-    //controllerStart();
+    
+    // wird nur für uartStart gebraucht
+    controllerStart();
 
 
         

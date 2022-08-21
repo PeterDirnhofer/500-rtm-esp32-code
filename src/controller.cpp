@@ -123,7 +123,7 @@ void controllerLoop(void *unused)
             eOld = e;
             ySaturate = saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
             currentZDac = ySaturate;                                  // set new z height
-            printf("+++ resume vspiLoop for new z/regelDiffernz zu gross (by controllerLoop)\n");
+            printf("+++ resume vspiLoop by controller. currentZDac\n");
             vTaskResume(handleVspiLoop); // will suspend itself
         }
         yOld = ySaturate;
