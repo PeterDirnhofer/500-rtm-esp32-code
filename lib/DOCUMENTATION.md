@@ -57,8 +57,9 @@ In platformio.ini:
 ``upload_protocol = esp-prog``
 
 Verbindung ESP32-ESP-Prog Tool:
-GND
-ESP-TMS GPIO_14
-ESP-TCK GPIO_13
-ESP_TDO GPIO_15
-ESP-TDI GPIO_12
+
+GND  
+ESP-TMS GPIO_14  
+ESP-TCK GPIO_13  
+ESP_TDO GPIO_15  
+ESP-TDI GPIO_12  
