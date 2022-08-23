@@ -1,13 +1,16 @@
 # Communication between Terminal Raspberry and ESP32
+
 ## Terminal
+
 ``sudo ./rtm_pi 100 1000 10.0 0.01 0 0 0 199 199``
 
 ## Raspberry
-Receive parameter from Terminal in 
+
+Receive parameter from Terminal in
 
 **main(argv[])**
 
-```c   
+```c
 int main (int argc, char *argv[]) {
     ...
     kI = atof(argv[1]);                                
@@ -23,10 +26,9 @@ int main (int argc, char *argv[]) {
 
 **Wait for handshake Interrupt from ESP32** falling edge
 
+**spiSendConfig(double kI, .... , uint16_t maxX)**
 
-
-**spiSendConfig(double kI, .... , uint16_t maxX)** 
-```c 
+```c
 // create dataArray
 double dataArray[] = {kI, kP, destinationTunnelCurrentnA, remainingTunnelCurrentDifferencenA, (double) startX, (double) startY, (double) direction, (double) maxX, (double) maxY};
 
@@ -40,15 +42,15 @@ memcpy(&buf[2], &dataArray[configSend], 8);
 bcm2835_spi_writenb(buf, 10);
 ```
 
+--
 
-
----
 ## Programmieren über die JTAG Schnittstelle mit ESP-Prog
 
-Um die Standard USB Schnittstelle für die Kommunikation während das Programm läuft verwenden zu können wird das ESP-Prog Tool während der Entwicklung verwendet, um den Code von Visual Studio auf den ESP zu übertragen. 
+Um die Standard USB Schnittstelle für die Kommunikation während das Programm läuft verwenden zu können wird das ESP-Prog Tool während der Entwicklung verwendet, um den Code von Visual Studio auf den ESP zu übertragen.
 
-So gehts: 
-https://docs.platformio.org/en/latest/plus/debug-tools/esp-prog.html
+So gehts:
+
+<https://docs.platformio.org/en/latest/plus/debug-tools/esp-prog.html>
 
 In platformio.ini:
 
@@ -60,14 +62,3 @@ ESP-TMS GPIO_14
 ESP-TCK GPIO_13
 ESP_TDO GPIO_15
 ESP-TDI GPIO_12
-
-
-
-
-
-
-
-
-
-
-
