@@ -39,10 +39,10 @@
 void setupDefaultData()
 {
 
-    //printf("Setup defaul data\n");
+    printf("Setup default data\n");
     // Simulation data configExisting
-    configNeeded = false;   
-    
+    // configNeeded = false;
+
     kI = 50;
     kP = 100;
     destinationTunnelCurrentnA = 20.0;
@@ -50,7 +50,6 @@ void setupDefaultData()
     rtmGrid.setDirection(false);
     rtmGrid.setMaxX(199);
     rtmGrid.setMaxY(199);
-
 
     printf("%f \n", kI);
     printf("%f \n", kP);
@@ -61,36 +60,33 @@ void setupDefaultData()
     printf("%d \n", direction);
     printf("%d \n", rtmGrid.getMaxX());
     printf("%d \n", rtmGrid.getMaxY());
-
-
-
 }
 
-// Main application
+/// @brief Startet tasks und beendet sich dann selbst
+/// @param
 extern "C" void app_main(void)
 {
-    printf("\n\n+++ app_main START +++\n\n");
+    printf("\n\n+++ app_main START +++\n");
     // wird nur verwendet, wenn Parameter üer UART übergeben werden sollen
-    
-    
-    setupDefaultData();
-    uartStart(); 
-    
-    // Bei uartStart wird nur vspi gebraucht
-    
+
     hspiStart();
-    
-    
-    // wird nur für uartStart gebraucht
-    controllerStart();
 
+    // Bei uartStart wird nur vspi gebraucht
+    // hspiStart();
 
-        
-    
+    // Nur ohne Raspberry. Kommunikation übe UART
+
+    bool UART_ACTIVE = false;
+    if (UART_ACTIVE)
+    {
+        uartStart();
+        setupDefaultData();
+        controllerStart();
+    }
 
     while (1)
     {
-        printf("TICK main\n");
+        printf("--- delete app_main\n");
 
         // https://esp32.com/viewtopic.php?t=10411
         // Delete task to omit task_wdt timeout error

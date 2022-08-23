@@ -40,9 +40,34 @@ memcpy(&buf[2], &dataArray[configSend], 8);
 bcm2835_spi_writenb(buf, 10);
 ```
 
-## ESP32
 
-```c
-extern WORD_ALIGNED_ATTR char recvbufferHspi[10];
 
-``
+---
+## Programmieren über die JTAG Schnittstelle mit ESP-Prog
+
+Um die Standard USB Schnittstelle für die Kommunikation während das Programm läuft verwenden zu können wird das ESP-Prog Tool während der Entwicklung verwendet, um den Code von Visual Studio auf den ESP zu übertragen. 
+
+So gehts: 
+https://docs.platformio.org/en/latest/plus/debug-tools/esp-prog.html
+
+In platformio.ini:
+
+``upload_protocol = esp-prog``
+
+Verbindung ESP32-ESP-Prog Tool:
+GND
+ESP-TMS GPIO_14
+ESP-TCK GPIO_13
+ESP_TDO GPIO_15
+ESP-TDI GPIO_12
+
+
+
+
+
+
+
+
+
+
+
