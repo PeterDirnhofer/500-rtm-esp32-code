@@ -46,7 +46,9 @@ bcm2835_spi_writenb(buf, 10);
 
 ## Programmieren über die JTAG Schnittstelle mit ESP-Prog
 
-Um die Standard USB Schnittstelle für die Kommunikation während das Programm läuft verwenden zu können wird das ESP-Prog Tool während der Entwicklung verwendet, um den Code von Visual Studio auf den ESP zu übertragen.
+
+Während der Entwicklung des Programms wird das ESP-Prog Tool um den Code von Visual Studio auf den ESP zu übertragen.    
+So bleibt die Standard ESP USB Schnittstelle für die Kommunikation mit dem Anwender frei.
 
 So gehts:
 
@@ -54,7 +56,9 @@ So gehts:
 
 In platformio.ini:
 
-``upload_protocol = esp-prog``
+``
+upload_port = 
+upload_protocol = esp-prog``
 
 Verbindung ESP32-ESP-Prog Tool:
 

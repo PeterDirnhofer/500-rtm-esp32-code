@@ -76,7 +76,7 @@ extern "C" void app_main(void)
 
     // Nur ohne Raspberry. Kommunikation übe UART
 
-    bool UART_ACTIVE = false;
+    bool UART_ACTIVE = true;
     if (UART_ACTIVE)
     {
         uartStart();
