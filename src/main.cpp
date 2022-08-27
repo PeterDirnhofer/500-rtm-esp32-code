@@ -16,7 +16,8 @@
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "esp_event.h"
-#include "nvs_flash.h"
+//#include "nvs_flash.h"
+//#include "nvs.h"
 #include "soc/rtc_periph.h"
 #include "driver/spi_slave.h"
 //#include "esp_log.h"
@@ -31,44 +32,20 @@
 #include "timer.h"
 
 #include "uart.h"
+#include "parameter.h"
 
-/**
- * @brief Set default data when useing without raspberry
- *
- */
-void setupDefaultData()
-{
+#include "nvs_flash.h"
+#include "nvs.h"
 
-    printf("Setup default data\n");
-    // Simulation data configExisting
-    // configNeeded = false;
-
-    kI = 50;
-    kP = 100;
-    destinationTunnelCurrentnA = 20.0;
-    remainingTunnelCurrentDifferencenA = 0.1;
-    rtmGrid.setDirection(false);
-    rtmGrid.setMaxX(199);
-    rtmGrid.setMaxY(199);
-
-    printf("%f \n", kI);
-    printf("%f \n", kP);
-    printf("%f \n", destinationTunnelCurrentnA);
-    printf("%f \n", remainingTunnelCurrentDifferencenA);
-    printf("%d \n", rtmGrid.getCurrentX());
-    printf("%d \n", rtmGrid.getCurrentY());
-    printf("%d \n", direction);
-    printf("%d \n", rtmGrid.getMaxX());
-    printf("%d \n", rtmGrid.getMaxY());
-}
 
 /// @brief Startet tasks und beendet sich dann selbst
 /// @param
 extern "C" void app_main(void)
 {
-    printf("\n\n+++ app_main START +++\n");
-    // wird nur verwendet, wenn Parameter üer UART übergeben werden sollen
 
+    printf("+++ START\n");
+
+       
     hspiStart();
 
     // Bei uartStart wird nur vspi gebraucht
@@ -80,7 +57,6 @@ extern "C" void app_main(void)
     if (UART_ACTIVE)
     {
         uartStart();
-        setupDefaultData();
         controllerStart();
     }
 
