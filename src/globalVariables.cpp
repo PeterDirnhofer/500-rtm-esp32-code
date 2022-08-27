@@ -72,3 +72,5 @@ uint16_t lastConfigExisting = 1000;
 uint16_t maxNumberAttemptsSPI = 10;
 
 intr_handle_t s_timer_handle;
+
+

@@ -115,7 +115,7 @@ extern uint16_t maxNumberAttemptsSPI;
 extern intr_handle_t s_timer_handle;
 extern uint8_t lastConfigByte;
 
-
+const char stringFromNvs[] = {"1234567890"};
 
 
 #endif
