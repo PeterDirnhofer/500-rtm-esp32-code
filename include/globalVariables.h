@@ -11,6 +11,10 @@
 #include "dataStoring.h"
 #include "movementXY.h"
 
+
+#define MODUS_RUN 0
+#define MODUS_MONITOR_TUNNEL_CURRENT 1
+
 #define GPIO_HANDSHAKE_HSPI GPIO_NUM_2
 #define GPIO_MOSI_HSPI GPIO_NUM_13
 #define GPIO_MISO_HSPI GPIO_NUM_12
@@ -115,7 +119,11 @@ extern uint16_t maxNumberAttemptsSPI;
 extern intr_handle_t s_timer_handle;
 extern uint8_t lastConfigByte;
 
-const char stringFromNvs[] = {"1234567890"};
+
+#define MODE_MEASURE 0
+#define MODE_MONITOR_TUNNEL_CURRENT 1
+extern uint16_t modeWorking;
+
 
 
 #endif

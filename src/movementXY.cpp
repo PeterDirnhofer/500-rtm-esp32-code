@@ -25,23 +25,25 @@ scanGrid::scanGrid(uint16_t maxX, uint16_t maxY, uint16_t startX, uint16_t start
  * x- ↓ <<<<<<<<<<<<<<<<\n         
  * x+ >>>>>>>>>>>>>>>> ↓
  * usw. bis Y max erreicht ist   
- * @return false, wenn grid komplett abgefahren ist
+ * @return true, wenn grid komplett abgefahren ist
  */
 bool scanGrid::moveOn()
 {
-
+    //printf("moveOn %d\n",(int)currentDirection);
     switch (currentDirection)
     {
     case false:
+       
         if (currentX < maxX)
         {
             currentX++; // rightwise
-            printf("moveOn currentX++ %d", currentX);
+            //printf("moveOn currentX++ %d\n", currentX);
 
             currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
         }
         else
         {
+             
             if (currentY != maxY)
             {
                 currentY++; // next row
@@ -56,6 +58,8 @@ bool scanGrid::moveOn()
         return false;
         break;
     case true:
+
+        
         if (currentX > 0)
         {
             currentX--; // leftwise

@@ -66,6 +66,8 @@ void hspiInit()
         //.post_trans_cb=my_post_trans_cb
     };
 
+  
+  
     // Configuration for the handshake line
     gpio_config_t io_conf = {
         .pin_bit_mask = (1 << GPIO_HANDSHAKE_HSPI),
@@ -74,6 +76,12 @@ void hspiInit()
 
     // Configure handshake line as output
     gpio_config(&io_conf);
+
+
+    
+    
+    
+    
     // Enable pull-ups on SPI lines so we don't detect rogue pulses when no master is connected.
     gpio_set_pull_mode(GPIO_MOSI_HSPI, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(GPIO_SCLK_HSPI, GPIO_PULLUP_ONLY);
@@ -176,7 +184,7 @@ void hspiLoop(void *unused)
         else if (rtmDataReady)  // Messdaten sind verfügbar. Von controller gesetzt
         {
 
-            printf("*** controllerLoop suspend");
+            printf("--- Messdaten verfügbar. controllerLoop suspend ");
             vTaskSuspend(handleControllerLoop);
             dataQueue.front();
 
@@ -314,9 +322,10 @@ void vspiLoop(void *unused)
 
     vspiSendDac(currentXDac, buffer.get(), handleDacX); // Dac X
     vspiSendDac(currentYDac, buffer.get(), handleDacY); // Dac Y
-    printf("--- suspend vspiLoop (self)\n");
+    printf("--- Suspend vspiLoop (self)\n");
     vTaskSuspend(NULL); // will be resumed by controller
-
+    
+    
     while (1)
     {
         printf("X, new: %d, old: %d \n", currentXDac, lastXDac);
