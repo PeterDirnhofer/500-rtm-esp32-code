@@ -45,28 +45,17 @@ extern "C" void app_main(void)
     esp_err_t err;
     printf("\n\n+++ START\n");
 
-
     // modeWorking Betriebsart wählen
     // MODE_MEASURE : Normalbetrieb
     // MODE_MONITOR_TUNNEL_CURRENT : Zeigt Tunnel ADC im Sekundentakt
     modeWorking = MODE_MONITOR_TUNNEL_CURRENT;
-
-    hspiStart();
-
-    // Bei uartStart wird nur vspi gebraucht
-    // hspiStart();
-
-    // Nur ohne Raspberry. Kommunikation stattdessen über UART
-
-    bool RASPI_ACTIVE = false;
-    if (!RASPI_ACTIVE)
-    {
-        setupDefaultData();
-        uartStart();
+    modeWorking = MODE_MEASURE;
 
     
-        controllerStart();
-    }
+    setupDefaultData();
+    uartStart();
+
+    controllerStart();
 
     while (1)
     {

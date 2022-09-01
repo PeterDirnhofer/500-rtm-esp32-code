@@ -20,7 +20,7 @@
 void displayTunnelCurrent()
 {
     //timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer during dataset sending
-    static double e, w, r, y, eOld, yOld = 0;
+    static double e, w, r = 0;
 
     printf("+++ Display Tunnel Current\n");
     w = destinationTunnelCurrentnA;
@@ -147,7 +147,11 @@ void controllerLoop(void *unused)
                 unsentDatasets = 0;
                 rtmDataReady = true; // damit weiss hspiLoop, dass Daten verfügbar sind
 
-                vTaskResume(handleHspiLoop); // sends datasets to raspberry pi, will resume after task for sending suspends itself
+                //vTaskResume(handleHspiLoop); // sends datasets to raspberry pi, will resume after task for sending suspends itself
+                printf("ERSATZ HspiLoop\n");
+                while(1)
+                ;
+                
                 vTaskSuspend(NULL);
                 unsentDatasets = 0;
                 timer_start(TIMER_GROUP_0, TIMER_0); // resume timer
@@ -166,7 +170,10 @@ void controllerLoop(void *unused)
                 if (!dataQueue.empty())
                 {
                     printf("Last datasets to send \n");
-                    vTaskResume(handleHspiLoop); // sends datasets to raspberry pi, will resume after task for sending suspends itself
+                    //vTaskResume(handleHspiLoop); // sends datasets to raspberry pi, will resume after task for sending suspends itself
+                    printf("ERSATZ HspiLoop\n");
+                    while(1)
+                        ;
                 }
                 else
                 {

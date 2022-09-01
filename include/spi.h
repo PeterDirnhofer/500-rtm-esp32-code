@@ -4,9 +4,7 @@
 void my_post_setup_cb(spi_slave_transaction_t *trans);
 void my_post_trans_cb(spi_slave_transaction_t *trans);
 
-void hspiInit();
-void hspiStart();
-void hspiLoop(void*);
+
 
 void vspiInit();
 void vspiStart();

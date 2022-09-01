@@ -3,16 +3,6 @@
 #include "driver/spi_master.h"
 #include "driver/i2c.h"
 
-esp_err_t retHspi;
-spi_slave_transaction_t tHspi;
-spi_slave_transaction_t tPreviousHspi;
-
-WORD_ALIGNED_ATTR char sendbufferHspi[10]="";
-WORD_ALIGNED_ATTR char recvbufferHspi[10]="";
-
-WORD_ALIGNED_ATTR char oldSendbufferHspi[10]="";
-WORD_ALIGNED_ATTR char oldRecvbufferHspi[10]="";
-
 
 WORD_ALIGNED_ATTR char sendbufferUart[10]="";
 WORD_ALIGNED_ATTR char recvbufferUart[10]="";
@@ -24,7 +14,6 @@ spi_transaction_t tVspi;
 WORD_ALIGNED_ATTR char sendbufferVspi[3]="";
 WORD_ALIGNED_ATTR char recvbufferVspi[3]="";
 
-TaskHandle_t  handleHspiLoop = NULL;
 TaskHandle_t  handleUartLoop = NULL;
 TaskHandle_t  handleUartRcvLoop = NULL;
 TaskHandle_t  handleVspiLoop = NULL;

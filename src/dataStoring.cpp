@@ -51,7 +51,11 @@ void sendDatasets(void* unused){
     //unnecessary task...
     printf("Created task for sending datasets to Pi\n");
     while(1){
-        vTaskResume(handleHspiLoop);
+        //vTaskResume(handleHspiLoop);
+        printf("ERSATZ HspiLoop\n");
+                while(1)
+                ;
+
         vTaskSuspend(NULL); //suspend sendDatasets task, so controller will resume
     }
 }

@@ -15,20 +15,9 @@
 #define MODUS_RUN 0
 #define MODUS_MONITOR_TUNNEL_CURRENT 1
 
-#define GPIO_HANDSHAKE_HSPI GPIO_NUM_2
-#define GPIO_MOSI_HSPI GPIO_NUM_13
-#define GPIO_MISO_HSPI GPIO_NUM_12
-#define GPIO_SCLK_HSPI GPIO_NUM_14
-#define GPIO_CS_HSPI GPIO_NUM_15
 
 #define TXD_PIN (GPIO_NUM_33)
 #define RXD_PIN (GPIO_NUM_32)
-
-#define DMA_CHAN_HSPI 0
-
-extern esp_err_t retHspi;
-extern spi_slave_transaction_t tHspi;
-extern spi_slave_transaction_t tPreviousHspi;
 
 
 #define GPIO_MOSI_VSPI 23
@@ -43,11 +32,6 @@ extern spi_slave_transaction_t tPreviousHspi;
 extern esp_err_t retVspi;
 extern spi_transaction_t tVspi;
 
-extern WORD_ALIGNED_ATTR char sendbufferHspi[10];
-extern WORD_ALIGNED_ATTR char recvbufferHspi[10];
-
-extern WORD_ALIGNED_ATTR char oldSendbufferHspi[10];
-extern WORD_ALIGNED_ATTR char oldRecvbufferHspi[10];
 
 extern WORD_ALIGNED_ATTR char sendbufferUart[10];
 extern WORD_ALIGNED_ATTR char recvbufferUart[10];
@@ -55,7 +39,6 @@ extern WORD_ALIGNED_ATTR char recvbufferUart[10];
 extern WORD_ALIGNED_ATTR char sendbufferVspi[3];
 extern WORD_ALIGNED_ATTR char recvbufferVspi[3];
 
-extern TaskHandle_t handleHspiLoop;
 extern TaskHandle_t handleUartLoop;
 extern TaskHandle_t handleUartRcvLoop;
 
