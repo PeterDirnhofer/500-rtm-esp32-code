@@ -8,6 +8,7 @@
 #include "spi.h"
 #include "dataStoring.h"
 #include "timer.h"
+#include "uart.h"
 
 /**
  * @brief Hilfe bei Inbetriebnahme. Monitoring Tunnelstrom, Keine Regelung
@@ -37,7 +38,14 @@ void displayTunnelCurrent()
         //  regeldifferenz = soll - ist
         e = w - r; // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
 
+
+      
+        
+        
+
         printf("%d[digits]  0x%X[hex] %f[nA]      delta: %f  soll: %f\n", adcValue,adcValue,currentTunnelCurrentnA,e, w);
+       
+        logMonitor("test");
         //printf("remainingTunnelCurrentDifferencenA %f\n", remainingTunnelCurrentDifferencenA);
         vTaskDelay(xDelay);
     }

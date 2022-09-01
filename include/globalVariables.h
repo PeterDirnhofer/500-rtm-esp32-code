@@ -21,6 +21,9 @@
 #define GPIO_SCLK_HSPI GPIO_NUM_14
 #define GPIO_CS_HSPI GPIO_NUM_15
 
+#define TXD_PIN (GPIO_NUM_33)
+#define RXD_PIN (GPIO_NUM_32)
+
 #define DMA_CHAN_HSPI 0
 
 extern esp_err_t retHspi;

@@ -63,6 +63,8 @@ extern "C" void app_main(void)
     {
         setupDefaultData();
         uartStart();
+
+    
         controllerStart();
     }
 
