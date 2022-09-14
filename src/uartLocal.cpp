@@ -34,6 +34,7 @@
 #include "esp_log.h"
 
 static const int RX_BUF_SIZE = 100;
+static const char *TAG = "uartLocal";
 
 
 
@@ -112,14 +113,14 @@ void uartRcvLoop(void *unused)
     
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
-    printf("*** uartRcvLoop started \n");
+    ESP_LOGI(TAG,"*** uartRcvLoop started \n");
     while (1)
     {
 
         const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 100 / portTICK_PERIOD_MS);
         if (rxBytes > 0)
         {
-
+           
             // Terminate input with 0
             data[rxBytes] = 0;
             for (int i = 0; i < rxBytes; i++)

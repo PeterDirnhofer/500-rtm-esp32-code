@@ -20,7 +20,7 @@
 //#include "nvs.h"
 #include "soc/rtc_periph.h"
 #include "driver/spi_slave.h"
-//#include "esp_log.h"
+#include "esp_log.h"
 #include "esp_spi_flash.h"
 #include "driver/gpio.h"
 
@@ -41,10 +41,11 @@
 /// @param
 extern "C" void app_main(void)
 {
+    static const char *TAG = "main";
 
     esp_err_t err;
-    printf("\n\n+++ START\n");
-
+    ESP_LOGI(TAG,"+++ START\n");
+  
     // modeWorking Betriebsart wählen
     // MODE_MEASURE : Normalbetrieb
     // MODE_MONITOR_TUNNEL_CURRENT : Zeigt Tunnel ADC im Sekundentakt

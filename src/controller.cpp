@@ -9,6 +9,7 @@
 #include "dataStoring.h"
 #include "timer.h"
 #include "uartLocal.h"
+#include "esp_log.h"
 
 /**
  * @brief Hilfe bei Inbetriebnahme. Monitoring Tunnelstrom, Keine Regelung
@@ -17,12 +18,15 @@
  * Berechneter Tunnelstrom in nA
  * 
  */
+
+static const char *TAG = "controller";
 extern "C" void displayTunnelCurrent()
 {
     //timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer during dataset sending
     static double e, w, r = 0;
 
-    printf("+++ Display Tunnel Current\n");
+
+    ESP_LOGI(TAG,"+++ Display Tunnel Current\n");
     w = destinationTunnelCurrentnA;
     
     
@@ -41,11 +45,11 @@ extern "C" void displayTunnelCurrent()
 
       
         
-        
+        char  help[256];
+        sprintf(help,"%d[digits]  0x%X[hex] %f[nA]      delta: %f  soll: %f\n", adcValue,adcValue,currentTunnelCurrentnA,e, w);
 
-        printf("%d[digits]  0x%X[hex] %f[nA]      delta: %f  soll: %f\n", adcValue,adcValue,currentTunnelCurrentnA,e, w);
-       
-        logMonitor("test");
+        logMonitor(help);
+        
         //printf("remainingTunnelCurrentDifferencenA %f\n", remainingTunnelCurrentDifferencenA);
         vTaskDelay(xDelay);
     }
@@ -61,12 +65,12 @@ extern "C" void displayTunnelCurrent()
  */
 extern "C" void controllerStart()
 {
-    printf("+++ controllerStart\n");
+    ESP_LOGI(TAG,"+++ controllerStart\n");
 
     esp_err_t errTemp = i2cInit(); // Init ADC
     if (errTemp != 0)
     {
-        printf("ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
+        ESP_LOGE(TAG,"ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
     }
     
     // Helfer: In der Inbetriebnahme zyklische Anzeige des Tunnelstroms
@@ -113,7 +117,7 @@ extern "C" void controllerStart()
  */
 extern "C" void controllerLoop(void *unused)
 {
-    printf("+++ controllerLoopStart\n");
+    ESP_LOGI(TAG,"+++ controllerLoopStart\n");
     static double e, w, r, y, eOld, yOld = 0;
     uint16_t ySaturate = 0;
     w = destinationTunnelCurrentnA;
@@ -134,7 +138,7 @@ extern "C" void controllerLoop(void *unused)
 
         if (std::abs(e) <= remainingTunnelCurrentDifferencenA)
         {
-            printf("regeldifferenz: kleiner remainingTunnelCurrentDifferencenA\n");
+            ESP_LOGI(TAG,"regeldifferenz: kleiner remainingTunnelCurrentDifferencenA\n");
             // save to queue
             dataQueue.emplace(dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac)); // add dateElememt to queue
             unsentDatasets++;
@@ -148,7 +152,7 @@ extern "C" void controllerLoop(void *unused)
                 rtmDataReady = true; // damit weiss hspiLoop, dass Daten verfügbar sind
 
                 //vTaskResume(handleHspiLoop); // sends datasets to raspberry pi, will resume after task for sending suspends itself
-                printf("ERSATZ HspiLoop\n");
+                ESP_LOGI(TAG,"ERSATZ HspiLoop\n");
                 while(1)
                 ;
                 
@@ -169,15 +173,15 @@ extern "C" void controllerLoop(void *unused)
                 // all points scanned, end controllerLoop
                 if (!dataQueue.empty())
                 {
-                    printf("Last datasets to send \n");
+                    ESP_LOGI(TAG,"Last datasets to send \n");
                     //vTaskResume(handleHspiLoop); // sends datasets to raspberry pi, will resume after task for sending suspends itself
-                    printf("ERSATZ HspiLoop\n");
+                    ESP_LOGI(TAG,"ERSATZ HspiLoop\n");
                     while(1)
                         ;
                 }
                 else
                 {
-                    printf("All points scanned, already sent all datasets.\n");
+                    ESP_LOGI(TAG,"All points scanned, already sent all datasets.\n");
                 }
                 vTaskDelete(NULL);
             }
@@ -196,7 +200,7 @@ extern "C" void controllerLoop(void *unused)
             eOld = e;
             ySaturate = saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
             currentZDac = ySaturate;                                  // set new z height
-            printf("+++ resume vspiLoop by controller. currentZDac\n");
+            ESP_LOGI(TAG,"+++ resume vspiLoop by controller. currentZDac\n");
 
             // handleVspiLoop stellt neue Z Position auf currentZDac
             vTaskResume(handleVspiLoop); // will suspend itself
