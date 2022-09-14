@@ -25,7 +25,7 @@ void null_task(void *pvParam)
 
 
 /**
- * @brief Senkunden Timerinterrupt retriggert controllerLoop
+ * @brief Timerinterrupt retriggert zyklisch die controllerLoop
  * 
  * @param arg 
  */

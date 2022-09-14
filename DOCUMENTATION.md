@@ -67,3 +67,17 @@ ESP-TMS GPIO_14
 ESP-TCK GPIO_13  
 ESP_TDO GPIO_15  
 ESP-TDI GPIO_12  
+
+Typical process when already started:
+
+- Timer starts controllerloop cyclic
+- Current is in limit
+  - controllerloop saves valid values
+  - rtmGrid.moveOn to set next XY Position currentX and currentY
+  - sleep
+- Current Out off limit
+  - controllerloop calculates new Z value currentZDac
+  - sleep
+- wait for next timer
+
+

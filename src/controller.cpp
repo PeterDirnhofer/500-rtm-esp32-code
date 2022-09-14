@@ -97,24 +97,33 @@ extern "C" void controllerStart()
  * Messung Tunnelstrom. Berechnung neuer Abstand Z zur Probe
  *
  * Die while Schleife setzt sich gleich am Anfang in den sleep modus.(mit vTaskSuspend)
- * Die schleife wird danach gewckt durch den ms Timer oder von der hspiLoop
+ * Die schleife wird danach geweckt durch den ms Timer oder von der hspiLoop
  *
  * *
  * @Ablauf:
+ * - Timer starts controllerloop cyclic
+ *  - ADC Current is in limit
+ *    - controllerloop saves valid values
+ *    - rtmGrid.moveOn to set next XY Position currentX and currentY
+ *    - sleep
+ * - Current Out off limit
+ *    - controllerloop calculates new Z value currentZDac
+ *    - resume vspiLoop
+ *    - sleep
+ *    
+ * - wait for next timer
+
  * Lesen Tunnelstrom 'adcValue' und Berechnung der Regeldifferenz
  *
  * Regeldifferenz liegt im Limit:
- * Die Messwerte 'CurrentX', 'CurrentY' und 'CurrentZac' werden in der queue gespeichert.
- * Sind 100 Messwert in der queue, wird die hspiLoop gestartet umd die Daten zu senden. Die Loop selbst geht in sleep.
+ * Gültiger Messwert. 'CurrentX', 'CurrentY' und 'CurrentZac' werden in der queue gespeichert.
+ * Sind 100 Messwerte in der queue, wird die hspiLoop gestartet umd die Daten zu senden. 
+ * Neue XY Position berechnen i
+ * Die Loop selbst geht in sleep.
  *
  * Regeldifferenz out off limit:
- *
- *
- * Gibt es noch nicht genügend Messwerte, wird die nächste Piezo Position im grid berechnet und der Timer gestoppt.
- * Die neue Piezo Position wird dann in der vpsiLoop angefahren
- *
- * War die Regeldifferenz zu gross (der Tunnelstron weicht zu sehr ab) wird eine korrigierte Z position 'currentZDac'
- * berechnet und die vspiLoop gestartet um diesen neuen Z Wert einzustellen.
+ * Z Wert nachjustieren. 
+ * Neuen globalen Stellwert currentZDac berechnen. vpsiLoop Starten. Suspend selbst. 
  */
 extern "C" void controllerLoop(void *unused)
 {
@@ -127,7 +136,7 @@ extern "C" void controllerLoop(void *unused)
     //
     while (1)
     {
-        vTaskSuspend(NULL);
+        vTaskSuspend(NULL);  // Wecken durch timer
 
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
 
