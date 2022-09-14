@@ -21,7 +21,7 @@
 #include "string.h"
 #include "driver/gpio.h"
 #include "string"
-#include "uart.h" // own uart
+#include "uartLocal.h" // own uart
 #include "globalVariables.h"
 
 #include "spi.h"
@@ -31,6 +31,7 @@
 #include "string.h"
 #include <iostream>
 #include <string>
+#include "esp_log.h"
 
 static const int RX_BUF_SIZE = 100;
 

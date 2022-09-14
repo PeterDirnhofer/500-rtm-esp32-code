@@ -31,7 +31,7 @@
 #include "dataStoring.h"
 #include "timer.h"
 
-#include "uart.h"
+#include "uartLocal.h"
 #include "parameter.h"
 
 #include "nvs_flash.h"

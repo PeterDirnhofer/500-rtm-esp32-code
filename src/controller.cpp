@@ -8,7 +8,7 @@
 #include "spi.h"
 #include "dataStoring.h"
 #include "timer.h"
-#include "uart.h"
+#include "uartLocal.h"
 
 /**
  * @brief Hilfe bei Inbetriebnahme. Monitoring Tunnelstrom, Keine Regelung
