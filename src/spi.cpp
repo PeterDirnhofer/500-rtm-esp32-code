@@ -55,6 +55,7 @@ void vspiInit()
         .sclk_io_num = GPIO_SCLK_VSPI,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
+       
     };
 
     // Configuration for the SPI slave devices -> syntax configuration
@@ -119,9 +120,20 @@ void vspiInit()
     
 }
 
+-/**
+ * @brief update DACs over SPI
+ * 
+ * Suspends after running.
+ * Resuming by controller
+ * 
+ * currentXDac, currentYDac is set by movementXY.cpp
+ * currentZDac is set by controller
+ * 
+ * @param unused 
+ */
 void vspiLoop(void *unused)
 {
-    printf("+++ vspiLoop started\n");
+    ESP_LOGI(TAG,"+++ vspiLoop started\n");
 
     std::unique_ptr<uint16_t> buffer = std::make_unique<uint16_t>();
 
@@ -137,6 +149,7 @@ void vspiLoop(void *unused)
     vTaskSuspend(NULL); // will be resumed by controller
     
     
+    // Resumed by Controller
     while (1)
     {
         printf("X, new: %d, old: %d \n", currentXDac, lastXDac);

@@ -4,5 +4,5 @@ void uartLoop(void *arg);
 void uartInit();
 void uartStart();
 int logMonitor(const char *data);
-void uartRcvLoop(void *unused);
+extern "C" void uartRcvLoop(void *unused);
 #endif

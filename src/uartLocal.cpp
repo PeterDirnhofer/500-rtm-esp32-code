@@ -106,7 +106,7 @@ float toFloat(char * h1)
  * 
  * @param unused 
  */
-void uartRcvLoop(void *unused)
+extern "C" void uartRcvLoop(void *unused)
 {
     int stIndex = 0;
     char st[100];
@@ -120,10 +120,7 @@ void uartRcvLoop(void *unused)
 
         const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 100 / portTICK_PERIOD_MS);
         if (rxBytes > 0)
-        {
-           
-        
-
+        {      
             // Terminate input with 0
             data[rxBytes] = 0;
             for (int i = 0; i < rxBytes; i++)
@@ -133,8 +130,7 @@ void uartRcvLoop(void *unused)
                 if ((c==3) || (c==27))  // Ctrl C or ESC
                 {
                     logMonitor("MONITORING TUNNEL CURRENT SELECTED\n");
-                    modeWorking = MODE_MONITOR_TUNNEL_CURRENT;
-                    
+                    modeWorking = MODE_MONITOR_TUNNEL_CURRENT;                
                     
                 }
                 
@@ -217,5 +213,7 @@ void uartRcvLoop(void *unused)
             }
         }
     }
+    free (data);
+    free(st);
 }
 

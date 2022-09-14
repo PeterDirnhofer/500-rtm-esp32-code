@@ -43,7 +43,7 @@ extern "C" void app_main(void)
 {
     static const char *TAG = "main";
 
-    esp_err_t err;
+   
     ESP_LOGI(TAG,"+++ START\n");
   
     // modeWorking Betriebsart wählen
@@ -57,8 +57,7 @@ extern "C" void app_main(void)
     uartStart();
     //ESP_LOGI(TAG,"++++++++++++++++ VORHER Mode gewaehlt %i\n",modeWorking);
 
-    logMonitor("Mit ESC oder CTRL C in den Monitoring Modus springen\n");
-    //ESP_LOGI(TAG,"vor TaskDelay\n");
+    logMonitor("Mit ESC in den Monitoring Modus springen\n");
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     // ESP_LOGI(TAG,"nach TaskDelay\n");
     // ESP_LOGI(TAG,"+++++++++++++++++++++ NACHHER Mode gewaehlt %i\n",modeWorking);
