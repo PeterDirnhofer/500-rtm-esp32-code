@@ -198,6 +198,11 @@ extern "C" void controllerLoop(void *unused)
             else
             {
                 // noch nicht alle Positionen angefahren
+                
+                // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PeDi
+                // HAb ich eingeführt
+                vTaskResume(handleVspiLoop); // will suspend itself 
+
             }
         }
         // regeldifferenz ist zu gross

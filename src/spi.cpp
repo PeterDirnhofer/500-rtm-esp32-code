@@ -120,7 +120,7 @@ void vspiInit()
     
 }
 
--/**
+/**
  * @brief update DACs over SPI
  * 
  * Suspends after running.
@@ -131,6 +131,8 @@ void vspiInit()
  * 
  * @param unused 
  */
+
+static const char *TAG = "vspiloop";
 void vspiLoop(void *unused)
 {
     ESP_LOGI(TAG,"+++ vspiLoop started\n");
