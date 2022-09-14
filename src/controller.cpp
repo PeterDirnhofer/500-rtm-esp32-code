@@ -17,7 +17,7 @@
  * Berechneter Tunnelstrom in nA
  * 
  */
-void displayTunnelCurrent()
+extern "C" void displayTunnelCurrent()
 {
     //timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer during dataset sending
     static double e, w, r = 0;
@@ -59,7 +59,7 @@ void displayTunnelCurrent()
  * Start  Controllerloop.
  * Initialisierung 1 ms Timer tG0 zum retriggern der ControllerLoop.
  */
-void controllerStart()
+extern "C" void controllerStart()
 {
     printf("+++ controllerStart\n");
 
@@ -111,7 +111,7 @@ void controllerStart()
  * War die Regeldifferenz zu gross (der Tunnelstron weicht zu sehr ab) wird eine korrigierte Z position 'currentZDac'
  * berechnet und die vspiLoop gestartet um diesen neuen Z Wert einzustellen.
  */
-void controllerLoop(void *unused)
+extern "C" void controllerLoop(void *unused)
 {
     printf("+++ controllerLoopStart\n");
     static double e, w, r, y, eOld, yOld = 0;
@@ -207,7 +207,7 @@ void controllerLoop(void *unused)
     }
 }
 
-uint16_t saturate16bit(uint32_t input, uint16_t min, uint16_t max)
+extern "C" uint16_t saturate16bit(uint32_t input, uint16_t min, uint16_t max)
 {
     if (input < min)
     {

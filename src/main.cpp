@@ -49,7 +49,7 @@ extern "C" void app_main(void)
     // MODE_MEASURE : Normalbetrieb
     // MODE_MONITOR_TUNNEL_CURRENT : Zeigt Tunnel ADC im Sekundentakt
     modeWorking = MODE_MONITOR_TUNNEL_CURRENT;
-    modeWorking = MODE_MEASURE;
+    //modeWorking = MODE_MEASURE;
 
     
     setupDefaultData();
@@ -59,7 +59,7 @@ extern "C" void app_main(void)
 
     while (1)
     {
-        printf("--- delete app_main\n");
+        printf("--- delete  app_main\n");
 
         // https://esp32.com/viewtopic.php?t=10411
         // Delete task to omit task_wdt timeout error

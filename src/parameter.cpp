@@ -27,16 +27,7 @@ esp_err_t saveStringParameter(const char *myLabel, const char *myValue)
     esp_err_t err;
 
     int len = sizeof(myLabel);
-    /*
-    char labelUppercase[len] = {0};
-    memset(labelUppercase,0,sizeof labelUppercase);
-
-    for (int i = 0; i < len; i++)
-    {
-        labelUppercase[i]=toupper(myLabel[i]);
-    }
-
-    */
+  
 
     // Open
     err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
@@ -306,27 +297,7 @@ void setupDefaultData()
 {
     size_t required_size = 0;
 
-    /*
-
-
-        // Write value including previously saved blob if available
-        required_size += sizeof(uint32_t);
-        run_time[required_size / sizeof(uint32_t) - 1] = xTaskGetTickCount() * portTICK_PERIOD_MS;
-        err = nvs_set_blob(my_handle, "run_time", run_time, required_size);
-        free(run_time);
-
-        if (err != ESP_OK)
-        {
-            printf("ERROR nvs_setBlb\n");
-            return;
-        }
-        err = nvs_commit(my_handle);
-
-
-    */
-
-    // Simulation data configExisting
-    // configNeeded = false;
+    
 
     kI = 50;
     kP = 100;

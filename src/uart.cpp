@@ -53,7 +53,10 @@ void uartInit(void)
 
     memset(recvbufferUart, 0, 10);
 }
-
+/**
+ * @brief Alternative Communication port.
+ * Replaces HSPI Communication over Raspberry
+ */
 void uartStart()
 {
     uartInit();
@@ -95,6 +98,11 @@ float toFloat(char * h1)
     return converted_value;
 }
 
+/**
+ * @brief Read Serial port for Monitoring an Configuration
+ * 
+ * @param unused 
+ */
 void uartRcvLoop(void *unused)
 {
     int stIndex = 0;
