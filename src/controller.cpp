@@ -76,6 +76,7 @@ extern "C" void controllerStart()
     // Helfer: In der Inbetriebnahme zyklische Anzeige des Tunnelstroms
     if(modeWorking==(uint16_t)MODE_MONITOR_TUNNEL_CURRENT){
         displayTunnelCurrent();
+        return;
     }
 
 

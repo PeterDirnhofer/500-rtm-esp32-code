@@ -62,6 +62,6 @@ uint16_t maxNumberAttemptsSPI = 10;
 
 intr_handle_t s_timer_handle;
 
-uint16_t modeWorking=0;
+uint16_t modeWorking;
 
 

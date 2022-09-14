@@ -32,6 +32,7 @@
 #include <iostream>
 #include <string>
 #include "esp_log.h"
+#include "timer.h"
 
 static const int RX_BUF_SIZE = 100;
 static const char *TAG = "uartLocal";
@@ -121,18 +122,30 @@ void uartRcvLoop(void *unused)
         if (rxBytes > 0)
         {
            
+        
+
             // Terminate input with 0
             data[rxBytes] = 0;
             for (int i = 0; i < rxBytes; i++)
             {
                 char c = data[i];
 
+                if ((c==3) || (c==27))  // Ctrl C or ESC
+                {
+                    logMonitor("MONITORING TUNNEL CURRENT SELECTED\n");
+                    modeWorking = MODE_MONITOR_TUNNEL_CURRENT;
+                    
+                    
+                }
+                
+
+                
                 st[stIndex++] = c;
                 st[stIndex] = 0;
 
                 if (stIndex > 99)
                 {
-                    printf("ERROR UART received too many bytes\n");
+                    ESP_LOGE(TAG,"ERROR UART received too many bytes\n");
 
                     stIndex = 0;
                     memset(&(st[0]), 0, 100); // clear array st

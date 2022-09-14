@@ -50,11 +50,21 @@ extern "C" void app_main(void)
     // MODE_MEASURE : Normalbetrieb
     // MODE_MONITOR_TUNNEL_CURRENT : Zeigt Tunnel ADC im Sekundentakt
     modeWorking = MODE_MONITOR_TUNNEL_CURRENT;
-    //modeWorking = MODE_MEASURE;
+    modeWorking = MODE_MEASURE;
 
     
     setupDefaultData();
     uartStart();
+    //ESP_LOGI(TAG,"++++++++++++++++ VORHER Mode gewaehlt %i\n",modeWorking);
+
+    logMonitor("Mit ESC oder CTRL C in den Monitoring Modus springen\n");
+    //ESP_LOGI(TAG,"vor TaskDelay\n");
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    // ESP_LOGI(TAG,"nach TaskDelay\n");
+    // ESP_LOGI(TAG,"+++++++++++++++++++++ NACHHER Mode gewaehlt %i\n",modeWorking);
+
+    //modeWorking = MODE_MONITOR_TUNNEL_CURRENT;
+
 
     controllerStart();
 
