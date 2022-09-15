@@ -1,10 +1,44 @@
-# Communication between Terminal Raspberry and ESP32
+# ESP32 esp-idf for STM
 
-## Terminal
+## Communication with Monitor via additional UART
+
+### Measuring Results
+
+Results are sent when available automatically via UART
+
+### Monitoring the test probes height
+
+Press **ESC** during startup
+
+### Measuring Parameter
+
+Press **P** during startup
+
+---
+
+## Process flow controller (after initialisation)
+
+- Timer starts controllerloop cyclic
+
+- Current is in limit
+  - controllerloop saves valid values
+  - rtmGrid.moveOn to set next XY Position currentX and currentY
+  - sleep
+- Current Out off limit
+  - controllerloop calculates new Z value currentZDac
+  - sleep
+- wait for next timer
+
+---
+
+
+## Communication between Terminal Raspberry and ESP32 - depracted
+
+### Terminal
 
 ``sudo ./rtm_pi 100 1000 10.0 0.01 0 0 0 199 199``
 
-## Raspberry
+### Raspberry
 
 Receive parameter from Terminal in
 
@@ -43,40 +77,3 @@ bcm2835_spi_writenb(buf, 10);
 ```
 
 --
-
-## Programmieren über die JTAG Schnittstelle mit ESP-Prog
-
-
-Während der Entwicklung des Programms wird das ESP-Prog Tool um den Code von Visual Studio auf den ESP zu übertragen.    
-So bleibt die Standard ESP USB Schnittstelle für die Kommunikation mit dem Anwender frei.
-
-So gehts:
-
-<https://docs.platformio.org/en/latest/plus/debug-tools/esp-prog.html>
-
-In platformio.ini:
-
-``
-upload_port = 
-upload_protocol = esp-prog``
-
-Verbindung ESP32-ESP-Prog Tool:
-
-GND  
-ESP-TMS GPIO_14  
-ESP-TCK GPIO_13  
-ESP_TDO GPIO_15  
-ESP-TDI GPIO_12  
-
-### Typical process when already started
-
-- Timer starts controllerloop cyclic
-
-- Current is in limit
-  - controllerloop saves valid values
-  - rtmGrid.moveOn to set next XY Position currentX and currentY
-  - sleep
-- Current Out off limit
-  - controllerloop calculates new Z value currentZDac
-  - sleep
-- wait for next timer

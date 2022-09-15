@@ -215,7 +215,7 @@ extern "C" void controllerLoop(void *unused)
             eOld = e;
             ySaturate = saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
             currentZDac = ySaturate;                                  // set new z height
-            ESP_LOGI(TAG,"+++ resume vspiLoop by controller. currentZDac\n");
+            ESP_LOGI(TAG,"controller: new ZDac: %i. resume vspiLoop\n",currentZDac);
 
             // handleVspiLoop stellt neue Z Position auf currentZDac
             vTaskResume(handleVspiLoop); // will suspend itself
