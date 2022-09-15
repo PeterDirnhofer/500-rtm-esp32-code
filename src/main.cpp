@@ -57,16 +57,21 @@ extern "C" void app_main(void)
     uartStart();
     //ESP_LOGI(TAG,"++++++++++++++++ VORHER Mode gewaehlt %i\n",modeWorking);
 
-    logMonitor("Mit ESC in den Monitoring Modus springen\n");
+    logMonitor("Mit ESC in Tunnel current Monitoring Modus springen\n");
     vTaskDelay(1000 / portTICK_PERIOD_MS);
-    // ESP_LOGI(TAG,"nach TaskDelay\n");
-    // ESP_LOGI(TAG,"+++++++++++++++++++++ NACHHER Mode gewaehlt %i\n",modeWorking);
-
+    
     //modeWorking = MODE_MONITOR_TUNNEL_CURRENT;
 
-
-    controllerStart();
-
+    if (modeWorking==MODE_MONITOR_TUNNEL_CURRENT)
+    {
+        displayTunnelCurrent();
+    }
+    else
+    {
+        controllerStart();    
+    }
+    
+    
     while (1)
     {
         printf("--- delete  app_main\n");

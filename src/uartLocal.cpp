@@ -127,12 +127,19 @@ extern "C" void uartRcvLoop(void *unused)
             {
                 char c = data[i];
 
-                if ((c==3) || (c==27))  // Ctrl C or ESC
+                if (c==27)  // ESC
                 {
                     logMonitor("MONITORING TUNNEL CURRENT SELECTED\n");
                     modeWorking = MODE_MONITOR_TUNNEL_CURRENT;                
                     
                 }
+
+                if (c==3)  // Ctrl C 
+                {
+                    logMonitor("MONITORING TUNNEL CURRENT SELECTED\n");
+                    esp_restart();
+                }
+                
                 
 
                 

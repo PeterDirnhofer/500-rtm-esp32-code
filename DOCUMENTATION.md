@@ -20,11 +20,11 @@ Press **P** during startup
 
 - Timer starts controllerloop cyclic
 
-- Current is in limit
+- If tunnel-current is in limit
   - controllerloop saves valid values
   - rtmGrid.moveOn to set next XY Position currentX and currentY
   - sleep
-- Current Out off limit
+- if tunnel-current Out off limit
   - controllerloop calculates new Z value currentZDac
   - sleep
 - wait for next timer

@@ -22,6 +22,12 @@
 static const char *TAG = "controller";
 extern "C" void displayTunnelCurrent()
 {
+
+    esp_err_t errTemp = i2cInit(); // Init ADC
+    if (errTemp != 0)
+    {
+        ESP_LOGE(TAG,"ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
+    }
     //timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer during dataset sending
     static double e, w, r = 0;
 
@@ -73,13 +79,7 @@ extern "C" void controllerStart()
         ESP_LOGE(TAG,"ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
     }
     
-    // Helfer: In der Inbetriebnahme zyklische Anzeige des Tunnelstroms
-    if(modeWorking==(uint16_t)MODE_MONITOR_TUNNEL_CURRENT){
-        displayTunnelCurrent();
-        return;
-    }
-
-
+   
 
     vspiStart(); // Init and loop for DACs
 
