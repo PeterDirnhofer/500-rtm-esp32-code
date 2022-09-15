@@ -147,30 +147,30 @@ void vspiLoop(void *unused)
 
     vspiSendDac(currentXDac, buffer.get(), handleDacX); // Dac X
     vspiSendDac(currentYDac, buffer.get(), handleDacY); // Dac Y
-    printf("--- Suspend vspiLoop (self)\n");
+    //printf("--- Suspend vspiLoop (self)\n");
     vTaskSuspend(NULL); // will be resumed by controller
     
     
     // Resumed by Controller
     while (1)
     {
-        printf("X, new: %d, old: %d \n", currentXDac, lastXDac);
+        //ESP_LOGI(TAG,"X, new: %d, old: %d \n", currentXDac, lastXDac);
 
         if (currentXDac != lastXDac)
         {                                                       // only if new value has been written to currentXDac
             vspiSendDac(currentXDac, buffer.get(), handleDacX); // Dac X
             lastXDac = currentXDac;
-            printf("new X \n");
+            ESP_LOGI(TAG,"new X=%d\n",currentXDac);
         }
         if (currentYDac != lastYDac)
         {                                                       // only if new value has been written to currentYDac
             vspiSendDac(currentYDac, buffer.get(), handleDacY); // Dac Y
             lastYDac = currentYDac;
-            printf("new Y \n");
+            ESP_LOGI(TAG,"new Y=%d\n",currentYDac);
         }
 
         vspiSendDac(currentZDac, buffer.get(), handleDacZ); // Dac Z
-        printf("--- Suspend vspiLoop (self)\n");
+        //printf("--- Suspend vspiLoop (self)\n");
         vTaskSuspend(NULL); // will be resumed by controller
     }
 }

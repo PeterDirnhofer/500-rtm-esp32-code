@@ -10,6 +10,7 @@
 #include "timer.h"
 #include "uartLocal.h"
 #include "esp_log.h"
+#include <stdarg.h>
 
 /**
  * @brief Hilfe bei Inbetriebnahme. Monitoring Tunnelstrom, Keine Regelung
@@ -20,24 +21,36 @@
  */
 
 static const char *TAG = "controller";
+/**
+ * @brief Loop diplaying tunnelcurrent to setup measuring 
+ * Is started by pessing ESC during startup
+ * 
+ */
 extern "C" void displayTunnelCurrent()
 {
+    
+    static double e,w,r = 0;
 
-    esp_err_t errTemp = i2cInit(); // Init ADC
+    esp_err_t errTemp = i2cInit(); // Init I2C for XYZ DACs
     if (errTemp != 0)
     {
         ESP_LOGE(TAG,"ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
     }
-    //timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer during dataset sending
-    static double e, w, r = 0;
 
-
+    // Set X,Y,Z to 0
+    vspiStart(); // Init and loop for DACs
+    currentXDac=0;
+    currentYDac=0;
+    currentZDac=0;  
     ESP_LOGI(TAG,"+++ Display Tunnel Current\n");
-    w = destinationTunnelCurrentnA;
+    ESP_LOGI(TAG,"Set X,Y,Z =");
+    vTaskResume(handleVspiLoop); // will suspend itself 
     
+    w = destinationTunnelCurrentnA;   
     
     const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
 
+    
     while (1)
     {
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
@@ -46,18 +59,13 @@ extern "C" void displayTunnelCurrent()
         r = currentTunnelCurrentnA;                                                                           // conversion from voltage to equivalent current
         // w=r+0.001;
         //  regeldifferenz = soll - ist
-        e = w - r; // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
-
-
-      
+        e = w - r; // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse     
         
-        char  help[256];
-        sprintf(help,"%d[digits]  0x%X[hex] %f[nA]      delta: %f  soll: %f\n", adcValue,adcValue,currentTunnelCurrentnA,e, w);
-
-        logMonitor(help);
         
-        //printf("remainingTunnelCurrentDifferencenA %f\n", remainingTunnelCurrentDifferencenA);
+        logMonitor("%d[digits]  0x%X[hex] %f[nA]      delta: %f  soll: %f\n", adcValue,adcValue,currentTunnelCurrentnA,e, w);
+        
         vTaskDelay(xDelay);
+
     }
 }
 
@@ -215,7 +223,7 @@ extern "C" void controllerLoop(void *unused)
             eOld = e;
             ySaturate = saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
             currentZDac = ySaturate;                                  // set new z height
-            ESP_LOGI(TAG,"controller: new ZDac: %i. resume vspiLoop\n",currentZDac);
+            ESP_LOGI(TAG,"new ZDac: %i. resume vspiLoop\n",currentZDac);
 
             // handleVspiLoop stellt neue Z Position auf currentZDac
             vTaskResume(handleVspiLoop); // will suspend itself

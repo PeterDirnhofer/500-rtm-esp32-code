@@ -12,7 +12,6 @@
 #include <stddef.h>
 #include <string.h>
 #include <memory>
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
@@ -33,11 +32,10 @@
 #include <string>
 #include "esp_log.h"
 #include "timer.h"
+#include <stdarg.h>
 
 static const int RX_BUF_SIZE = 100;
 static const char *TAG = "uartLocal";
-
-
 
 void uartInit(void)
 {
@@ -70,11 +68,19 @@ void uartStart()
     xTaskCreatePinnedToCore(uartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &handleUartRcvLoop, 0);
 }
 
-int logMonitor(const char *data)
-{
-    const int len = strlen(data);
-    const int txBytes = uart_write_bytes(UART_NUM_1, data, len);
-    return txBytes;
+ int logMonitor (const char* fmt,... ){
+    va_list ap;
+    va_start(ap,fmt);
+    
+    char s[100]={0};
+    vsprintf(s,fmt,ap);
+
+    const int len = strlen(s);
+    int rc = uart_write_bytes(UART_NUM_1, s, len);
+  
+    va_end(ap);
+    return rc;
+
 }
 
 using namespace std;
@@ -111,8 +117,6 @@ extern "C" void uartRcvLoop(void *unused)
     int stIndex = 0;
     char st[100];
 
-    
-
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
     ESP_LOGI(TAG,"*** uartRcvLoop started \n");
     while (1)
@@ -139,9 +143,6 @@ extern "C" void uartRcvLoop(void *unused)
                     logMonitor("MONITORING TUNNEL CURRENT SELECTED\n");
                     esp_restart();
                 }
-                
-                
-
                 
                 st[stIndex++] = c;
                 st[stIndex] = 0;
