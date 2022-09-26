@@ -15,7 +15,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
-#include "esp_log.h"
 #include "driver/uart.h" // esp uart
 #include "string.h"
 #include "driver/gpio.h"
@@ -30,7 +29,7 @@
 #include "string.h"
 #include <iostream>
 #include <string>
-#include "esp_log.h"
+#include <esp_log.h>
 #include "timer.h"
 #include <stdarg.h>
 
@@ -51,8 +50,6 @@ void uartInit(void)
     uart_driver_install(UART_NUM_1, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
     uart_param_config(UART_NUM_1, &uart_config);
     uart_set_pin(UART_NUM_1, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-
-    memset(recvbufferUart, 0, 10);
 }
 /**
  * @brief Alternative Communication port.
@@ -61,42 +58,36 @@ void uartInit(void)
 void uartStart()
 {
     uartInit();
-
-    //printf("Starting uartLoop ... ");
-    //xTaskCreatePinnedToCore(uartLoop, "uartLoop", 10000, NULL, 4, &handleUartLoop, 0);
-
     xTaskCreatePinnedToCore(uartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &handleUartRcvLoop, 0);
 }
 
- int logMonitor (const char* fmt,... ){
+int uartSend(const char *fmt, ...)
+{
     va_list ap;
-    va_start(ap,fmt);
-    
-    char s[100]={0};
-    vsprintf(s,fmt,ap);
+    va_start(ap, fmt);
+
+    char s[100] = {0};
+    vsprintf(s, fmt, ap);
 
     const int len = strlen(s);
     int rc = uart_write_bytes(UART_NUM_1, s, len);
-  
+
     va_end(ap);
     return rc;
-
 }
 
-using namespace std;
-string convertToString(char *a)
+std::string convertToString(char *a)
 {
-    string s(a);
+    std::string s(a);
     return s;
 }
 
-float toFloat(char * h1)
+float toFloat(char *h1)
 {
-    
 
-    //printf("kI als String: %s\n", splitStrings[1]);
-    
-    string helps = convertToString(h1);
+    // printf("kI als String: %s\n", splitStrings[1]);
+
+    std::string helps = convertToString(h1);
     char *ending;
     float converted_value = strtof(helps.c_str(), &ending);
     if (*ending != 0)
@@ -109,119 +100,161 @@ float toFloat(char * h1)
 
 /**
  * @brief Read Serial port for Monitoring an Configuration
- * 
- * @param unused 
+ *
+ * @param unused
  */
+
+// https://github.com/espressif/esp-idf/blob/af28c1fa21fc0abf9cb3ac8568db9cbd99a7f4b5/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 extern "C" void uartRcvLoop(void *unused)
 {
     int stIndex = 0;
-    char st[100];
+    std::string rcvString = "";
+    bool found_13;
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
-    ESP_LOGI(TAG,"*** uartRcvLoop started \n");
+    uint8_t actual_data = 0;
+    // static const char *TAG = "uartRcvLoop";
+    uint8_t *extracted = (uint8_t *)malloc(RX_BUF_SIZE + 1);
+    uint8_t extracted_cnt = 0;
+    memset(extracted, 0, RX_BUF_SIZE + 1);
+
+    ESP_LOGI(TAG, "*** STARTED \n");
+    found_13 = false;
     while (1)
     {
 
-        const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 100 / portTICK_PERIOD_MS);
-        if (rxBytes > 0)
-        {      
-            // Terminate input with 0
-            data[rxBytes] = 0;
-            for (int i = 0; i < rxBytes; i++)
+    
+
+        // uart_flush()
+        const int rxCount = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 500 / portTICK_PERIOD_MS);
+        if ((rxCount > 0) &&  (found_13 == false))
+        {
+            // Terminate input with 0123
+            data[rxCount] = 0;
+
+            int i = 0;
+           
+           
+
+            ESP_LOGI(TAG, "rxCount: %d\n", rxCount);
+
+            while ((i < rxCount) && (found_13 == false))
             {
-                char c = data[i];
-
-                if (c==27)  // ESC
+                if (data[i] == 13)
                 {
-                    logMonitor("MONITORING TUNNEL CURRENT SELECTED\n");
-                    modeWorking = MODE_MONITOR_TUNNEL_CURRENT;                
-                    
+                    found_13 = true;
+                    ESP_LOGI(TAG,"13 found\n");
+
+                    //rcvString.append(0);
                 }
-
-                if (c==3)  // Ctrl C 
+                else
                 {
-                    logMonitor("MONITORING TUNNEL CURRENT SELECTED\n");
-                    esp_restart();
+                    ESP_LOGI(TAG,"append %d\n",data[i]);
+                    rcvString += (char)data[i];
                 }
-                
-                st[stIndex++] = c;
-                st[stIndex] = 0;
+                i++;
+            }
 
-                if (stIndex > 99)
-                {
-                    ESP_LOGE(TAG,"ERROR UART received too many bytes\n");
+            
 
-                    stIndex = 0;
-                    memset(&(st[0]), 0, 100); // clear array st
-                }
+            ESP_LOGI(TAG,"nach rcvString erzeugung\n");
 
-                if (c == 13)
-                {
 
-                    // std::string str(st);
+            // https://www.includehelp.com/c-programs/c-program-to-split-string-by-space-into-words.aspx
+            // std::string st;
 
-                    // https://www.includehelp.com/c-programs/c-program-to-split-string-by-space-into-words.aspx
-                    // char str[100];
-                    char splitStrings[10][10]; // can store 10 words of 10 characters
-                    int i, j, cnt;
+            char splitStrings[10][10]; // can store 10 words of 10 characters
+            int j, cnt;
 
-                    j = 0;
-                    cnt = 0;
-                    for (i = 0; i <= (strlen(st)); i++)
-                    {
-                        // if space or NULL found, assign NULL into splitStrings[cnt]
-                        if (st[i] == ' ' || st[i] == '\0')
+            j = 0;
+            cnt = 0;
+
+            /*
+                        for (int i = 0; i < rxCount; i++)
                         {
-                            splitStrings[cnt][j] = '\0';
-                            cnt++; // for next word
-                            if (cnt > 9)
+
+                            ESP_LOGI(TAG,"bytes read %d\n",rxCount);
+                            char c = data[i];
+
+                            st[stIndex++] = c;
+                            st[stIndex] = 0;
+
+                            if (stIndex > 99)
                             {
-                                // logMonitor ("ERROR. maximum 9 Data");
-                                printf("ERROR. maximum 9 Data");
-                                return;
+                                ESP_LOGE(TAG,"ERROR UART received too many bytes\n");
+
+                                stIndex = 0;
+                                memset(&(st[0]), 0, 100); // clear array st
                             }
 
-                            j = 0; // for next word, init index to 0
+
+
+                            if (c == 13)
+                            {
+
+                                // std::string str(st);
+
+                                // https://www.includehelp.com/c-programs/c-program-to-split-string-by-space-into-words.aspx
+                                // char str[100];
+                                char splitStrings[10][10]; // can store 10 words of 10 characters
+                                int i, j, cnt;
+
+                                j = 0;
+                                cnt = 0;
+                                for (i = 0; i <= (strlen(st)); i++)
+                                {
+                                    // if space or NULL found, assign NULL into splitStrings[cnt]
+                                    if (st[i] == ' ' || st[i] == '\0')
+                                    {
+                                        splitStrings[cnt][j] = '\0';
+                                        cnt++; // for next word
+                                        if (cnt > 9)
+                                        {
+                                            // logMonitor ("ERROR. maximum 9 Data");
+                                            printf("ERROR. maximum 9 Data");
+                                            return;
+                                        }
+
+                                        j = 0; // for next word, init index to 0
+                                    }
+                                    else
+                                    {
+                                        splitStrings[cnt][j] = st[i];
+                                        j++;
+                                    }
+                                }
+
+                                printf("\nStrings (words) after split by space:\n");
+                                for (i = 0; i < cnt; i++)
+                                {
+
+                                    printf(splitStrings[i]);
+                                    printf("\n");
+                                }
+
+                                kI = atof(splitStrings[1]);
+                                kP = atof(splitStrings[2]);
+                                destinationTunnelCurrentnA = toFloat(splitStrings[3]);
+                                remainingTunnelCurrentDifferencenA = toFloat(splitStrings[4]);
+                                startX = (uint16_t)atoi(splitStrings[5]);
+                                startY = (uint16_t)atoi(splitStrings[6]);
+                                direction = (bool)atoi(splitStrings[7]);
+
+                                // maxX = (uint16_t) atoi(splitStrings[8]);
+                                // maxY = (uint16_t) atoi(splitStrings[9]);
+
+                                // double dataArray[] = {kI, kP, destinationTunnelCurrentnA, remainingTunnelCurrentDifferencenA, (double) startX, (double) startY, (double) direction, (double) maxX, (double) maxY};
+
+                                //    printf("%s\n", splitStrings[i]);
+
+                                // std::unique_ptr<protocolElement> currentReceivedCommand = std::make_unique<protocolElement>((uint8_t*) st); //create protocolElement, constructor will proceed
+
+                                ESP_LOGI(TAG,"nach protocolElemet erzeugen\n");
+                                stIndex = 0;
+                            }
                         }
-                        else
-                        {
-                            splitStrings[cnt][j] = st[i];
-                            j++;
-                        }
-                    }
-
-                    printf("\nStrings (words) after split by space:\n");
-                    for (i = 0; i < cnt; i++)
-                    {
-
-                        printf(splitStrings[i]);
-                        printf("\n");
-                    }
-
-                    kI = atof(splitStrings[1]);
-                    kP = atof(splitStrings[2]);
-                    destinationTunnelCurrentnA = toFloat(splitStrings[3]);
-                    remainingTunnelCurrentDifferencenA = toFloat(splitStrings[4]);
-                    startX = (uint16_t)atoi(splitStrings[5]);
-                    startY = (uint16_t)atoi(splitStrings[6]);
-                    direction = (bool)atoi(splitStrings[7]);
-
-                    // maxX = (uint16_t) atoi(splitStrings[8]);
-                    // maxY = (uint16_t) atoi(splitStrings[9]);
-
-                    // double dataArray[] = {kI, kP, destinationTunnelCurrentnA, remainingTunnelCurrentDifferencenA, (double) startX, (double) startY, (double) direction, (double) maxX, (double) maxY};
-
-                    //    printf("%s\n", splitStrings[i]);
-
-                    // std::unique_ptr<protocolElement> currentReceivedCommand = std::make_unique<protocolElement>((uint8_t*) st); //create protocolElement, constructor will proceed
-                    logMonitor(st); 
-                    logMonitor("nach protocolElemet erzeugen\n");
-                    stIndex = 0;
-                }
-            }
+            */
         }
     }
-    free (data);
-    free(st);
+    free(data);
 }
-

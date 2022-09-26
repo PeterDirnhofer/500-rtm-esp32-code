@@ -62,7 +62,7 @@ extern "C" void displayTunnelCurrent()
         e = w - r; // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse     
         
         
-        logMonitor("%d[digits]  0x%X[hex] %f[nA]      delta: %f  soll: %f\n", adcValue,adcValue,currentTunnelCurrentnA,e, w);
+        uartSend("%d[digits]  0x%X[hex] %f[nA]      delta: %f  soll: %f\n", adcValue,adcValue,currentTunnelCurrentnA,e, w);
         
         vTaskDelay(xDelay);
 

@@ -37,6 +37,9 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 
+#include <UartClass.h>
+
+
 /// @brief Startet tasks und beendet sich dann selbst
 /// @param
 extern "C" void app_main(void)
@@ -44,19 +47,37 @@ extern "C" void app_main(void)
     static const char *TAG = "main";
 
    
-    ESP_LOGI(TAG,"+++ START\n");
+    ESP_LOGI(TAG,"\n+++ START ++++++++++++\n");
   
     // modeWorking Betriebsart wählen
     // MODE_MEASURE : Normalbetrieb
     // MODE_MONITOR_TUNNEL_CURRENT : Zeigt Tunnel ADC im Sekundentakt
     modeWorking = MODE_MONITOR_TUNNEL_CURRENT;
-    //modeWorking = MODE_MEASURE;
+    //UartClass uc;
+
+    UartClass ek;
+    //ek.eineFunktion();
+    
+    return;
 
     
-    setupDefaultData();
+
+    //modeWorking = MODE_MEASURE;
     uartStart();
+   
+
     
-    logMonitor("Mit ESC in Tunnel current Monitoring Modus springen\n");
+
+
+
+
+
+
+
+
+
+    
+    uartSend("Mit ESC in Tunnel current Monitoring Modus springen\n");
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     
     //modeWorking = MODE_MONITOR_TUNNEL_CURRENT;

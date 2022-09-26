@@ -4,9 +4,6 @@
 #include "driver/i2c.h"
 
 
-WORD_ALIGNED_ATTR char sendbufferUart[10]="";
-WORD_ALIGNED_ATTR char recvbufferUart[10]="";
-
 
 esp_err_t retVspi;
 spi_transaction_t tVspi;

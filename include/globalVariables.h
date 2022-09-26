@@ -33,9 +33,6 @@ extern esp_err_t retVspi;
 extern spi_transaction_t tVspi;
 
 
-extern WORD_ALIGNED_ATTR char sendbufferUart[10];
-extern WORD_ALIGNED_ATTR char recvbufferUart[10];
-
 extern WORD_ALIGNED_ATTR char sendbufferVspi[3];
 extern WORD_ALIGNED_ATTR char recvbufferVspi[3];
 
