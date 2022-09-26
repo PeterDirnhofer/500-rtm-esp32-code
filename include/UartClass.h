@@ -5,16 +5,23 @@
 
 #pragma once
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 class UartClass
 {
-  public:                              // öffentlich
-    UartClass();                      // der Default-Konstruktor
-    ~UartClass(); 
-   
+public:
+  UartClass();  // der Default-Konstruktor
+  ~UartClass(); // Destructor
 
-  private:                             // privat
-    int m_eineVariable;
+  void start();
+
+private: // privat
+  void uartInit();
+  static void uartRcvLoop(void *unused);
+  TaskHandle_t task_handle;
+
+
 };
 
 #endif

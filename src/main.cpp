@@ -55,8 +55,10 @@ extern "C" void app_main(void)
     modeWorking = MODE_MONITOR_TUNNEL_CURRENT;
     //UartClass uc;
 
-    UartClass ek;
-    //ek.eineFunktion();
+    UartClass uk;
+    uk.start();
+    
+   
     
     return;
 
