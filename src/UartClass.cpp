@@ -37,17 +37,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-
-
-
 static const int RX_BUF_SIZE = 100;
-static const char *TAG = "uartLocal";
-
-
-
+static const char *TAG = "UartClass";
 
 UartClass::UartClass()
-: task_handle(NULL)
+    : task_handle(NULL)
 {
 }
 
@@ -57,18 +51,16 @@ UartClass::~UartClass()
 
 /**
  * @brief init Uart for communication with Laptop usb
- * 
- * 
+ *
+ *
  */
-void UartClass::start(){
-    
+void UartClass::start()
+{
+
     this->uartInit();
-    //xTaskCreatePinnedToCore(this->uartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->task_handle, 0);
-    xTaskCreatePinnedToCore(this->uartRcvLoop,"uartRcvLoop",10000,NULL,4,&this->task_handle,(BaseType_t)0);
-
+    // xTaskCreatePinnedToCore(this->uartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->task_handle, 0);
+    xTaskCreatePinnedToCore(this->uartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->task_handle, (BaseType_t)0);
 }
-
-
 
 void UartClass::uartInit()
 {
@@ -88,16 +80,13 @@ void UartClass::uartInit()
 
 void UartClass::uartRcvLoop(void *unused)
 {
-// https://github.com/espressif/esp-idf/blob/af28c1fa21fc0abf9cb3ac8568db9cbd99a7f4b5/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
-    int stIndex = 0;
+    // https://github.com/espressif/esp-idf/blob/af28c1fa21fc0abf9cb3ac8568db9cbd99a7f4b5/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
+
     std::string rcvString = "";
     bool found_13;
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
-    uint8_t actual_data = 0;
-    // static const char *TAG = "uartRcvLoop";
     uint8_t *extracted = (uint8_t *)malloc(RX_BUF_SIZE + 1);
-    uint8_t extracted_cnt = 0;
     memset(extracted, 0, RX_BUF_SIZE + 1);
 
     ESP_LOGI(TAG, "*** STARTED \n");
@@ -105,51 +94,45 @@ void UartClass::uartRcvLoop(void *unused)
     while (1)
     {
 
-    
-
         // uart_flush()
-        const int rxCount = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 500 / portTICK_PERIOD_MS);
-        if ((rxCount > 0) &&  (found_13 == false))
+        const int rxCount = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 1000 / portTICK_PERIOD_MS);
+        if ((rxCount > 0) && (found_13 == false))
         {
-            // Terminate input with 0123
             data[rxCount] = 0;
-
             int i = 0;
-           
-           
 
-            ESP_LOGI(TAG, "rxCount: %d\n", rxCount);
+            // ESP_LOGI(TAG, "rxCount: %d\n", rxCount);
 
             while ((i < rxCount) && (found_13 == false))
             {
                 if (data[i] == 13)
                 {
                     found_13 = true;
-                    ESP_LOGI(TAG,"13 found\n");
-
-                    //rcvString.append(0);
                 }
                 else
                 {
-                    ESP_LOGI(TAG,"append %d\n",data[i]);
                     rcvString += (char)data[i];
                 }
                 i++;
             }
 
-            
+            if (found_13)
+            {
 
-            ESP_LOGI(TAG,"nach rcvString erzeugung\n");
+                ESP_LOGI(TAG, "13 found.  \n");
 
+                const char *str = rcvString.c_str();
+                ESP_LOGI(TAG, "Start Analyse rcvString = %s\n", str);
+               
 
-            // https://www.includehelp.com/c-programs/c-program-to-split-string-by-space-into-words.aspx
-            // std::string st;
+                // https://www.includehelp.com/c-programs/c-program-to-split-string-by-space-into-words.aspx
 
-            char splitStrings[10][10]; // can store 10 words of 10 characters
-            int j, cnt;
+                char splitStrings[10][10]; // can store 10 words of 10 characters
+                int j, cnt;
 
-            j = 0;
-            cnt = 0;
+                j = 0;
+                cnt = 0;
+            }
 
             /*
                         for (int i = 0; i < rxCount; i++)
@@ -240,4 +223,3 @@ void UartClass::uartRcvLoop(void *unused)
     }
     free(data);
 }
-
