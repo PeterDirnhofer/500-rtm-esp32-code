@@ -7,6 +7,9 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include <cstring>
+#include <string>
+
 
 class UartClass
 {
@@ -15,13 +18,20 @@ public:
   ~UartClass(); // Destructor
 
   void start();
-
-private: // privat
+  static int staticIntVar;
+  //static std::string parameters[]; 
+  static std::string usbReceive;
+  
+private: 
   void uartInit();
   static void uartRcvLoop(void *unused);
   TaskHandle_t task_handle;
+  
+  //std::string parameters[10];
 
+  
 
 };
+
 
 #endif

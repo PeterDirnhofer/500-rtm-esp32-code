@@ -39,9 +39,18 @@
 
 #include <UartClass.h>
 
+// static members of UartClass are declared in UArtClass.h
+// Need to be initialized from outside the class
+int UartClass::staticIntVar=123;
+std::string UartClass::usbReceive="";
+
+
 
 /// @brief Startet tasks und beendet sich dann selbst
 /// @param
+
+
+
 extern "C" void app_main(void)
 {
     static const char *TAG = "main";
@@ -56,6 +65,7 @@ extern "C" void app_main(void)
     //UartClass uc;
 
     UartClass uk;
+    
     uk.start();
     
    

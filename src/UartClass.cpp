@@ -30,6 +30,7 @@
 #include "string.h"
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <esp_log.h>
 #include "timer.h"
 #include <stdarg.h>
@@ -76,6 +77,7 @@ void UartClass::uartInit()
     uart_driver_install(UART_NUM_1, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
     uart_param_config(UART_NUM_1, &uart_config);
     uart_set_pin(UART_NUM_1, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    staticIntVar=321;
 }
 
 void UartClass::uartRcvLoop(void *unused)
@@ -83,142 +85,82 @@ void UartClass::uartRcvLoop(void *unused)
     // https://github.com/espressif/esp-idf/blob/af28c1fa21fc0abf9cb3ac8568db9cbd99a7f4b5/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 
     std::string rcvString = "";
-    bool found_13;
+    bool found_CR;
+    staticIntVar=27;
+    
+   
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
-    uint8_t *extracted = (uint8_t *)malloc(RX_BUF_SIZE + 1);
-    memset(extracted, 0, RX_BUF_SIZE + 1);
 
     ESP_LOGI(TAG, "*** STARTED \n");
-    found_13 = false;
+    found_CR = false;
     while (1)
     {
 
         // uart_flush()
-        const int rxCount = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 1000 / portTICK_PERIOD_MS);
-        if ((rxCount > 0) && (found_13 == false))
+        const int rxCount = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 100 / portTICK_PERIOD_MS);
+        if ((rxCount > 0) && (found_CR == false))
         {
             data[rxCount] = 0;
             int i = 0;
 
-            // ESP_LOGI(TAG, "rxCount: %d\n", rxCount);
-
-            while ((i < rxCount) && (found_13 == false))
+            // Input ends with CR LF = 13 10
+            while ((i < rxCount) && (found_CR == false))
             {
-                if (data[i] == 13)
+                if (data[i] == 0xD) // Carriage Return
                 {
-                    found_13 = true;
+                    found_CR = true;
                 }
-                else
+                else if (data[i] >= 0x20) // Save only printable characters
                 {
                     rcvString += (char)data[i];
                 }
                 i++;
             }
-
-            if (found_13)
+            usbReceive.clear();
+            if (found_CR)
             {
 
-                ESP_LOGI(TAG, "13 found.  \n");
+                ESP_LOGI(TAG, "#### 13 found.  \n");
 
-                const char *str = rcvString.c_str();
-                ESP_LOGI(TAG, "Start Analyse rcvString = %s\n", str);
-               
+                ESP_LOGI(TAG, "Start Analyse rcvString\n%s\n", rcvString.c_str());
+                usbReceive.append(rcvString);
 
-                // https://www.includehelp.com/c-programs/c-program-to-split-string-by-space-into-words.aspx
+                ESP_LOGI(TAG,"usbReceive %s\n",usbReceive.c_str());
 
-                char splitStrings[10][10]; // can store 10 words of 10 characters
-                int j, cnt;
+                // Split rcvString
+                // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
 
-                j = 0;
-                cnt = 0;
+                char *cstr = new char[rcvString.length() + 1];
+                std::strcpy(cstr, rcvString.c_str());
+
+                // how many comma are in string
+                int numberOfValues=1;
+                for (int i=0; i < rcvString.length();i++)
+                    if(cstr[i]==',') numberOfValues++;
+            
+                ESP_LOGI(TAG,"numberOfValues %d",numberOfValues);
+
+                //std::string parameters[10];
+                int parametersIndex;
+
+                std::string parameters[10];
+                parameters[0]="wert1";
+
+                
+                char *p = std::strtok(cstr, ",");
+                parametersIndex=0;
+                while (p != 0)
+                {
+                    printf("%s\n", p);
+                    char buffer[20];
+                    sprintf(buffer,"%s",p);
+                    parameters[parametersIndex++]=buffer;                 
+                    p = std::strtok(NULL, ",");
+                }
+
+                delete[] cstr;
             }
-
-            /*
-                        for (int i = 0; i < rxCount; i++)
-                        {
-
-                            ESP_LOGI(TAG,"bytes read %d\n",rxCount);
-                            char c = data[i];
-
-                            st[stIndex++] = c;
-                            st[stIndex] = 0;
-
-                            if (stIndex > 99)
-                            {
-                                ESP_LOGE(TAG,"ERROR UART received too many bytes\n");
-
-                                stIndex = 0;
-                                memset(&(st[0]), 0, 100); // clear array st
-                            }
-
-
-
-                            if (c == 13)
-                            {
-
-                                // std::string str(st);
-
-                                // https://www.includehelp.com/c-programs/c-program-to-split-string-by-space-into-words.aspx
-                                // char str[100];
-                                char splitStrings[10][10]; // can store 10 words of 10 characters
-                                int i, j, cnt;
-
-                                j = 0;
-                                cnt = 0;
-                                for (i = 0; i <= (strlen(st)); i++)
-                                {
-                                    // if space or NULL found, assign NULL into splitStrings[cnt]
-                                    if (st[i] == ' ' || st[i] == '\0')
-                                    {
-                                        splitStrings[cnt][j] = '\0';
-                                        cnt++; // for next word
-                                        if (cnt > 9)
-                                        {
-                                            // logMonitor ("ERROR. maximum 9 Data");
-                                            printf("ERROR. maximum 9 Data");
-                                            return;
-                                        }
-
-                                        j = 0; // for next word, init index to 0
-                                    }
-                                    else
-                                    {
-                                        splitStrings[cnt][j] = st[i];
-                                        j++;
-                                    }
-                                }
-
-                                printf("\nStrings (words) after split by space:\n");
-                                for (i = 0; i < cnt; i++)
-                                {
-
-                                    printf(splitStrings[i]);
-                                    printf("\n");
-                                }
-
-                                kI = atof(splitStrings[1]);
-                                kP = atof(splitStrings[2]);
-                                destinationTunnelCurrentnA = toFloat(splitStrings[3]);
-                                remainingTunnelCurrentDifferencenA = toFloat(splitStrings[4]);
-                                startX = (uint16_t)atoi(splitStrings[5]);
-                                startY = (uint16_t)atoi(splitStrings[6]);
-                                direction = (bool)atoi(splitStrings[7]);
-
-                                // maxX = (uint16_t) atoi(splitStrings[8]);
-                                // maxY = (uint16_t) atoi(splitStrings[9]);
-
-                                // double dataArray[] = {kI, kP, destinationTunnelCurrentnA, remainingTunnelCurrentDifferencenA, (double) startX, (double) startY, (double) direction, (double) maxX, (double) maxY};
-
-                                //    printf("%s\n", splitStrings[i]);
-
-                                // std::unique_ptr<protocolElement> currentReceivedCommand = std::make_unique<protocolElement>((uint8_t*) st); //create protocolElement, constructor will proceed
-
-                                ESP_LOGI(TAG,"nach protocolElemet erzeugen\n");
-                                stIndex = 0;
-                            }
-                        }
-            */
         }
     }
     free(data);
