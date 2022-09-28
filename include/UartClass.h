@@ -18,7 +18,7 @@ public:
   ~UartClass(); // Destructor
 
   void start();
-  static int staticIntVar;
+  static bool usbAvailable;
   //static std::string parameters[]; 
   static std::string usbReceive;
   

@@ -77,7 +77,7 @@ void UartClass::uartInit()
     uart_driver_install(UART_NUM_1, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
     uart_param_config(UART_NUM_1, &uart_config);
     uart_set_pin(UART_NUM_1, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    staticIntVar=321;
+    
 }
 
 void UartClass::uartRcvLoop(void *unused)
@@ -86,9 +86,9 @@ void UartClass::uartRcvLoop(void *unused)
 
     std::string rcvString = "";
     bool found_CR;
-    staticIntVar=27;
     
-   
+    
+    
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
 
@@ -125,6 +125,7 @@ void UartClass::uartRcvLoop(void *unused)
 
                 ESP_LOGI(TAG, "Start Analyse rcvString\n%s\n", rcvString.c_str());
                 usbReceive.append(rcvString);
+                usbAvailable=true;
 
                 ESP_LOGI(TAG,"usbReceive %s\n",usbReceive.c_str());
 

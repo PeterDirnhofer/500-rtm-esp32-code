@@ -41,8 +41,10 @@
 
 // static members of UartClass are declared in UArtClass.h
 // Need to be initialized from outside the class
-int UartClass::staticIntVar=123;
+
 std::string UartClass::usbReceive="";
+
+bool UartClass::usbAvailable=false;
 
 
 
@@ -67,6 +69,17 @@ extern "C" void app_main(void)
     UartClass uk;
     
     uk.start();
+    printf("usbAvailable %d\n",UartClass::usbAvailable);
+    while(UartClass::usbAvailable==false)
+    {
+        vTaskDelay(500 / portTICK_RATE_MS);
+        printf(".");
+        
+    }
+
+    std::string res= UartClass::usbReceive;
+    ESP_LOGI(TAG,"%s\n",res.c_str());
+    
     
    
     
