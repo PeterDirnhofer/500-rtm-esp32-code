@@ -10,7 +10,6 @@
 #include <cstring>
 #include <string>
 
-
 class UartClass
 {
 public:
@@ -18,20 +17,16 @@ public:
   ~UartClass(); // Destructor
 
   void start();
+  int send(const char *fmt, ...);
+  int getPcCommad();
+
   static bool usbAvailable;
-  //static std::string parameters[]; 
   static std::string usbReceive;
-  
-private: 
-  void uartInit();
+
+private:
+  // void uartInit();
   static void uartRcvLoop(void *unused);
   TaskHandle_t task_handle;
-  
-  //std::string parameters[10];
-
-  
-
 };
-
 
 #endif

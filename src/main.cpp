@@ -59,27 +59,16 @@ extern "C" void app_main(void)
 
    
     ESP_LOGI(TAG,"\n+++ START ++++++++++++\n");
-  
-    // modeWorking Betriebsart wählen
-    // MODE_MEASURE : Normalbetrieb
-    // MODE_MONITOR_TUNNEL_CURRENT : Zeigt Tunnel ADC im Sekundentakt
-    modeWorking = MODE_MONITOR_TUNNEL_CURRENT;
-    //UartClass uc;
-
-    UartClass uk;
+    UartClass usb;
+    usb.start();
     
-    uk.start();
-    printf("usbAvailable %d\n",UartClass::usbAvailable);
-    while(UartClass::usbAvailable==false)
-    {
-        vTaskDelay(500 / portTICK_RATE_MS);
-        printf(".");
-        
-    }
-
+    // Wait for command from PC via USB
+    usb.getPcCommad();
+    
     std::string res= UartClass::usbReceive;
     ESP_LOGI(TAG,"%s\n",res.c_str());
     
+
     
    
     

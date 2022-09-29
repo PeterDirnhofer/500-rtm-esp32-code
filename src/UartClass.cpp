@@ -58,13 +58,6 @@ UartClass::~UartClass()
 void UartClass::start()
 {
 
-    this->uartInit();
-    // xTaskCreatePinnedToCore(this->uartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->task_handle, 0);
-    xTaskCreatePinnedToCore(this->uartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->task_handle, (BaseType_t)0);
-}
-
-void UartClass::uartInit()
-{
     const uart_config_t uart_config = {
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,
@@ -77,17 +70,15 @@ void UartClass::uartInit()
     uart_driver_install(UART_NUM_1, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
     uart_param_config(UART_NUM_1, &uart_config);
     uart_set_pin(UART_NUM_1, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    
-}
 
+    xTaskCreatePinnedToCore(this->uartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->task_handle, (BaseType_t)0);
+}
 void UartClass::uartRcvLoop(void *unused)
 {
     // https://github.com/espressif/esp-idf/blob/af28c1fa21fc0abf9cb3ac8568db9cbd99a7f4b5/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 
     std::string rcvString = "";
     bool found_CR;
-    
-    
     
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
@@ -117,17 +108,21 @@ void UartClass::uartRcvLoop(void *unused)
                 }
                 i++;
             }
-            usbReceive.clear();
+            
             if (found_CR)
             {
-
+                UartClass::usbReceive.clear();
                 ESP_LOGI(TAG, "#### 13 found.  \n");
 
-                ESP_LOGI(TAG, "Start Analyse rcvString\n%s\n", rcvString.c_str());
-                usbReceive.append(rcvString);
-                usbAvailable=true;
-
+                // ESP_LOGI(TAG, "Start Analyse rcvString\n%s\n", rcvString.c_str());
+                UartClass::usbReceive.clear();
+                UartClass::usbReceive.append(rcvString);
+                UartClass::usbAvailable=true;
+                rcvString.clear();
                 ESP_LOGI(TAG,"usbReceive %s\n",usbReceive.c_str());
+            
+
+
 
                 // Split rcvString
                 // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
@@ -165,4 +160,39 @@ void UartClass::uartRcvLoop(void *unused)
         }
     }
     free(data);
+}
+
+int UartClass::send(const char *fmt, ...)
+{
+        
+    va_list ap;
+    va_start(ap, fmt);
+
+    char s[100] = {0};
+    vsprintf(s, fmt, ap);
+    ESP_LOGI(TAG,"uartsend");
+
+    
+    const int len = strlen(s);
+    int rc = uart_write_bytes(UART_NUM_1, s, len);
+
+    va_end(ap);
+  
+    return rc;
+}
+
+int UartClass::getPcCommad(){
+    uint32_t i = 0;
+    while(UartClass::usbAvailable==false)
+    {
+        if ((i % 20)==0){
+            ESP_LOGI(TAG,"IRQ ");
+            this->send("REQUEST\n");
+        }
+        vTaskDelay(100 / portTICK_RATE_MS);
+        i++;
+    }
+
+    return 0;
+
 }
