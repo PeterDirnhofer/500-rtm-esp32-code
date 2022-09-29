@@ -65,11 +65,6 @@ extern "C" void app_main(void)
     // Wait for command from PC via USB
     usb.getPcCommad();
     
-    std::string res= UartClass::usbReceive;
-    ESP_LOGI(TAG,"%s\n",res.c_str());
-    
-
-    
    
     
     return;

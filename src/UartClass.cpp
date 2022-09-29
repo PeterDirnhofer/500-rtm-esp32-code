@@ -79,7 +79,6 @@ void UartClass::uartRcvLoop(void *unused)
 
     std::string rcvString = "";
     bool found_CR;
-    
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
 
@@ -108,7 +107,7 @@ void UartClass::uartRcvLoop(void *unused)
                 }
                 i++;
             }
-            
+
             if (found_CR)
             {
                 UartClass::usbReceive.clear();
@@ -117,45 +116,9 @@ void UartClass::uartRcvLoop(void *unused)
                 // ESP_LOGI(TAG, "Start Analyse rcvString\n%s\n", rcvString.c_str());
                 UartClass::usbReceive.clear();
                 UartClass::usbReceive.append(rcvString);
-                UartClass::usbAvailable=true;
+                UartClass::usbAvailable = true;
                 rcvString.clear();
-                ESP_LOGI(TAG,"usbReceive %s\n",usbReceive.c_str());
-            
-
-
-
-                // Split rcvString
-                // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
-
-                char *cstr = new char[rcvString.length() + 1];
-                std::strcpy(cstr, rcvString.c_str());
-
-                // how many comma are in string
-                int numberOfValues=1;
-                for (int i=0; i < rcvString.length();i++)
-                    if(cstr[i]==',') numberOfValues++;
-            
-                ESP_LOGI(TAG,"numberOfValues %d",numberOfValues);
-
-                //std::string parameters[10];
-                int parametersIndex;
-
-                std::string parameters[10];
-                parameters[0]="wert1";
-
-                
-                char *p = std::strtok(cstr, ",");
-                parametersIndex=0;
-                while (p != 0)
-                {
-                    printf("%s\n", p);
-                    char buffer[20];
-                    sprintf(buffer,"%s",p);
-                    parameters[parametersIndex++]=buffer;                 
-                    p = std::strtok(NULL, ",");
-                }
-
-                delete[] cstr;
+                ESP_LOGI(TAG, "usbReceive %s\n", usbReceive.c_str());
             }
         }
     }
@@ -164,35 +127,87 @@ void UartClass::uartRcvLoop(void *unused)
 
 int UartClass::send(const char *fmt, ...)
 {
-        
+
     va_list ap;
     va_start(ap, fmt);
 
     char s[100] = {0};
     vsprintf(s, fmt, ap);
-    ESP_LOGI(TAG,"uartsend");
+    ESP_LOGI(TAG, "uartsend");
 
-    
     const int len = strlen(s);
     int rc = uart_write_bytes(UART_NUM_1, s, len);
 
     va_end(ap);
-  
+
     return rc;
 }
 
-int UartClass::getPcCommad(){
+int UartClass::getPcCommad()
+{
     uint32_t i = 0;
-    while(UartClass::usbAvailable==false)
+    while (UartClass::usbAvailable == false)
     {
-        if ((i % 20)==0){
-            ESP_LOGI(TAG,"IRQ ");
+        if ((i % 20) == 0)
+        {
+            ESP_LOGI(TAG, "IRQ ");
             this->send("REQUEST\n");
         }
         vTaskDelay(100 / portTICK_RATE_MS);
         i++;
     }
 
-    return 0;
+    // Command received
 
+    // Split rcvString
+    // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
+
+    char *cstr = new char[UartClass::usbReceive.length() + 1];
+    std::strcpy(cstr, UartClass::usbReceive.c_str());
+
+    // how many comma are in string
+    int numberOfValues = 1;
+    for (int i = 0; i < UartClass::usbReceive.length(); i++)
+        if (cstr[i] == ',')
+            numberOfValues++;
+
+    ESP_LOGI(TAG, "numberOfValues %d", numberOfValues);
+
+    // std::string parameters[10];
+    int parametersIndex;
+
+    std::string parameters[10];
+    parameters[0] = "wert1";
+
+    char *p = std::strtok(cstr, ",");
+    parametersIndex = 0;
+    while (p != 0)
+    {
+        printf("%s\n", p);
+        char buffer[20];
+        sprintf(buffer, "%s", p);
+        parameters[parametersIndex++] = buffer;
+        p = std::strtok(NULL, ",");
+    }
+    free(cstr);
+
+    ESP_LOGI(TAG, "Parameters[0]: %s\n", parameters[0].c_str());
+
+    ESP_LOGI(TAG, "Vor strcmp\n");
+
+    
+    if (strcmp(parameters[0].c_str(), "SETUP") == 0){
+         ESP_LOGI(TAG, "SETUP detected\n");
+    }
+    else if (strcmp(parameters[0].c_str(), "MEASURE") == 0){
+         ESP_LOGI(TAG, "MEASURE detected\n");
+    }
+    else if (strcmp(parameters[0].c_str(), "PARAM") == 0){
+         ESP_LOGI(TAG, "PARAM detected\n");
+    }
+    else ESP_LOGI(TAG, "NOTHING detected\n");
+
+   
+
+    return 0;
 }
