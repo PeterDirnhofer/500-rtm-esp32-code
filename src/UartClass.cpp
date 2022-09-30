@@ -197,29 +197,33 @@ extern "C" int UartClass::getPcCommad()
          parameters[0][i]=toupper(parameters[0][i]);
     }
     
-    
-    
 
     if (strcmp(this->parameters[0].c_str(), "SETUP") == 0)
     {
-        modeWorking = MODE_MONITOR_TUNNEL_CURRENT;
+        this->workingMode= MODE_MONITOR_TUNNEL_CURRENT;
         ESP_LOGI(TAG, "SETUP detected\n");
         return MODE_MONITOR_TUNNEL_CURRENT;
     }
     else if (strcmp(this->parameters[0].c_str(), "MEASURE") == 0)
     {
-        modeWorking = MODE_MEASURE;
+        this->workingMode = MODE_MEASURE;
         ESP_LOGI(TAG, "MEASURE detected\n");
         return MODE_MEASURE;
     }
     else if (strcmp(this->parameters[0].c_str(), "PARAM") == 0)
     {
+        this->workingMode = MODE_PARAMETER;
         ESP_LOGI(TAG, "PARAM detected\n");
-        return 2;
+        return MODE_PARAMETER;
     }
     else
-        ESP_LOGI(TAG, "NOTHING detected\n");
-        return -1;
+        ESP_LOGI(TAG, "INVALID Command");
+        return MODE_INVALID;
 
     return 0;
+}
+
+
+int UartClass::getworkingMode(){
+    return this->workingMode;
 }

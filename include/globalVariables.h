@@ -102,11 +102,9 @@ extern uint16_t maxNumberAttemptsSPI;
 extern intr_handle_t s_timer_handle;
 extern uint8_t lastConfigByte;
 
-
-#define MODE_MEASURE 0
+#define MODE_INVALID -1
 #define MODE_MONITOR_TUNNEL_CURRENT 1
-extern uint16_t modeWorking;
-
-
+#define MODE_MEASURE 2
+#define MODE_PARAMETER 3
 
 #endif

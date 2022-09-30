@@ -65,22 +65,18 @@ extern "C" void app_main(void)
     // Wait for command from PC via USB
     usb.getPcCommad();
     
-   
-    
-    return;
-
     
 
     //modeWorking = MODE_MEASURE;
-    uartStart();
+    //uartStart();
    
     
-    uartSend("Mit ESC in Tunnel current Monitoring Modus springen\n");
+    //uartSend("Mit ESC in Tunnel current Monitoring Modus springen\n");
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     
     //modeWorking = MODE_MONITOR_TUNNEL_CURRENT;
 
-    if (modeWorking==MODE_MONITOR_TUNNEL_CURRENT)
+    if (usb.getworkingMode()==MODE_MONITOR_TUNNEL_CURRENT)
     {
         displayTunnelCurrent();
     }
