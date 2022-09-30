@@ -74,17 +74,6 @@ extern "C" void app_main(void)
     //modeWorking = MODE_MEASURE;
     uartStart();
    
-
-    
-
-
-
-
-
-
-
-
-
     
     uartSend("Mit ESC in Tunnel current Monitoring Modus springen\n");
     vTaskDelay(1000 / portTICK_PERIOD_MS);

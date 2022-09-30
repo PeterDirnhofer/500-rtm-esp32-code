@@ -24,9 +24,11 @@ public:
   static std::string usbReceive;
 
 private:
-  // void uartInit();
   static void uartRcvLoop(void *unused);
+  
   TaskHandle_t task_handle;
+  std::string parameters[10];
+
 };
 
 #endif

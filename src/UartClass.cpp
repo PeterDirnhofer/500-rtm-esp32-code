@@ -89,6 +89,7 @@ void UartClass::uartRcvLoop(void *unused)
 
         // uart_flush()
         const int rxCount = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 100 / portTICK_PERIOD_MS);
+
         if ((rxCount > 0) && (found_CR == false))
         {
             data[rxCount] = 0;
@@ -143,8 +144,9 @@ int UartClass::send(const char *fmt, ...)
     return rc;
 }
 
-int UartClass::getPcCommad()
+extern "C" int UartClass::getPcCommad()
 {
+    // Request PC. Wait for PC response
     uint32_t i = 0;
     while (UartClass::usbAvailable == false)
     {
@@ -157,9 +159,9 @@ int UartClass::getPcCommad()
         i++;
     }
 
-    // Command received
+    // Command received from PC
 
-    // Split rcvString
+    // Split usbReceive csv to parameters[]
     // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
 
     char *cstr = new char[UartClass::usbReceive.length() + 1];
@@ -176,9 +178,6 @@ int UartClass::getPcCommad()
     // std::string parameters[10];
     int parametersIndex;
 
-    std::string parameters[10];
-    parameters[0] = "wert1";
-
     char *p = std::strtok(cstr, ",");
     parametersIndex = 0;
     while (p != 0)
@@ -186,28 +185,41 @@ int UartClass::getPcCommad()
         printf("%s\n", p);
         char buffer[20];
         sprintf(buffer, "%s", p);
-        parameters[parametersIndex++] = buffer;
+        this->parameters[parametersIndex++] = buffer;
         p = std::strtok(NULL, ",");
     }
     free(cstr);
 
-    ESP_LOGI(TAG, "Parameters[0]: %s\n", parameters[0].c_str());
-
-    ESP_LOGI(TAG, "Vor strcmp\n");
-
+    ESP_LOGI(TAG, "Parameters[0]: %s\n", this->parameters[0].c_str());
     
-    if (strcmp(parameters[0].c_str(), "SETUP") == 0){
-         ESP_LOGI(TAG, "SETUP detected\n");
+    for (size_t i = 0; i < parameters[0].length(); i++)
+    {
+         parameters[0][i]=toupper(parameters[0][i]);
     }
-    else if (strcmp(parameters[0].c_str(), "MEASURE") == 0){
-         ESP_LOGI(TAG, "MEASURE detected\n");
-    }
-    else if (strcmp(parameters[0].c_str(), "PARAM") == 0){
-         ESP_LOGI(TAG, "PARAM detected\n");
-    }
-    else ESP_LOGI(TAG, "NOTHING detected\n");
+    
+    
+    
 
-   
+    if (strcmp(this->parameters[0].c_str(), "SETUP") == 0)
+    {
+        modeWorking = MODE_MONITOR_TUNNEL_CURRENT;
+        ESP_LOGI(TAG, "SETUP detected\n");
+        return MODE_MONITOR_TUNNEL_CURRENT;
+    }
+    else if (strcmp(this->parameters[0].c_str(), "MEASURE") == 0)
+    {
+        modeWorking = MODE_MEASURE;
+        ESP_LOGI(TAG, "MEASURE detected\n");
+        return MODE_MEASURE;
+    }
+    else if (strcmp(this->parameters[0].c_str(), "PARAM") == 0)
+    {
+        ESP_LOGI(TAG, "PARAM detected\n");
+        return 2;
+    }
+    else
+        ESP_LOGI(TAG, "NOTHING detected\n");
+        return -1;
 
     return 0;
 }
