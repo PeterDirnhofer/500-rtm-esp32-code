@@ -33,12 +33,13 @@
 #include "uartLocal.h"
 
 
+static const char *TAG = "spi.cpp";
 
 
 void vspiStart()
 {
 
-    printf("+++ vspiStart\n");
+    ESP_LOGI("TAG","+++ START vspiStart\n");
     vspiInit();
     // printf("*** vspiStart Core: %d \n", xPortGetCoreID());
     xTaskCreatePinnedToCore(vspiLoop, "vspiloop", 10000, NULL, 3, &handleVspiLoop, 1);
@@ -132,9 +133,10 @@ void vspiInit()
  * @param unused 
  */
 
-static const char *TAG = "vspiloop";
+
 void vspiLoop(void *unused)
 {
+    
     ESP_LOGI(TAG,"+++ vspiLoop started\n");
 
     std::unique_ptr<uint16_t> buffer = std::make_unique<uint16_t>();

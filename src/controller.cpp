@@ -29,6 +29,8 @@ static const char *TAG = "controller";
 extern "C" void displayTunnelCurrent()
 {
     
+    ESP_LOGI(TAG,"+++ START Display Current Channel");
+    
     static double e,w,r = 0;
 
     esp_err_t errTemp = i2cInit(); // Init I2C for XYZ DACs
