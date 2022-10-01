@@ -89,7 +89,7 @@ void UartClass::uartRcvLoop(void *unused)
         // uart_flush()
         const int rxCount = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 100 / portTICK_PERIOD_MS);
 
-        if ((rxCount > 0) && (found_CR == false))
+        if (rxCount > 0)// && (found_CR == false))
         {
             data[rxCount] = 0;
             int i = 0;
@@ -97,7 +97,6 @@ void UartClass::uartRcvLoop(void *unused)
             // Input ends with CR LF = 13 10
             while ((i < rxCount) && (found_CR == false))
             {
-                printf("%d ",data[i]);
             
                 if (data[i] == 0xD) // Carriage Return
                 {
@@ -116,14 +115,13 @@ void UartClass::uartRcvLoop(void *unused)
 
             if (found_CR)
             {
-                UartClass::usbReceive.clear();
                 ESP_LOGI(TAG, "#### 13 found.  \n");
 
-                // ESP_LOGI(TAG, "Start Analyse rcvString\n%s\n", rcvString.c_str());
                 UartClass::usbReceive.clear();
                 UartClass::usbReceive.append(rcvString);
                 UartClass::usbAvailable = true;
                 rcvString.clear();
+                found_CR=false;
                 ESP_LOGI(TAG, "usbReceive %s\n", usbReceive.c_str());
             }
         }
