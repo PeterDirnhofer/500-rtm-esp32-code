@@ -16,6 +16,7 @@ protocolElement::protocolElement(uint16_t x, uint16_t y, uint16_t z, uint8_t con
     this->dataBytewise[5] = (z & 0xFF);
     this->dataBytewise[6] = (z & (0xFF << 8)) >> 8;
 }
+
 protocolElement::protocolElement(uint8_t *dataBytewise)
 
 {

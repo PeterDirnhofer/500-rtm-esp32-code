@@ -1,5 +1,5 @@
 #include "dataStoring.h"
-#include "communication.h"
+//#include "communication.h"
 #include "globalVariables.h"
 
 
@@ -8,6 +8,10 @@ dataElement::dataElement(uint16_t x, uint16_t y, uint16_t z)
 : x(x), y(y), z(z)
 {}
 
+void saveConfigParamWoCommunication_h(){
+
+}
+/*
 void saveConfigParam(double param, uint8_t configDescriptionByte){
 
     switch (configDescriptionByte){
@@ -48,7 +52,7 @@ void saveConfigParam(double param, uint8_t configDescriptionByte){
 
 }
 
-
+*/
 void sendDatasets(void* unused){
     //unnecessary task...
     printf("Created task for sending datasets to Pi\n");
