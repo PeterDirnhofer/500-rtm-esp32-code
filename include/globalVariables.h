@@ -107,4 +107,6 @@ extern uint8_t lastConfigByte;
 #define MODE_MEASURE 2
 #define MODE_PARAMETER 3
 
+#define BLUE_LED GPIO_NUM_2
+
 #endif

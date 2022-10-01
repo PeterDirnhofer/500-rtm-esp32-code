@@ -55,6 +55,8 @@ bool UartClass::usbAvailable=false;
 extern "C" void app_main(void)
 {
     static const char *TAG = "main";
+    gpio_set_direction(BLUE_LED, GPIO_MODE_OUTPUT); // Blue LED as Output
+    gpio_set_level(BLUE_LED,1);
     UartClass usb;
    
     ESP_LOGI(TAG,"\n+++ START ++++++++++++\n");
@@ -64,14 +66,8 @@ extern "C" void app_main(void)
     // Wait for command from PC via USB
     usb.getPcCommad();
     
-    
-
-    //modeWorking = MODE_MEASURE;
-    //uartStart();
-   
-    
     //uartSend("Mit ESC in Tunnel current Monitoring Modus springen\n");
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    // vTaskDelay(1000 / portTICK_PERIOD_MS);
     
     //modeWorking = MODE_MONITOR_TUNNEL_CURRENT;
 

@@ -12,27 +12,19 @@
 #include <stdarg.h>
 #include "UartClass.h"
 
-/**
- * @brief Hilfe bei Inbetriebnahme. Monitoring Tunnelstrom, Keine Regelung
- * Zyklische Anzeige:
- * Tunnelstrom als ADC Wert dezimal und hexadezimal
- * Berechneter Tunnelstrom in nA
- * 
+/**@brief Setup-Helper. Starts display tunnel_current
  */
-
 static const char *TAG = "controller";
-/**
- * @brief Loop diplaying tunnelcurrent to setup measuring 
+/**@brief Loop diplaying tunnelcurrent to setup measuring 
+ * 
  * Is started by pessing ESC during startup
  * 
  */
 extern "C" void displayTunnelCurrent()
 {
-    
     ESP_LOGI(TAG,"+++ START Display Current Channel");
     
     static double e,w,r = 0;
-
     esp_err_t errTemp = i2cInit(); // Init I2C for XYZ DACs
     if (errTemp != 0)
     {
@@ -44,17 +36,19 @@ extern "C" void displayTunnelCurrent()
     currentXDac=0;
     currentYDac=0;
     currentZDac=0;  
+    vTaskResume(handleVspiLoop); // Start for one run. Will suspend itself 
+    
     ESP_LOGI(TAG,"+++ Display Tunnel Current\n");
     ESP_LOGI(TAG,"Set X,Y,Z =");
-    vTaskResume(handleVspiLoop); // will suspend itself 
-    
-    w = destinationTunnelCurrentnA;   
-    
-    const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
 
+    w = destinationTunnelCurrentnA;      
+    const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
+    int ledLevel=1;
     
+    // loop
     while (1)
     {
+        
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
 
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM); // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
@@ -64,20 +58,23 @@ extern "C" void displayTunnelCurrent()
         e = w - r; // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse     
         
         UartClass::send("%d[digits]  0x%X[hex] %f[nA]      delta: %f  soll: %f\n", adcValue,adcValue,currentTunnelCurrentnA,e, w);
-        // uartSend("%d[digits]  0x%X[hex] %f[nA]      delta: %f  soll: %f\n", adcValue,adcValue,currentTunnelCurrentnA,e, w);
+        
+        // Invert Blue LED        
+        
+        gpio_set_level(BLUE_LED, ledLevel % 2);
+        ledLevel++;
         
         vTaskDelay(xDelay);
 
     }
 }
 
-
-/**@brief Initialisiering vspi und i2c. Start controllerLoop. Initialisierung 1 ms Timer für restart controllerLoop
+/**@brief Initialialze vspi and i2c. Start single controllerLoop. Initialize 1 ms Timer for restarting controllerLoop
  * @details
- * Initialisiering vspi zur X,Y,Z DAC Piezo Ansteuerung.
- * Initialisierung i2c zur ADC Tunnelstrom Abfrage.
- * Start  Controllerloop.
- * Initialisierung 1 ms Timer tG0 zum retriggern der ControllerLoop.
+ * Init vspi for X,Y,Z DAC Piezo control.
+ * Init i2c for ADC reading tunnel-crrent.
+ * Start single run controllerLoop.
+ * Init 1 ms Timer tG0 to trigger single controllerLoop run.
  */
 extern "C" void controllerStart()
 {
@@ -89,19 +86,12 @@ extern "C" void controllerStart()
         ESP_LOGE(TAG,"ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
     }
     
-   
-
     vspiStart(); // Init and loop for DACs
-
-    // xTaskCreatePinnedToCore(sendDatasets, "sendDatasets", 10000, NULL, 3, &handleSendDatasets, 0);
-    // timer_tg0_initialise(1000000); //ns ->
     xTaskCreatePinnedToCore(controllerLoop, "controllerLoop", 10000, NULL, 2, &handleControllerLoop, 1);
     timer_tg0_initialise(1200); // us -> 10^6us/860SPS = 1162 -> 1200
 }
 
-
-/**
- * @brief Steuerung des RTM. Messen Tunnelstrom. Berechnen neue Piezoposition für X,Y und Z. Speichern Messdaten
+/**@brief Steuerung des RTM. Messen Tunnelstrom. Berechnen neue Piezoposition für X,Y und Z. Speichern Messdaten
  *
  * @details
  * Messung Tunnelstrom. Berechnung neuer Abstand Z zur Probe

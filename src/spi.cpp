@@ -26,22 +26,20 @@
 
 #include "globalVariables.h"
 #include "spi.h"
-#include "communication.h"
+//#include "communication.h"
 #include "controller.h"
 #include "timer.h"
 
-
-
-
 static const char *TAG = "spi.cpp";
 
-
+/**@brief Init spi for DACs and run one vspiLoop
+ * 
+ */
 void vspiStart()
 {
 
     ESP_LOGI("TAG","+++ START vspiStart\n");
     vspiInit();
-    // printf("*** vspiStart Core: %d \n", xPortGetCoreID());
     xTaskCreatePinnedToCore(vspiLoop, "vspiloop", 10000, NULL, 3, &handleVspiLoop, 1);
 }
 
@@ -121,8 +119,7 @@ void vspiInit()
     
 }
 
-/**
- * @brief update DACs over SPI
+/**@brief update DACs over SPI
  * 
  * Suspends after running.
  * Resuming by controller
@@ -132,8 +129,6 @@ void vspiInit()
  * 
  * @param unused 
  */
-
-
 void vspiLoop(void *unused)
 {
     

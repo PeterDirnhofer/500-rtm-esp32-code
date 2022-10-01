@@ -23,7 +23,7 @@
 #include "globalVariables.h"
 
 #include "spi.h"
-#include "communication.h"
+//#include "communication.h"
 #include "controller.h"
 #include "timer.h"
 #include "string.h"
@@ -72,6 +72,7 @@ void UartClass::start()
 
     xTaskCreatePinnedToCore(this->uartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->task_handle, (BaseType_t)0);
 }
+
 void UartClass::uartRcvLoop(void *unused)
 {
     // https://github.com/espressif/esp-idf/blob/af28c1fa21fc0abf9cb3ac8568db9cbd99a7f4b5/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
@@ -147,17 +148,28 @@ extern "C" int UartClass::getPcCommad()
 {
     // Request PC. Wait for PC response
     uint32_t i = 0;
+    int ledLevel = 0;
+
     while (UartClass::usbAvailable == false)
     {
+      
         if ((i % 20) == 0)
         {
+          
+            // Invert Blue LED        
+            ledLevel++;
+            gpio_set_level(BLUE_LED, ledLevel % 2);
+            
             ESP_LOGI(TAG, "IRQ ");
             this->send("REQUEST\n");
+
         }
+   
         vTaskDelay(100 / portTICK_RATE_MS);
         i++;
     }
 
+    gpio_set_level(BLUE_LED, 1);
     // Command received from PC
 
     // Split usbReceive csv to parameters[]
@@ -221,7 +233,6 @@ extern "C" int UartClass::getPcCommad()
 
     return 0;
 }
-
 
 int UartClass::getworkingMode(){
     return this->workingMode;
