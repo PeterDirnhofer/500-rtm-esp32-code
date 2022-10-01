@@ -56,7 +56,6 @@ UartClass::~UartClass()
  */
 void UartClass::start()
 {
-
     const uart_config_t uart_config = {
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,
@@ -94,13 +93,19 @@ void UartClass::uartRcvLoop(void *unused)
         {
             data[rxCount] = 0;
             int i = 0;
-
+            
             // Input ends with CR LF = 13 10
             while ((i < rxCount) && (found_CR == false))
             {
+                printf("%d ",data[i]);
+            
                 if (data[i] == 0xD) // Carriage Return
                 {
                     found_CR = true;
+                }
+                else if (data[i] == 0x3) // CTRL C
+                {
+                    esp_restart();
                 }
                 else if (data[i] >= 0x20) // Save only printable characters
                 {
