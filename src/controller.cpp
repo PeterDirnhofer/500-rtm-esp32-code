@@ -8,9 +8,9 @@
 #include "spi.h"
 #include "dataStoring.h"
 #include "timer.h"
-#include "uartLocal.h"
 #include "esp_log.h"
 #include <stdarg.h>
+#include "UartClass.h"
 
 /**
  * @brief Hilfe bei Inbetriebnahme. Monitoring Tunnelstrom, Keine Regelung
@@ -63,8 +63,8 @@ extern "C" void displayTunnelCurrent()
         //  regeldifferenz = soll - ist
         e = w - r; // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse     
         
-        
-        uartSend("%d[digits]  0x%X[hex] %f[nA]      delta: %f  soll: %f\n", adcValue,adcValue,currentTunnelCurrentnA,e, w);
+        UartClass::send("%d[digits]  0x%X[hex] %f[nA]      delta: %f  soll: %f\n", adcValue,adcValue,currentTunnelCurrentnA,e, w);
+        // uartSend("%d[digits]  0x%X[hex] %f[nA]      delta: %f  soll: %f\n", adcValue,adcValue,currentTunnelCurrentnA,e, w);
         
         vTaskDelay(xDelay);
 

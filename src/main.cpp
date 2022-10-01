@@ -31,7 +31,6 @@
 #include "dataStoring.h"
 #include "timer.h"
 
-// #include "uartLocal.h"
 #include "parameter.h"
 
 #include "nvs_flash.h"
@@ -56,10 +55,10 @@ bool UartClass::usbAvailable=false;
 extern "C" void app_main(void)
 {
     static const char *TAG = "main";
-
+    UartClass usb;
    
     ESP_LOGI(TAG,"\n+++ START ++++++++++++\n");
-    UartClass usb;
+    
     usb.start();
     
     // Wait for command from PC via USB

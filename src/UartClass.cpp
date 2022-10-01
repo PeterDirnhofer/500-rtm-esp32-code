@@ -20,7 +20,6 @@
 #include "string.h"
 #include "driver/gpio.h"
 #include "string"
-#include "uartLocal.h" // own uart
 #include "globalVariables.h"
 
 #include "spi.h"

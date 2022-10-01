@@ -17,7 +17,7 @@ public:
   ~UartClass(); // Destructor
 
   void start();
-  int send(const char *fmt, ...);
+  static int send(const char *fmt, ...);
   int getPcCommad();
   
 

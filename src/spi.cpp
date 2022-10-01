@@ -30,7 +30,7 @@
 #include "controller.h"
 #include "timer.h"
 
-#include "uartLocal.h"
+
 
 
 static const char *TAG = "spi.cpp";
