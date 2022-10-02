@@ -31,11 +31,12 @@
 #include "adc.h"
 #include "controller.h"
 #include "dataStoring.h"
-#include "parameter.h"
+
 
 // private classes
 #include "UartClass.h"
-#include "NvsStorageClass.h"
+#include "ParameterClass.h"
+
 
 
 // static members of UartClass are declared in UArtClass.h
@@ -52,6 +53,10 @@ extern "C" void app_main(void)
     gpio_set_direction(BLUE_LED, GPIO_MODE_OUTPUT); // Blue LED as Output
     gpio_set_level(BLUE_LED,1);
     UartClass usb;
+    ParameterClass parameterclass;
+
+    //ParameterClass param;
+
     
 
     
@@ -71,7 +76,10 @@ extern "C" void app_main(void)
     {
         controllerStart();    
     }
-    
+    else if (usb.getPcCommad()==MODE_PARAMETER)
+    {
+        //param.start();
+    }
     
     while (1)
     {

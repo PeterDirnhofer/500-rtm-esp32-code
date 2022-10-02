@@ -240,3 +240,9 @@ extern "C" int UartClass::getPcCommad()
 int UartClass::getworkingMode(){
     return this->workingMode;
 }
+
+void UartClass::getParameters(){
+
+    //return("");
+
+}

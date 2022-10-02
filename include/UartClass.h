@@ -24,6 +24,7 @@ public:
   static bool usbAvailable;
   static std::string usbReceive;
   int getworkingMode();
+  void getParameters();
 
 private:
   static void uartRcvLoop(void *unused);
