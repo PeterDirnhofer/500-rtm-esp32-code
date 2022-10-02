@@ -49,22 +49,16 @@ bool UartClass::usbAvailable=false;
 extern "C" void app_main(void)
 {
     static const char *TAG = "main";
+    ESP_LOGI(TAG,"\n+++ START ++++++++++++\n");
 
     gpio_set_direction(BLUE_LED, GPIO_MODE_OUTPUT); // Blue LED as Output
     gpio_set_level(BLUE_LED,1);
     UartClass usb;
+    usb.start();
+
+    ESP_LOGI(TAG,"starting parameterclass\n");
     ParameterClass parameterclass;
 
-    //ParameterClass param;
-
-    
-
-    
-    
-
-
-    ESP_LOGI(TAG,"\n+++ START ++++++++++++\n");
-    usb.start();
     
     // Wait for command from PC via USB
     usb.getPcCommad();
@@ -78,7 +72,7 @@ extern "C" void app_main(void)
     }
     else if (usb.getPcCommad()==MODE_PARAMETER)
     {
-        //param.start();
+        //parameterclass.start();
     }
     
     while (1)

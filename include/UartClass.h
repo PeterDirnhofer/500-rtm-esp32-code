@@ -9,6 +9,7 @@
 #include "freertos/task.h"
 #include <cstring>
 #include <string>
+#include <vector>
 
 class UartClass
 {
@@ -24,13 +25,15 @@ public:
   static bool usbAvailable;
   static std::string usbReceive;
   int getworkingMode();
-  void getParameters();
+  std::vector<std::string> getParameters();
 
 private:
   static void uartRcvLoop(void *unused);
   
   TaskHandle_t task_handle;
   std::string parameters[10];
+  std::vector<std::string> parametersVector;
+
   int workingMode;
 
 

@@ -36,6 +36,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include <vector>
 
 static const int RX_BUF_SIZE = 100;
 static const char *TAG = "UartClass";
@@ -89,15 +90,15 @@ void UartClass::uartRcvLoop(void *unused)
         // uart_flush()
         const int rxCount = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 100 / portTICK_PERIOD_MS);
 
-        if (rxCount > 0)// && (found_CR == false))
+        if (rxCount > 0) // && (found_CR == false))
         {
             data[rxCount] = 0;
             int i = 0;
-            
+
             // Input ends with CR LF = 13 10
             while ((i < rxCount) && (found_CR == false))
             {
-            
+
                 if (data[i] == 0xD) // Carriage Return
                 {
                     found_CR = true;
@@ -121,7 +122,7 @@ void UartClass::uartRcvLoop(void *unused)
                 UartClass::usbReceive.append(rcvString);
                 UartClass::usbAvailable = true;
                 rcvString.clear();
-                found_CR=false;
+                found_CR = false;
                 ESP_LOGI(TAG, "usbReceive %s\n", usbReceive.c_str());
             }
         }
@@ -155,19 +156,18 @@ extern "C" int UartClass::getPcCommad()
 
     while (UartClass::usbAvailable == false)
     {
-      
+
         if ((i % 20) == 0)
         {
-          
-            // Invert Blue LED        
+
+            // Invert Blue LED
             ledLevel++;
             gpio_set_level(BLUE_LED, ledLevel % 2);
-            
+
             ESP_LOGI(TAG, "IRQ ");
             this->send("REQUEST\n");
-
         }
-   
+
         vTaskDelay(100 / portTICK_RATE_MS);
         i++;
     }
@@ -194,27 +194,31 @@ extern "C" int UartClass::getPcCommad()
 
     char *p = std::strtok(cstr, ",");
     parametersIndex = 0;
+    this->parametersVector.clear();
     while (p != 0)
     {
         printf("%s\n", p);
         char buffer[20];
         sprintf(buffer, "%s", p);
         this->parameters[parametersIndex++] = buffer;
+        this->parametersVector.push_back(buffer);
+
         p = std::strtok(NULL, ",");
     }
     free(cstr);
 
     ESP_LOGI(TAG, "Parameters[0]: %s\n", this->parameters[0].c_str());
-    
+
+    ESP_LOGI(TAG, "ParametersVector[0]: %s" , this->parametersVector[0].c_str());
+
     for (size_t i = 0; i < parameters[0].length(); i++)
     {
-         parameters[0][i]=toupper(parameters[0][i]);
+        parameters[0][i] = toupper(parameters[0][i]);
     }
-    
 
     if (strcmp(this->parameters[0].c_str(), "SETUP") == 0)
     {
-        this->workingMode= MODE_MONITOR_TUNNEL_CURRENT;
+        this->workingMode = MODE_MONITOR_TUNNEL_CURRENT;
         ESP_LOGI(TAG, "SETUP detected\n");
         return MODE_MONITOR_TUNNEL_CURRENT;
     }
@@ -232,17 +236,24 @@ extern "C" int UartClass::getPcCommad()
     }
     else
         ESP_LOGI(TAG, "INVALID Command");
-        return MODE_INVALID;
+    return MODE_INVALID;
 
     return 0;
 }
 
-int UartClass::getworkingMode(){
+int UartClass::getworkingMode()
+{
     return this->workingMode;
 }
 
-void UartClass::getParameters(){
+std::vector<std::string> UartClass::getParameters(){
 
-    //return("");
+    std::vector<std::string> v1;
+    v1.push_back("Zeile1");
+
+    return v1;
+    
+    
+
 
 }
