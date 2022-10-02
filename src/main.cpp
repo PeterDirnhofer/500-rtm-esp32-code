@@ -35,6 +35,8 @@
 
 // private classes
 #include "UartClass.h"
+#include "preferences.h"
+
 
 // static members of UartClass are declared in UArtClass.h
 // Need to be initialized from outside the class
@@ -50,7 +52,27 @@ extern "C" void app_main(void)
     gpio_set_direction(BLUE_LED, GPIO_MODE_OUTPUT); // Blue LED as Output
     gpio_set_level(BLUE_LED,1);
     UartClass usb;
+    Preferences prefs;
+
+    
+
+    prefs.begin();
+    
+    //prefs.putChar("CHAR1",'C');
+    
+
+    int8_t rc1=0;
+    rc1= prefs.getChar("CHAR1",0);
+
+    ESP_LOGI(TAG,"rc1=%c\n",rc1);
+
+    
+    
    
+
+    return;
+
+
     ESP_LOGI(TAG,"\n+++ START ++++++++++++\n");
     usb.start();
     
