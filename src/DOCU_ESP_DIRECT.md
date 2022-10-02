@@ -1,7 +1,8 @@
 # RTM ESP32 - USB
+
 The 500 EUR Raster Tunnel Microscope is controlled by a ESP32. The ESP32 is connected to a Computer via a additional USB Interface. No Raspberry needed.
 
-## Communication-Protocol ESP32-Computer
+## Communication-Protocol ESP32 to Computer
 
 - ESP32 starts and sends cyclic "REQUEST" to computer and waits for Computer response.
 - Computer answeres to "REQUEST" with "SETUP" or "MEASURE" or "PARAMETER"
