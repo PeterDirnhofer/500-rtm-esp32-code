@@ -73,7 +73,21 @@ extern "C" void app_main(void)
     ESP_LOGI(TAG,"%f\n",floatresult);
 
     
-    
+    double doubleresult = 0;
+
+    doubleresult = prefs.putDouble("DOUBLE1",11.2345678);
+
+    doubleresult = prefs.getDouble("DOUBLE1",0.0);
+
+    ESP_LOGI(TAG,"%f\n",doubleresult);
+
+    bool boolresult=true;
+    prefs.putBool("BOOL1",false);
+    boolresult=prefs.getBool("BOOL1",true);
+
+    ESP_LOGI(TAG,"bool %d\n",boolresult);
+
+
    
 
     return;

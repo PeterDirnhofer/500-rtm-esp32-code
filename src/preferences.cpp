@@ -147,6 +147,12 @@ float Preferences::putFloat(const char* key, const float value)
   return putBytes(key, (void*)&value, sizeof(float));
 }
 
+
+double Preferences::putDouble(const char* key, const double value)
+{
+    return putBytes(key, (void*)&value, sizeof(double));
+}
+
 size_t Preferences::putChar(const char *key, int8_t value)
 {
     if (!_started || !key || _readOnly)
@@ -549,6 +555,14 @@ float Preferences::getFloat(const char* key, const float defaultValue)
     float value = defaultValue;
     getBytes(key, (void*) &value, sizeof(float));
     return value;
+}
+
+double Preferences::getDouble(const char* key, const double defaultValue)
+{
+    double value = defaultValue;
+    getBytes(key, (void*) &value, sizeof(double));
+    return value;
+
 }
 
 
