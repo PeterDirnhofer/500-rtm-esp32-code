@@ -64,7 +64,13 @@ extern "C" void app_main(void)
     int8_t rc1=0;
     rc1= prefs.getChar("CHAR1",0);
 
-    ESP_LOGI(TAG,"rc1=%c\n",rc1);
+    float floatresult = 0;
+
+    //floatresult = prefs.putFloat("FLOAT1",1.2334);
+
+    floatresult = prefs.getFloat("FLOAT1",0.0);
+
+    ESP_LOGI(TAG,"%f\n",floatresult);
 
     
     

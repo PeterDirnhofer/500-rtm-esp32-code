@@ -61,6 +61,8 @@ class Preferences {
        
         size_t putBytes(const char* key, const void* value, size_t len);
 
+        float putFloat(const char* key, const float value);
+
         bool isKey(const char* key);
         PreferenceType getType(const char* key);
         int8_t getChar(const char* key, int8_t defaultValue = 0);
@@ -75,6 +77,7 @@ class Preferences {
         uint64_t getULong64(const char* key, uint64_t defaultValue = 0);
        
         bool getBool(const char* key, bool defaultValue = false);
+        float getFloat(const char* key, const float defaultValue);
        
         size_t getBytesLength(const char* key);
         size_t getBytes(const char* key, void * buf, size_t maxLen);

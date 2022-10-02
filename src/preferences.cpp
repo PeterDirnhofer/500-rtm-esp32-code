@@ -142,9 +142,10 @@ bool Preferences::remove(const char *key)
 /*
  * Put a key value
  * */
-
-
-
+float Preferences::putFloat(const char* key, const float value)
+{
+  return putBytes(key, (void*)&value, sizeof(float));
+}
 
 size_t Preferences::putChar(const char *key, int8_t value)
 {
@@ -541,6 +542,15 @@ bool Preferences::getBool(const char *key, const bool defaultValue)
 {
     return getUChar(key, defaultValue ? 1 : 0) == 1;
 }
+
+
+float Preferences::getFloat(const char* key, const float defaultValue)
+{
+    float value = defaultValue;
+    getBytes(key, (void*) &value, sizeof(float));
+    return value;
+}
+
 
 size_t Preferences::getBytesLength(const char *key)
 {
