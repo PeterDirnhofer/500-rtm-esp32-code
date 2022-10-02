@@ -11,8 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _PREFERENCES_H_
-#define _PREFERENCES_H_
+#ifndef _NVS_STORAGE_CLASS_
+#define _NVS_STORAGE_CLASS_
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -33,15 +33,15 @@ typedef enum {
  * @brief Store data in non volatile ESP NVS memory
  * For many datatypes exists a Put and a Get method
  */
-class Preferences {
+class NvsStorageClass {
     protected:
         //uint32_t _handle;
         nvs_handle_t _handle;
         bool _started;
         bool _readOnly;
     public:
-        Preferences();
-        ~Preferences();
+        NvsStorageClass();
+        ~NvsStorageClass();
 
         // bool begin(const char * name, bool readOnly=false, const char* partition_label=NULL);
         bool begin();

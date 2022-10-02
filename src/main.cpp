@@ -35,7 +35,7 @@
 
 // private classes
 #include "UartClass.h"
-#include "preferences.h"
+#include "NvsStorageClass.h"
 
 
 // static members of UartClass are declared in UArtClass.h
@@ -52,48 +52,10 @@ extern "C" void app_main(void)
     gpio_set_direction(BLUE_LED, GPIO_MODE_OUTPUT); // Blue LED as Output
     gpio_set_level(BLUE_LED,1);
     UartClass usb;
-    Preferences prefs;
-
     
 
-    prefs.begin();
-
-    prefs.clear();
     
     
-    //prefs.putChar("CHAR1",'C');
-    
-
-    int8_t rc1=0;
-    rc1= prefs.getChar("CHAR1",0);
-
-    float floatresult = 0;
-
-    //floatresult = prefs.putFloat("FLOAT1",1.2334);
-
-    floatresult = prefs.getFloat("FLOAT1",0.0);
-
-    ESP_LOGI(TAG,"%f\n",floatresult);
-
-    
-    double doubleresult = 0;
-
-    //doubleresult = prefs.putDouble("DOUBLE1",11.2345678);
-
-    doubleresult = prefs.getDouble("DOUBLE1",0.0);
-
-    ESP_LOGI(TAG,"%f\n",doubleresult);
-
-    bool boolresult=true;
-    prefs.putBool("BOOL1",false);
-    boolresult=prefs.getBool("BOOL1",true);
-
-    ESP_LOGI(TAG,"bool %d\n",boolresult);
-
-
-   
-
-    return;
 
 
     ESP_LOGI(TAG,"\n+++ START ++++++++++++\n");

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "Preferences.h"
+#include "NvsStorageClass.h"
 
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -26,17 +26,17 @@ const char *nvs_errors[] = {"OTHER", "NOT_INITIALIZED", "NOT_FOUND", "TYPE_MISMA
 #define nvs_error(e) (((e) > ESP_ERR_NVS_BASE) ? nvs_errors[(e) & ~(ESP_ERR_NVS_BASE)] : nvs_errors[0])
 #define STORAGE_NAMESPACE "nvsparam"
 
-Preferences::Preferences()
+NvsStorageClass::NvsStorageClass()
     : _handle(0), _started(false), _readOnly(false)
 {
 }
 
-Preferences::~Preferences()
+NvsStorageClass::~NvsStorageClass()
 {
     end();
 }
 
-bool Preferences::begin()
+bool NvsStorageClass::begin()
 { 
     if (_started)
     {
@@ -76,7 +76,7 @@ bool Preferences::begin()
     return true;
 }
 
-void Preferences::end()
+void NvsStorageClass::end()
 {
     if (!_started)
     {
@@ -93,7 +93,7 @@ void Preferences::end()
  * Clear all keys in opened preferences
  * */
 
-bool Preferences::clear()
+bool NvsStorageClass::clear()
 {
     if (!_started || _readOnly)
     {
@@ -119,7 +119,7 @@ bool Preferences::clear()
  * Remove a key
  * */
 
-bool Preferences::remove(const char *key)
+bool NvsStorageClass::remove(const char *key)
 {
     if (!_started || !key || _readOnly)
     {
@@ -143,18 +143,18 @@ bool Preferences::remove(const char *key)
 /*
  * Put a key value
  * */
-float Preferences::putFloat(const char* key, const float value)
+float NvsStorageClass::putFloat(const char* key, const float value)
 {
   return putBytes(key, (void*)&value, sizeof(float));
 }
 
 
-double Preferences::putDouble(const char* key, const double value)
+double NvsStorageClass::putDouble(const char* key, const double value)
 {
     return putBytes(key, (void*)&value, sizeof(double));
 }
 
-size_t Preferences::putChar(const char *key, int8_t value)
+size_t NvsStorageClass::putChar(const char *key, int8_t value)
 {
     if (!_started || !key || _readOnly)
     {
@@ -176,7 +176,7 @@ size_t Preferences::putChar(const char *key, int8_t value)
     return 1;
 }
 
-size_t Preferences::putUChar(const char *key, uint8_t value)
+size_t NvsStorageClass::putUChar(const char *key, uint8_t value)
 {
     if (!_started || !key || _readOnly)
     {
@@ -198,7 +198,7 @@ size_t Preferences::putUChar(const char *key, uint8_t value)
     return 1;
 }
 
-size_t Preferences::putShort(const char *key, int16_t value)
+size_t NvsStorageClass::putShort(const char *key, int16_t value)
 {
     if (!_started || !key || _readOnly)
     {
@@ -220,7 +220,7 @@ size_t Preferences::putShort(const char *key, int16_t value)
     return 2;
 }
 
-size_t Preferences::putUShort(const char *key, uint16_t value)
+size_t NvsStorageClass::putUShort(const char *key, uint16_t value)
 {
     if (!_started || !key || _readOnly)
     {
@@ -242,7 +242,7 @@ size_t Preferences::putUShort(const char *key, uint16_t value)
     return 2;
 }
 
-size_t Preferences::putInt(const char *key, int32_t value)
+size_t NvsStorageClass::putInt(const char *key, int32_t value)
 {
     if (!_started || !key || _readOnly)
     {
@@ -264,7 +264,7 @@ size_t Preferences::putInt(const char *key, int32_t value)
     return 4;
 }
 
-size_t Preferences::putUInt(const char *key, uint32_t value)
+size_t NvsStorageClass::putUInt(const char *key, uint32_t value)
 {
     if (!_started || !key || _readOnly)
     {
@@ -286,17 +286,17 @@ size_t Preferences::putUInt(const char *key, uint32_t value)
     return 4;
 }
 
-size_t Preferences::putLong(const char *key, int32_t value)
+size_t NvsStorageClass::putLong(const char *key, int32_t value)
 {
     return putInt(key, value);
 }
 
-size_t Preferences::putULong(const char *key, uint32_t value)
+size_t NvsStorageClass::putULong(const char *key, uint32_t value)
 {
     return putUInt(key, value);
 }
 
-size_t Preferences::putLong64(const char *key, int64_t value)
+size_t NvsStorageClass::putLong64(const char *key, int64_t value)
 {
     if (!_started || !key || _readOnly)
     {
@@ -318,7 +318,7 @@ size_t Preferences::putLong64(const char *key, int64_t value)
     return 8;
 }
 
-size_t Preferences::putULong64(const char *key, uint64_t value)
+size_t NvsStorageClass::putULong64(const char *key, uint64_t value)
 {
     if (!_started || !key || _readOnly)
     {
@@ -340,12 +340,12 @@ size_t Preferences::putULong64(const char *key, uint64_t value)
     return 8;
 }
 
-size_t Preferences::putBool(const char *key, const bool value)
+size_t NvsStorageClass::putBool(const char *key, const bool value)
 {
     return putUChar(key, (uint8_t)(value ? 1 : 0));
 }
 
-size_t Preferences::putBytes(const char *key, const void *value, size_t len)
+size_t NvsStorageClass::putBytes(const char *key, const void *value, size_t len)
 {
     if (!_started || !key || !value || !len || _readOnly)
     {
@@ -366,7 +366,7 @@ size_t Preferences::putBytes(const char *key, const void *value, size_t len)
     return len;
 }
 
-PreferenceType Preferences::getType(const char *key)
+PreferenceType NvsStorageClass::getType(const char *key)
 {
     if (!_started || !key || strlen(key) > 15)
     {
@@ -404,7 +404,7 @@ PreferenceType Preferences::getType(const char *key)
     return PT_INVALID;
 }
 
-bool Preferences::isKey(const char *key)
+bool NvsStorageClass::isKey(const char *key)
 {
     return getType(key) != PT_INVALID;
 }
@@ -413,7 +413,7 @@ bool Preferences::isKey(const char *key)
  * Get a key value
  * */
 
-int8_t Preferences::getChar(const char *key, const int8_t defaultValue)
+int8_t NvsStorageClass::getChar(const char *key, const int8_t defaultValue)
 {
     int8_t value = defaultValue;
     if (!_started || !key)
@@ -430,7 +430,7 @@ int8_t Preferences::getChar(const char *key, const int8_t defaultValue)
     return value;
 }
 
-uint8_t Preferences::getUChar(const char *key, const uint8_t defaultValue)
+uint8_t NvsStorageClass::getUChar(const char *key, const uint8_t defaultValue)
 {
     uint8_t value = defaultValue;
     if (!_started || !key)
@@ -445,7 +445,7 @@ uint8_t Preferences::getUChar(const char *key, const uint8_t defaultValue)
     return value;
 }
 
-int16_t Preferences::getShort(const char *key, const int16_t defaultValue)
+int16_t NvsStorageClass::getShort(const char *key, const int16_t defaultValue)
 {
     int16_t value = defaultValue;
     if (!_started || !key)
@@ -460,7 +460,7 @@ int16_t Preferences::getShort(const char *key, const int16_t defaultValue)
     return value;
 }
 
-uint16_t Preferences::getUShort(const char *key, const uint16_t defaultValue)
+uint16_t NvsStorageClass::getUShort(const char *key, const uint16_t defaultValue)
 {
     uint16_t value = defaultValue;
     if (!_started || !key)
@@ -475,7 +475,7 @@ uint16_t Preferences::getUShort(const char *key, const uint16_t defaultValue)
     return value;
 }
 
-int32_t Preferences::getInt(const char *key, const int32_t defaultValue)
+int32_t NvsStorageClass::getInt(const char *key, const int32_t defaultValue)
 {
     int32_t value = defaultValue;
     if (!_started || !key)
@@ -490,7 +490,7 @@ int32_t Preferences::getInt(const char *key, const int32_t defaultValue)
     return value;
 }
 
-uint32_t Preferences::getUInt(const char *key, const uint32_t defaultValue)
+uint32_t NvsStorageClass::getUInt(const char *key, const uint32_t defaultValue)
 {
     uint32_t value = defaultValue;
     if (!_started || !key)
@@ -505,17 +505,17 @@ uint32_t Preferences::getUInt(const char *key, const uint32_t defaultValue)
     return value;
 }
 
-int32_t Preferences::getLong(const char *key, const int32_t defaultValue)
+int32_t NvsStorageClass::getLong(const char *key, const int32_t defaultValue)
 {
     return getInt(key, defaultValue);
 }
 
-uint32_t Preferences::getULong(const char *key, const uint32_t defaultValue)
+uint32_t NvsStorageClass::getULong(const char *key, const uint32_t defaultValue)
 {
     return getUInt(key, defaultValue);
 }
 
-int64_t Preferences::getLong64(const char *key, const int64_t defaultValue)
+int64_t NvsStorageClass::getLong64(const char *key, const int64_t defaultValue)
 {
     int64_t value = defaultValue;
     if (!_started || !key)
@@ -530,7 +530,7 @@ int64_t Preferences::getLong64(const char *key, const int64_t defaultValue)
     return value;
 }
 
-uint64_t Preferences::getULong64(const char *key, const uint64_t defaultValue)
+uint64_t NvsStorageClass::getULong64(const char *key, const uint64_t defaultValue)
 {
     uint64_t value = defaultValue;
     if (!_started || !key)
@@ -545,20 +545,20 @@ uint64_t Preferences::getULong64(const char *key, const uint64_t defaultValue)
     return value;
 }
 
-bool Preferences::getBool(const char *key, const bool defaultValue)
+bool NvsStorageClass::getBool(const char *key, const bool defaultValue)
 {
     return getUChar(key, defaultValue ? 1 : 0) == 1;
 }
 
 
-float Preferences::getFloat(const char* key, const float defaultValue)
+float NvsStorageClass::getFloat(const char* key, const float defaultValue)
 {
     float value = defaultValue;
     getBytes(key, (void*) &value, sizeof(float));
     return value;
 }
 
-double Preferences::getDouble(const char* key, const double defaultValue)
+double NvsStorageClass::getDouble(const char* key, const double defaultValue)
 {
     double value = defaultValue;
     getBytes(key, (void*) &value, sizeof(double));
@@ -567,7 +567,7 @@ double Preferences::getDouble(const char* key, const double defaultValue)
 }
 
 
-size_t Preferences::getBytesLength(const char *key)
+size_t NvsStorageClass::getBytesLength(const char *key)
 {
     size_t len = 0;
     if (!_started || !key)
@@ -583,7 +583,7 @@ size_t Preferences::getBytesLength(const char *key)
     return len;
 }
 
-size_t Preferences::getBytes(const char *key, void *buf, size_t maxLen)
+size_t NvsStorageClass::getBytes(const char *key, void *buf, size_t maxLen)
 {
     size_t len = getBytesLength(key);
     if (!len || !buf || !maxLen)
@@ -604,7 +604,7 @@ size_t Preferences::getBytes(const char *key, void *buf, size_t maxLen)
     return len;
 }
 
-size_t Preferences::freeEntries()
+size_t NvsStorageClass::freeEntries()
 {
     nvs_stats_t nvs_stats;
     esp_err_t err = nvs_get_stats(NULL, &nvs_stats);
