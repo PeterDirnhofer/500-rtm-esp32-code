@@ -26,7 +26,6 @@ const char *nvs_errors[] = {"OTHER", "NOT_INITIALIZED", "NOT_FOUND", "TYPE_MISMA
 #define nvs_error(e) (((e) > ESP_ERR_NVS_BASE) ? nvs_errors[(e) & ~(ESP_ERR_NVS_BASE)] : nvs_errors[0])
 #define STORAGE_NAMESPACE "nvsparam"
 
-
 Preferences::Preferences()
     : _handle(0), _started(false), _readOnly(false)
 {
@@ -87,6 +86,8 @@ void Preferences::end()
     nvs_close(_handle);
     _started = false;
 }
+
+
 
 /*
  * Clear all keys in opened preferences

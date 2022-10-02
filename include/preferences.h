@@ -29,6 +29,10 @@ typedef enum {
 } PreferenceType;
 
 
+/**
+ * @brief Store data in non volatile ESP NVS memory
+ * For many datatypes exists a Put and a Get method
+ */
 class Preferences {
     protected:
         //uint32_t _handle;

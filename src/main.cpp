@@ -57,6 +57,9 @@ extern "C" void app_main(void)
     
 
     prefs.begin();
+
+    prefs.clear();
+    
     
     //prefs.putChar("CHAR1",'C');
     
@@ -75,7 +78,7 @@ extern "C" void app_main(void)
     
     double doubleresult = 0;
 
-    doubleresult = prefs.putDouble("DOUBLE1",11.2345678);
+    //doubleresult = prefs.putDouble("DOUBLE1",11.2345678);
 
     doubleresult = prefs.getDouble("DOUBLE1",0.0);
 
