@@ -11,11 +11,11 @@
 #include <string>
 #include <vector>
 
-class UsbPcClass
+class UsbPcInterface
 {
 public:
-  UsbPcClass();  // der Default-Konstruktor
-  ~UsbPcClass(); // Destructor
+  UsbPcInterface();  // der Default-Konstruktor
+  ~UsbPcInterface(); // Destructor
 
   void start();
   static int send(const char *fmt, ...);

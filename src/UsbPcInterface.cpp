@@ -1,4 +1,4 @@
-#include <UsbPcClass.h>
+#include <UsbPcInterface.h>
 // C:\Users\peter\git-esp-idf\UART\src
 
 // https://github.com/espressif/esp-idf/blob/30e8f19f5ac158fc57e80ff97c62b6cc315aa337/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
@@ -33,21 +33,21 @@
 #include "timer.h"
 #include <stdarg.h>
 
-#include "UsbPcClass.h"
+#include "UsbPcInterface.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <vector>
 
 
 static const int RX_BUF_SIZE = 100;
-static const char *TAG = "UsbPcClass";
+static const char *TAG = "UsbPcInterface";
 
-UsbPcClass::UsbPcClass()
+UsbPcInterface::UsbPcInterface()
     : mTaskHandle(NULL), mStarted(false)
 {
 }
 
-UsbPcClass::~UsbPcClass()
+UsbPcInterface::~UsbPcInterface()
 {
 }
 
@@ -56,7 +56,7 @@ UsbPcClass::~UsbPcClass()
  *
  *
  */
-void UsbPcClass::start()
+void UsbPcInterface::start()
 {
     const uart_config_t uart_config = {
         .baud_rate = 115200,
@@ -80,7 +80,7 @@ void UsbPcClass::start()
  * 
  * 
  */
-void UsbPcClass::mUartRcvLoop(void *unused)
+void UsbPcInterface::mUartRcvLoop(void *unused)
 {
     // https://github.com/espressif/esp-idf/blob/af28c1fa21fc0abf9cb3ac8568db9cbd99a7f4b5/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 
@@ -125,9 +125,9 @@ void UsbPcClass::mUartRcvLoop(void *unused)
             {
                 ESP_LOGI(TAG, "#### 13 found.  \n");
 
-                UsbPcClass::mUsbReceiveString.clear();
-                UsbPcClass::mUsbReceiveString.append(rcvString);
-                UsbPcClass::usbAvailable = true;
+                UsbPcInterface::mUsbReceiveString.clear();
+                UsbPcInterface::mUsbReceiveString.append(rcvString);
+                UsbPcInterface::usbAvailable = true;
                 rcvString.clear();
                 found_CR = false;
                 ESP_LOGI(TAG, "usbReceive %s\n", mUsbReceiveString.c_str());
@@ -137,7 +137,7 @@ void UsbPcClass::mUartRcvLoop(void *unused)
     free(data);
 }
 
-int UsbPcClass::send(const char *fmt, ...)
+int UsbPcInterface::send(const char *fmt, ...)
 {
 
     va_list ap;
@@ -160,13 +160,13 @@ int UsbPcClass::send(const char *fmt, ...)
  * Set workingMode to: SETUP or PARAMETER or MEASURE. 
  * getworkingMode() reads workingMode
  */
-extern "C" int UsbPcClass::getPcCommadToSetWorkingMode()
+extern "C" int UsbPcInterface::getPcCommadToSetWorkingMode()
 {
     // Request PC. Wait for PC response
     uint32_t i = 0;
     int ledLevel = 0;
 
-    while (UsbPcClass::usbAvailable == false)
+    while (UsbPcInterface::usbAvailable == false)
     {
 
         if ((i % 20) == 0)
@@ -187,12 +187,12 @@ extern "C" int UsbPcClass::getPcCommadToSetWorkingMode()
     // Split usbReceive csv to parameters[]
     // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
 
-    char *cstr = new char[UsbPcClass::mUsbReceiveString.length() + 1];
-    std::strcpy(cstr, UsbPcClass::mUsbReceiveString.c_str());
+    char *cstr = new char[UsbPcInterface::mUsbReceiveString.length() + 1];
+    std::strcpy(cstr, UsbPcInterface::mUsbReceiveString.c_str());
 
     // how many comma are in string
     int numberOfValues = 1;
-    for (int i = 0; i < UsbPcClass::mUsbReceiveString.length(); i++)
+    for (int i = 0; i < UsbPcInterface::mUsbReceiveString.length(); i++)
         if (cstr[i] == ',')
             numberOfValues++;
 
@@ -244,12 +244,12 @@ extern "C" int UsbPcClass::getPcCommadToSetWorkingMode()
     return 0;
 }
 
-int UsbPcClass::getworkingMode()
+int UsbPcInterface::getworkingMode()
 {
     return this->mWorkingMode;
 }
 
-std::vector<std::string> UsbPcClass::getParameters()
+std::vector<std::string> UsbPcInterface::getParameters()
 {
     return this->mParametersVector;
 }
