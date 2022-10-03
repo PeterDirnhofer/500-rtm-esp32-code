@@ -39,7 +39,7 @@
 #include <vector>
 
 
-static const int RX_BUF_SIZE = 100;
+static const int RX_BUF_SIZE = 200;
 static const char *TAG = "UsbPcInterface";
 
 UsbPcInterface::UsbPcInterface()
@@ -131,6 +131,7 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
                 rcvString.clear();
                 found_CR = false;
                 ESP_LOGI(TAG, "usbReceive %s\n", mUsbReceiveString.c_str());
+                free(data);
             }
         }
     }
@@ -244,7 +245,7 @@ extern "C" int UsbPcInterface::getPcCommadToSetWorkingMode()
     return 0;
 }
 
-int UsbPcInterface::getworkingMode()
+int UsbPcInterface::getWorkingMode()
 {
     return this->mWorkingMode;
 }

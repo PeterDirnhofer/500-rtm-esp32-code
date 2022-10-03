@@ -11,6 +11,11 @@
 #include <string>
 #include <vector>
 
+
+/**
+ * @brief Communication with PC via USB
+ * 
+ */
 class UsbPcInterface
 {
 public:
@@ -21,7 +26,7 @@ public:
   static int send(const char *fmt, ...);
   int getPcCommadToSetWorkingMode();
   static bool usbAvailable;
-  int getworkingMode();
+  int getWorkingMode();
   std::vector<std::string> getParameters();
 
 private:

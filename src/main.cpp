@@ -62,12 +62,12 @@ extern "C" void app_main(void)
     // Wait for command from PC via USB
     usb.getPcCommadToSetWorkingMode();
 
-    if (usb.getworkingMode() == MODE_SETUP)
+    if (usb.getWorkingMode() == MODE_SETUP)
     {
         usb.send("START SETUP\n");
         displayTunnelCurrent();
     }
-    else if (usb.getworkingMode() == MODE_MEASURE)
+    else if (usb.getWorkingMode() == MODE_MEASURE)
     {
         usb.send("START MEASURE\n");
         controllerStart();
