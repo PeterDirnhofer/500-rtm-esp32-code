@@ -10,7 +10,7 @@
 #include "timer.h"
 #include "esp_log.h"
 #include <stdarg.h>
-#include "UartClass.h"
+#include "UsbPcClass.h"
 
 /**@brief Setup-Helper. Starts display tunnel_current
  */
@@ -57,7 +57,7 @@ extern "C" void displayTunnelCurrent()
         //  regeldifferenz = soll - ist
         e = w - r; // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse     
         
-        UartClass::send("%d[digits]  0x%X[hex] %f[nA]      delta: %f  soll: %f\n", adcValue,adcValue,currentTunnelCurrentnA,e, w);
+        UsbPcClass::send("%d[digits]  0x%X[hex] %f[nA]      delta: %f  soll: %f\n", adcValue,adcValue,currentTunnelCurrentnA,e, w);
         
         // Invert Blue LED        
         

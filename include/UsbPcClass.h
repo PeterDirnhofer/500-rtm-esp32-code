@@ -11,23 +11,22 @@
 #include <string>
 #include <vector>
 
-class UartClass
+class UsbPcClass
 {
 public:
-  UartClass();  // der Default-Konstruktor
-  ~UartClass(); // Destructor
+  UsbPcClass();  // der Default-Konstruktor
+  ~UsbPcClass(); // Destructor
 
   void start();
   static int send(const char *fmt, ...);
   int getPcCommadToSetWorkingMode();
   static bool usbAvailable;
-  // static std::string usbReceiveString;
   int getworkingMode();
   std::vector<std::string> getParameters();
 
 private:
-  static std::string usbReceiveString;
-  static void uartRcvLoop(void *unused);
+  static std::string mUsbReceiveString;
+  static void mUartRcvLoop(void *unused);
 
   TaskHandle_t task_handle;
   bool _started;

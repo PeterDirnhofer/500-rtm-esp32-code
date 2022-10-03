@@ -35,13 +35,13 @@
 #include "dataStoring.h"
 
 // private classes
-#include "UartClass.h"
+#include "UsbPcClass.h"
 #include "ParameterClass.h"
 
-// static members of UartClass are declared in UArtClass.h
+// static members of UsbPcClass are declared in UsbPcClass.h
 // Need to be initialized from outside the class
-std::string UartClass::usbReceiveString = "";
-bool UartClass::usbAvailable = false;
+std::string UsbPcClass::mUsbReceiveString = "";
+bool UsbPcClass::usbAvailable = false;
 
 extern "C" void app_main(void)
 {
@@ -53,7 +53,7 @@ extern "C" void app_main(void)
     gpio_set_direction(BLUE_LED, GPIO_MODE_OUTPUT); // Blue LED as Output
     gpio_set_level(BLUE_LED, 1);
 
-    UartClass usb;
+    UsbPcClass usb;
     usb.start();
 
     ParameterClass parameterClass;

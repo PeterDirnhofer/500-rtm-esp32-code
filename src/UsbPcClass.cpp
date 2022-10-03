@@ -1,4 +1,4 @@
-#include <UartClass.h>
+#include <UsbPcClass.h>
 // C:\Users\peter\git-esp-idf\UART\src
 
 // https://github.com/espressif/esp-idf/blob/30e8f19f5ac158fc57e80ff97c62b6cc315aa337/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
@@ -23,7 +23,6 @@
 #include "globalVariables.h"
 
 #include "spi.h"
-//#include "communication.h"
 #include "controller.h"
 #include "timer.h"
 #include "string.h"
@@ -34,19 +33,21 @@
 #include "timer.h"
 #include <stdarg.h>
 
+#include "UsbPcClass.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <vector>
 
-static const int RX_BUF_SIZE = 100;
-static const char *TAG = "UartClass";
 
-UartClass::UartClass()
+static const int RX_BUF_SIZE = 100;
+static const char *TAG = "UsbPcClass";
+
+UsbPcClass::UsbPcClass()
     : task_handle(NULL), _started(false)
 {
 }
 
-UartClass::~UartClass()
+UsbPcClass::~UsbPcClass()
 {
 }
 
@@ -55,7 +56,7 @@ UartClass::~UartClass()
  *
  *
  */
-void UartClass::start()
+void UsbPcClass::start()
 {
     const uart_config_t uart_config = {
         .baud_rate = 115200,
@@ -70,7 +71,7 @@ void UartClass::start()
     uart_param_config(UART_NUM_1, &uart_config);
     uart_set_pin(UART_NUM_1, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
-    xTaskCreatePinnedToCore(this->uartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->task_handle, (BaseType_t)0);
+    xTaskCreatePinnedToCore(this->mUartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->task_handle, (BaseType_t)0);
     this->_started = true;
 }
 
@@ -79,7 +80,7 @@ void UartClass::start()
  * 
  * 
  */
-void UartClass::uartRcvLoop(void *unused)
+void UsbPcClass::mUartRcvLoop(void *unused)
 {
     // https://github.com/espressif/esp-idf/blob/af28c1fa21fc0abf9cb3ac8568db9cbd99a7f4b5/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 
@@ -124,19 +125,19 @@ void UartClass::uartRcvLoop(void *unused)
             {
                 ESP_LOGI(TAG, "#### 13 found.  \n");
 
-                UartClass::usbReceiveString.clear();
-                UartClass::usbReceiveString.append(rcvString);
-                UartClass::usbAvailable = true;
+                UsbPcClass::mUsbReceiveString.clear();
+                UsbPcClass::mUsbReceiveString.append(rcvString);
+                UsbPcClass::usbAvailable = true;
                 rcvString.clear();
                 found_CR = false;
-                ESP_LOGI(TAG, "usbReceive %s\n", usbReceiveString.c_str());
+                ESP_LOGI(TAG, "usbReceive %s\n", mUsbReceiveString.c_str());
             }
         }
     }
     free(data);
 }
 
-int UartClass::send(const char *fmt, ...)
+int UsbPcClass::send(const char *fmt, ...)
 {
 
     va_list ap;
@@ -159,13 +160,13 @@ int UartClass::send(const char *fmt, ...)
  * Set workingMode to: SETUP or PARAMETER or MEASURE. 
  * getworkingMode() reads workingMode
  */
-extern "C" int UartClass::getPcCommadToSetWorkingMode()
+extern "C" int UsbPcClass::getPcCommadToSetWorkingMode()
 {
     // Request PC. Wait for PC response
     uint32_t i = 0;
     int ledLevel = 0;
 
-    while (UartClass::usbAvailable == false)
+    while (UsbPcClass::usbAvailable == false)
     {
 
         if ((i % 20) == 0)
@@ -186,12 +187,12 @@ extern "C" int UartClass::getPcCommadToSetWorkingMode()
     // Split usbReceive csv to parameters[]
     // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
 
-    char *cstr = new char[UartClass::usbReceiveString.length() + 1];
-    std::strcpy(cstr, UartClass::usbReceiveString.c_str());
+    char *cstr = new char[UsbPcClass::mUsbReceiveString.length() + 1];
+    std::strcpy(cstr, UsbPcClass::mUsbReceiveString.c_str());
 
     // how many comma are in string
     int numberOfValues = 1;
-    for (int i = 0; i < UartClass::usbReceiveString.length(); i++)
+    for (int i = 0; i < UsbPcClass::mUsbReceiveString.length(); i++)
         if (cstr[i] == ',')
             numberOfValues++;
 
@@ -243,12 +244,12 @@ extern "C" int UartClass::getPcCommadToSetWorkingMode()
     return 0;
 }
 
-int UartClass::getworkingMode()
+int UsbPcClass::getworkingMode()
 {
     return this->workingMode;
 }
 
-std::vector<std::string> UartClass::getParameters()
+std::vector<std::string> UsbPcClass::getParameters()
 {
     return this->parametersVector;
 }
