@@ -28,11 +28,11 @@ private:
   static std::string mUsbReceiveString;
   static void mUartRcvLoop(void *unused);
 
-  TaskHandle_t task_handle;
-  bool _started;
-  std::vector<std::string> parametersVector;
+  TaskHandle_t mTaskHandle;
+  bool mStarted;
+  std::vector<std::string> mParametersVector;
 
-  int workingMode;
+  int mWorkingMode;
 };
 
 #endif

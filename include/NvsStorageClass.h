@@ -35,7 +35,7 @@ typedef enum {
  */
 class NvsStorageClass {
     protected:
-        //uint32_t _handle;
+
         nvs_handle_t _handle;
         bool _started;
         bool _readOnly;

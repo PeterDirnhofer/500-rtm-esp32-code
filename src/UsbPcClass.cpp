@@ -43,7 +43,7 @@ static const int RX_BUF_SIZE = 100;
 static const char *TAG = "UsbPcClass";
 
 UsbPcClass::UsbPcClass()
-    : task_handle(NULL), _started(false)
+    : mTaskHandle(NULL), mStarted(false)
 {
 }
 
@@ -71,8 +71,8 @@ void UsbPcClass::start()
     uart_param_config(UART_NUM_1, &uart_config);
     uart_set_pin(UART_NUM_1, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
-    xTaskCreatePinnedToCore(this->mUartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->task_handle, (BaseType_t)0);
-    this->_started = true;
+    xTaskCreatePinnedToCore(this->mUartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->mTaskHandle, (BaseType_t)0);
+    this->mStarted = true;
 }
 
 /**
@@ -200,45 +200,45 @@ extern "C" int UsbPcClass::getPcCommadToSetWorkingMode()
 
     char *p = std::strtok(cstr, ",");
 
-    this->parametersVector.clear();
+    this->mParametersVector.clear();
     while (p != 0)
     {
         //printf("%s\n", p);
         char buffer[20];
         sprintf(buffer, "%s", p);
-        this->parametersVector.push_back(buffer);
+        this->mParametersVector.push_back(buffer);
 
         p = std::strtok(NULL, ",");
     }
     free(cstr);
 
-    ESP_LOGI(TAG, "ParametersVector[0]: %s", this->parametersVector[0].c_str());
+    ESP_LOGI(TAG, "ParametersVector[0]: %s", this->mParametersVector[0].c_str());
 
-    for (size_t i = 0; i < parametersVector[0].length(); i++)
+    for (size_t i = 0; i < mParametersVector[0].length(); i++)
     {
-        parametersVector[0][i] = toupper(parametersVector[0][i]);
+        mParametersVector[0][i] = toupper(mParametersVector[0][i]);
     }
 
-    if (strcmp(this->parametersVector[0].c_str(), "SETUP") == 0)
+    if (strcmp(this->mParametersVector[0].c_str(), "SETUP") == 0)
     {
-        this->workingMode = MODE_SETUP;
+        this->mWorkingMode = MODE_SETUP;
         ESP_LOGI(TAG, "SETUP detected\n");
         return MODE_SETUP;
     }
-    else if (strcmp(this->parametersVector[0].c_str(), "MEASURE") == 0)
+    else if (strcmp(this->mParametersVector[0].c_str(), "MEASURE") == 0)
     {
-        this->workingMode = MODE_MEASURE;
+        this->mWorkingMode = MODE_MEASURE;
         ESP_LOGI(TAG, "MEASURE detected\n");
         return MODE_MEASURE;
     }
-    else if (strcmp(this->parametersVector[0].c_str(), "PARAMETER") == 0)
+    else if (strcmp(this->mParametersVector[0].c_str(), "PARAMETER") == 0)
     {
-        this->workingMode = MODE_PARAMETER;
+        this->mWorkingMode = MODE_PARAMETER;
         ESP_LOGI(TAG, "PARAM detected\n");
         return MODE_PARAMETER;
     }
     else
-        ESP_LOGI(TAG, "INVALID Command %s\n",parametersVector[0].c_str());
+        ESP_LOGI(TAG, "INVALID Command %s\n",mParametersVector[0].c_str());
     return MODE_INVALID;
 
     return 0;
@@ -246,10 +246,10 @@ extern "C" int UsbPcClass::getPcCommadToSetWorkingMode()
 
 int UsbPcClass::getworkingMode()
 {
-    return this->workingMode;
+    return this->mWorkingMode;
 }
 
 std::vector<std::string> UsbPcClass::getParameters()
 {
-    return this->parametersVector;
+    return this->mParametersVector;
 }
