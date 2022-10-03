@@ -18,11 +18,13 @@ ParameterClass::~ParameterClass()
 
 static const char *TAG = "ParameterClass";
 
-esp_err_t ParameterClass::setParameter(std::vector<std::string> params){
+esp_err_t ParameterClass::setParameters(std::vector<std::string> params){
     // 100 1000 10.0 0.01 0 0 0 199 199``
+    // PARAMETER,100,1000,10.0,0.01,0,0,0,199,199
     ESP_LOGI(TAG,"params.size %d\n",(int)params.size()); 
     if((int)params.size()!=10){
         ESP_LOGE(TAG,"setparameter needs 9+1 values. Actual %d\n",(int)params.size());
+        
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -30,7 +32,9 @@ esp_err_t ParameterClass::setParameter(std::vector<std::string> params){
 
 }
 
-std::vector<std::string> ParameterClass::getParameter(){
+
+
+std::vector<std::string> ParameterClass::getParameters(){
     std::vector<std::string> returnVector;
     returnVector.push_back("return1");
     returnVector.push_back("return2");

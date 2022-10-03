@@ -21,8 +21,8 @@ public:
   ParameterClass();  // der Default-Konstruktor
   ~ParameterClass(); // Destructor
 
-  esp_err_t setParameter(std::vector<std::string> params);
-  std::vector<std::string> getParameter();
+  esp_err_t setParameters(std::vector<std::string> params);
+  std::vector<std::string> getParameters();
 
 
 
