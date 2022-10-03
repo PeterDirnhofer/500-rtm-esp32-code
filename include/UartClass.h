@@ -19,25 +19,21 @@ public:
 
   void start();
   static int send(const char *fmt, ...);
-  int getPcCommad();
-  
-
+  int getPcCommadToSetWorkingMode();
   static bool usbAvailable;
-  static std::string usbReceive;
+  // static std::string usbReceiveString;
   int getworkingMode();
   std::vector<std::string> getParameters();
 
 private:
+  static std::string usbReceiveString;
   static void uartRcvLoop(void *unused);
-  
+
   TaskHandle_t task_handle;
   bool _started;
   std::vector<std::string> parametersVector;
 
   int workingMode;
-
-
-  
 };
 
 #endif

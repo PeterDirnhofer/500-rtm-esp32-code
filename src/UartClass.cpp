@@ -74,6 +74,11 @@ void UartClass::start()
     this->_started = true;
 }
 
+/**
+ * @brief Read CR terminated string from PC-usb into usbReceiveString. Set usbAvailable.    
+ * 
+ * 
+ */
 void UartClass::uartRcvLoop(void *unused)
 {
     // https://github.com/espressif/esp-idf/blob/af28c1fa21fc0abf9cb3ac8568db9cbd99a7f4b5/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
@@ -119,12 +124,12 @@ void UartClass::uartRcvLoop(void *unused)
             {
                 ESP_LOGI(TAG, "#### 13 found.  \n");
 
-                UartClass::usbReceive.clear();
-                UartClass::usbReceive.append(rcvString);
+                UartClass::usbReceiveString.clear();
+                UartClass::usbReceiveString.append(rcvString);
                 UartClass::usbAvailable = true;
                 rcvString.clear();
                 found_CR = false;
-                ESP_LOGI(TAG, "usbReceive %s\n", usbReceive.c_str());
+                ESP_LOGI(TAG, "usbReceive %s\n", usbReceiveString.c_str());
             }
         }
     }
@@ -149,7 +154,12 @@ int UartClass::send(const char *fmt, ...)
     return rc;
 }
 
-extern "C" int UartClass::getPcCommad()
+/**
+ * @brief Read USB input from Computer. 
+ * Set workingMode to: SETUP or PARAMETER or MEASURE. 
+ * getworkingMode() reads workingMode
+ */
+extern "C" int UartClass::getPcCommadToSetWorkingMode()
 {
     // Request PC. Wait for PC response
     uint32_t i = 0;
@@ -176,26 +186,23 @@ extern "C" int UartClass::getPcCommad()
     // Split usbReceive csv to parameters[]
     // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
 
-    char *cstr = new char[UartClass::usbReceive.length() + 1];
-    std::strcpy(cstr, UartClass::usbReceive.c_str());
+    char *cstr = new char[UartClass::usbReceiveString.length() + 1];
+    std::strcpy(cstr, UartClass::usbReceiveString.c_str());
 
     // how many comma are in string
     int numberOfValues = 1;
-    for (int i = 0; i < UartClass::usbReceive.length(); i++)
+    for (int i = 0; i < UartClass::usbReceiveString.length(); i++)
         if (cstr[i] == ',')
             numberOfValues++;
 
     ESP_LOGI(TAG, "numberOfValues %d", numberOfValues);
 
-    // std::string parameters[10];
-    int parametersIndex;
-
     char *p = std::strtok(cstr, ",");
-    parametersIndex = 0;
+
     this->parametersVector.clear();
     while (p != 0)
     {
-        printf("%s\n", p);
+        //printf("%s\n", p);
         char buffer[20];
         sprintf(buffer, "%s", p);
         this->parametersVector.push_back(buffer);
@@ -213,9 +220,9 @@ extern "C" int UartClass::getPcCommad()
 
     if (strcmp(this->parametersVector[0].c_str(), "SETUP") == 0)
     {
-        this->workingMode = MODE_MONITOR_TUNNEL_CURRENT;
+        this->workingMode = MODE_SETUP;
         ESP_LOGI(TAG, "SETUP detected\n");
-        return MODE_MONITOR_TUNNEL_CURRENT;
+        return MODE_SETUP;
     }
     else if (strcmp(this->parametersVector[0].c_str(), "MEASURE") == 0)
     {
@@ -243,8 +250,5 @@ int UartClass::getworkingMode()
 
 std::vector<std::string> UartClass::getParameters()
 {
-
     return this->parametersVector;
-
-
 }

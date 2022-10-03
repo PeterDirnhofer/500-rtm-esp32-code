@@ -40,11 +40,13 @@
 
 // static members of UartClass are declared in UArtClass.h
 // Need to be initialized from outside the class
-std::string UartClass::usbReceive = "";
+std::string UartClass::usbReceiveString = "";
 bool UartClass::usbAvailable = false;
 
 extern "C" void app_main(void)
 {
+
+    esp_log_level_set("*",ESP_LOG_WARN);
     static const char *TAG = "main";
     ESP_LOGI(TAG, "\n+++ START ++++++++++++\n");
 
@@ -58,9 +60,9 @@ extern "C" void app_main(void)
 
     // SELECT Run Mode
     // Wait for command from PC via USB
-    usb.getPcCommad();
+    usb.getPcCommadToSetWorkingMode();
 
-    if (usb.getworkingMode() == MODE_MONITOR_TUNNEL_CURRENT)
+    if (usb.getworkingMode() == MODE_SETUP)
     {
         usb.send("START SETUP\n");
         displayTunnelCurrent();
@@ -70,7 +72,7 @@ extern "C" void app_main(void)
         usb.send("START MEASURE\n");
         controllerStart();
     }
-    else if (usb.getPcCommad() == MODE_PARAMETER)
+    else if (usb.getPcCommadToSetWorkingMode() == MODE_PARAMETER)
     {
         usb.send("PARAMETER STARTED\n");
 
