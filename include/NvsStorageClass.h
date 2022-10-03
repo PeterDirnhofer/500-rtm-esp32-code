@@ -36,9 +36,9 @@ typedef enum {
 class NvsStorageClass {
     protected:
 
-        nvs_handle_t _handle;
-        bool _started;
-        bool _readOnly;
+        nvs_handle_t mHandle;
+        bool mStarted;
+        bool mReadOnly;
     public:
         NvsStorageClass();
         ~NvsStorageClass();
@@ -49,9 +49,6 @@ class NvsStorageClass {
 
         bool clear();
         bool remove(const char * key);
-
-
-
 
         size_t putChar(const char* key, int8_t value);
         size_t putUChar(const char* key, uint8_t value);

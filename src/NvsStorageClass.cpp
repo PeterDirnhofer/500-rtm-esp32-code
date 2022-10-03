@@ -26,7 +26,7 @@ const char *nvs_errors[] = {"OTHER", "NOT_INITIALIZED", "NOT_FOUND", "TYPE_MISMA
 #define STORAGE_NAMESPACE "nvsparam"
 
 NvsStorageClass::NvsStorageClass()
-    : _handle(0), _started(false), _readOnly(false)
+    : mHandle(0), mStarted(false), mReadOnly(false)
 {
 }
 
@@ -39,12 +39,12 @@ NvsStorageClass::~NvsStorageClass()
 
 bool NvsStorageClass::begin()
 { 
-    if (_started)
+    if (mStarted)
     {
         ESP_LOGI(TAG,"nvs_arleaady started\n");
         return false;
     }
-    _readOnly = false;
+    mReadOnly = false;
 
     // Initialize NVS
     // https://github.com/espressif/esp-idf/blob/master/examples/storage/nvs_rw_value/main/nvs_value_example_main.c
@@ -65,7 +65,7 @@ bool NvsStorageClass::begin()
     
     
     // Open
-    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &_handle);
+    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &mHandle);
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "%s", esp_err_to_name(err));
@@ -73,19 +73,19 @@ bool NvsStorageClass::begin()
     }
     ESP_LOGI(TAG,"+++ nvs_flash opened\n");
 
-    _started = true;
+    mStarted = true;
     return true;
 }
 
 void NvsStorageClass::end()
 {
-    if (!_started)
+    if (!mStarted)
     {
         ESP_LOGE(TAG,"nvs_not started or _readOnly or \n");
         return;
     }
-    nvs_close(_handle);
-    _started = false;
+    nvs_close(mHandle);
+    mStarted = false;
 }
 
 
@@ -96,19 +96,19 @@ void NvsStorageClass::end()
 
 bool NvsStorageClass::clear()
 {
-    if (!_started || _readOnly)
+    if (!mStarted || mReadOnly)
     {
         ESP_LOGE(TAG,"nvs_not started or _readOnly or \n");
         return false;
     }
-    esp_err_t err = nvs_erase_all(_handle);
+    esp_err_t err = nvs_erase_all(mHandle);
  
     if (err)
     {
         ESP_LOGE(TAG, "nvs_erase_all fail: %s", nvs_error(err));
         return false;
     }
-    err = nvs_commit(_handle);
+    err = nvs_commit(mHandle);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_commit fail: %s", nvs_error(err));
@@ -123,17 +123,17 @@ bool NvsStorageClass::clear()
 
 bool NvsStorageClass::remove(const char *key)
 {
-    if (!_started || !key || _readOnly)
+    if (!mStarted || !key || mReadOnly)
     {
         return false;
     }
-    esp_err_t err = nvs_erase_key(_handle, key);
+    esp_err_t err = nvs_erase_key(mHandle, key);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_erase_key fail: %s %s", key, nvs_error(err));
         return false;
     }
-    err = nvs_commit(_handle);
+    err = nvs_commit(mHandle);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_commit fail: %s %s", key, nvs_error(err));
@@ -158,18 +158,18 @@ double NvsStorageClass::putDouble(const char* key, const double value)
 
 size_t NvsStorageClass::putChar(const char *key, int8_t value)
 {
-    if (!_started || !key || _readOnly)
+    if (!mStarted || !key || mReadOnly)
     {
         ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
         return 0;
     }
-    esp_err_t err = nvs_set_i8(_handle, key, value);
+    esp_err_t err = nvs_set_i8(mHandle, key, value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_set_i8 fail: %s %s", key, nvs_error(err));
         return 0;
     }
-    err = nvs_commit(_handle);
+    err = nvs_commit(mHandle);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_commit fail: %s %s", key, nvs_error(err));
@@ -180,18 +180,18 @@ size_t NvsStorageClass::putChar(const char *key, int8_t value)
 
 size_t NvsStorageClass::putUChar(const char *key, uint8_t value)
 {
-    if (!_started || !key || _readOnly)
+    if (!mStarted || !key || mReadOnly)
     {
         ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
         return 0;
     }
-    esp_err_t err = nvs_set_u8(_handle, key, value);
+    esp_err_t err = nvs_set_u8(mHandle, key, value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_set_u8 fail: %s %s", key, nvs_error(err));
         return 0;
     }
-    err = nvs_commit(_handle);
+    err = nvs_commit(mHandle);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_commit fail: %s %s", key, nvs_error(err));
@@ -202,18 +202,18 @@ size_t NvsStorageClass::putUChar(const char *key, uint8_t value)
 
 size_t NvsStorageClass::putShort(const char *key, int16_t value)
 {
-    if (!_started || !key || _readOnly)
+    if (!mStarted || !key || mReadOnly)
     {
         ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
         return 0;
     }
-    esp_err_t err = nvs_set_i16(_handle, key, value);
+    esp_err_t err = nvs_set_i16(mHandle, key, value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_set_i16 fail: %s %s", key, nvs_error(err));
         return 0;
     }
-    err = nvs_commit(_handle);
+    err = nvs_commit(mHandle);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_commit fail: %s %s", key, nvs_error(err));
@@ -224,18 +224,18 @@ size_t NvsStorageClass::putShort(const char *key, int16_t value)
 
 size_t NvsStorageClass::putUShort(const char *key, uint16_t value)
 {
-    if (!_started || !key || _readOnly)
+    if (!mStarted || !key || mReadOnly)
     {
         ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
         return 0;
     }
-    esp_err_t err = nvs_set_u16(_handle, key, value);
+    esp_err_t err = nvs_set_u16(mHandle, key, value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_set_u16 fail: %s %s", key, nvs_error(err));
         return 0;
     }
-    err = nvs_commit(_handle);
+    err = nvs_commit(mHandle);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_commit fail: %s %s", key, nvs_error(err));
@@ -246,18 +246,18 @@ size_t NvsStorageClass::putUShort(const char *key, uint16_t value)
 
 size_t NvsStorageClass::putInt(const char *key, int32_t value)
 {
-    if (!_started || !key || _readOnly)
+    if (!mStarted || !key || mReadOnly)
     {
         ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
         return 0;
     }
-    esp_err_t err = nvs_set_i32(_handle, key, value);
+    esp_err_t err = nvs_set_i32(mHandle, key, value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_set_i32 fail: %s %s", key, nvs_error(err));
         return 0;
     }
-    err = nvs_commit(_handle);
+    err = nvs_commit(mHandle);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_commit fail: %s %s", key, nvs_error(err));
@@ -268,18 +268,18 @@ size_t NvsStorageClass::putInt(const char *key, int32_t value)
 
 size_t NvsStorageClass::putUInt(const char *key, uint32_t value)
 {
-    if (!_started || !key || _readOnly)
+    if (!mStarted || !key || mReadOnly)
     {
         ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
         return 0;
     }
-    esp_err_t err = nvs_set_u32(_handle, key, value);
+    esp_err_t err = nvs_set_u32(mHandle, key, value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_set_u32 fail: %s %s", key, nvs_error(err));
         return 0;
     }
-    err = nvs_commit(_handle);
+    err = nvs_commit(mHandle);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_commit fail: %s %s", key, nvs_error(err));
@@ -300,18 +300,18 @@ size_t NvsStorageClass::putULong(const char *key, uint32_t value)
 
 size_t NvsStorageClass::putLong64(const char *key, int64_t value)
 {
-    if (!_started || !key || _readOnly)
+    if (!mStarted || !key || mReadOnly)
     {
         ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
         return 0;
     }
-    esp_err_t err = nvs_set_i64(_handle, key, value);
+    esp_err_t err = nvs_set_i64(mHandle, key, value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_set_i64 fail: %s %s", key, nvs_error(err));
         return 0;
     }
-    err = nvs_commit(_handle);
+    err = nvs_commit(mHandle);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_commit fail: %s %s", key, nvs_error(err));
@@ -322,18 +322,18 @@ size_t NvsStorageClass::putLong64(const char *key, int64_t value)
 
 size_t NvsStorageClass::putULong64(const char *key, uint64_t value)
 {
-    if (!_started || !key || _readOnly)
+    if (!mStarted || !key || mReadOnly)
     {
         ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
         return 0;
     }
-    esp_err_t err = nvs_set_u64(_handle, key, value);
+    esp_err_t err = nvs_set_u64(mHandle, key, value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_set_u64 fail: %s %s", key, nvs_error(err));
         return 0;
     }
-    err = nvs_commit(_handle);
+    err = nvs_commit(mHandle);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_commit fail: %s %s", key, nvs_error(err));
@@ -349,17 +349,17 @@ size_t NvsStorageClass::putBool(const char *key, const bool value)
 
 size_t NvsStorageClass::putBytes(const char *key, const void *value, size_t len)
 {
-    if (!_started || !key || !value || !len || _readOnly)
+    if (!mStarted || !key || !value || !len || mReadOnly)
     {
         return 0;
     }
-    esp_err_t err = nvs_set_blob(_handle, key, value, len);
+    esp_err_t err = nvs_set_blob(mHandle, key, value, len);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_set_blob fail: %s %s", key, nvs_error(err));
         return 0;
     }
-    err = nvs_commit(_handle);
+    err = nvs_commit(mHandle);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_commit fail: %s %s", key, nvs_error(err));
@@ -370,7 +370,7 @@ size_t NvsStorageClass::putBytes(const char *key, const void *value, size_t len)
 
 PreferenceType NvsStorageClass::getType(const char *key)
 {
-    if (!_started || !key || strlen(key) > 15)
+    if (!mStarted || !key || strlen(key) > 15)
     {
         return PT_INVALID;
     }
@@ -383,25 +383,25 @@ PreferenceType NvsStorageClass::getType(const char *key)
     int64_t mt7;
     uint64_t mt8;
     size_t len = 0;
-    if (nvs_get_i8(_handle, key, &mt1) == ESP_OK)
+    if (nvs_get_i8(mHandle, key, &mt1) == ESP_OK)
         return PT_I8;
-    if (nvs_get_u8(_handle, key, &mt2) == ESP_OK)
+    if (nvs_get_u8(mHandle, key, &mt2) == ESP_OK)
         return PT_U8;
-    if (nvs_get_i16(_handle, key, &mt3) == ESP_OK)
+    if (nvs_get_i16(mHandle, key, &mt3) == ESP_OK)
         return PT_I16;
-    if (nvs_get_u16(_handle, key, &mt4) == ESP_OK)
+    if (nvs_get_u16(mHandle, key, &mt4) == ESP_OK)
         return PT_U16;
-    if (nvs_get_i32(_handle, key, &mt5) == ESP_OK)
+    if (nvs_get_i32(mHandle, key, &mt5) == ESP_OK)
         return PT_I32;
-    if (nvs_get_u32(_handle, key, &mt6) == ESP_OK)
+    if (nvs_get_u32(mHandle, key, &mt6) == ESP_OK)
         return PT_U32;
-    if (nvs_get_i64(_handle, key, &mt7) == ESP_OK)
+    if (nvs_get_i64(mHandle, key, &mt7) == ESP_OK)
         return PT_I64;
-    if (nvs_get_u64(_handle, key, &mt8) == ESP_OK)
+    if (nvs_get_u64(mHandle, key, &mt8) == ESP_OK)
         return PT_U64;
-    if (nvs_get_str(_handle, key, NULL, &len) == ESP_OK)
+    if (nvs_get_str(mHandle, key, NULL, &len) == ESP_OK)
         return PT_STR;
-    if (nvs_get_blob(_handle, key, NULL, &len) == ESP_OK)
+    if (nvs_get_blob(mHandle, key, NULL, &len) == ESP_OK)
         return PT_BLOB;
     return PT_INVALID;
 }
@@ -418,11 +418,11 @@ bool NvsStorageClass::isKey(const char *key)
 int8_t NvsStorageClass::getChar(const char *key, const int8_t defaultValue)
 {
     int8_t value = defaultValue;
-    if (!_started || !key)
+    if (!mStarted || !key)
     {
         return value;
     }
-    esp_err_t err = nvs_get_i8(_handle, key, &value);
+    esp_err_t err = nvs_get_i8(mHandle, key, &value);
     if (err)
     {
 
@@ -435,11 +435,11 @@ int8_t NvsStorageClass::getChar(const char *key, const int8_t defaultValue)
 uint8_t NvsStorageClass::getUChar(const char *key, const uint8_t defaultValue)
 {
     uint8_t value = defaultValue;
-    if (!_started || !key)
+    if (!mStarted || !key)
     {
         return value;
     }
-    esp_err_t err = nvs_get_u8(_handle, key, &value);
+    esp_err_t err = nvs_get_u8(mHandle, key, &value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_get_u8 fail: %s %s", key, nvs_error(err));
@@ -450,11 +450,11 @@ uint8_t NvsStorageClass::getUChar(const char *key, const uint8_t defaultValue)
 int16_t NvsStorageClass::getShort(const char *key, const int16_t defaultValue)
 {
     int16_t value = defaultValue;
-    if (!_started || !key)
+    if (!mStarted || !key)
     {
         return value;
     }
-    esp_err_t err = nvs_get_i16(_handle, key, &value);
+    esp_err_t err = nvs_get_i16(mHandle, key, &value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_get_i16 fail: %s %s", key, nvs_error(err));
@@ -465,11 +465,11 @@ int16_t NvsStorageClass::getShort(const char *key, const int16_t defaultValue)
 uint16_t NvsStorageClass::getUShort(const char *key, const uint16_t defaultValue)
 {
     uint16_t value = defaultValue;
-    if (!_started || !key)
+    if (!mStarted || !key)
     {
         return value;
     }
-    esp_err_t err = nvs_get_u16(_handle, key, &value);
+    esp_err_t err = nvs_get_u16(mHandle, key, &value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_get_u16 fail: %s %s", key, nvs_error(err));
@@ -480,11 +480,11 @@ uint16_t NvsStorageClass::getUShort(const char *key, const uint16_t defaultValue
 int32_t NvsStorageClass::getInt(const char *key, const int32_t defaultValue)
 {
     int32_t value = defaultValue;
-    if (!_started || !key)
+    if (!mStarted || !key)
     {
         return value;
     }
-    esp_err_t err = nvs_get_i32(_handle, key, &value);
+    esp_err_t err = nvs_get_i32(mHandle, key, &value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_get_i32 fail: %s %s", key, nvs_error(err));
@@ -495,11 +495,11 @@ int32_t NvsStorageClass::getInt(const char *key, const int32_t defaultValue)
 uint32_t NvsStorageClass::getUInt(const char *key, const uint32_t defaultValue)
 {
     uint32_t value = defaultValue;
-    if (!_started || !key)
+    if (!mStarted || !key)
     {
         return value;
     }
-    esp_err_t err = nvs_get_u32(_handle, key, &value);
+    esp_err_t err = nvs_get_u32(mHandle, key, &value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_get_u32 fail: %s %s", key, nvs_error(err));
@@ -520,11 +520,11 @@ uint32_t NvsStorageClass::getULong(const char *key, const uint32_t defaultValue)
 int64_t NvsStorageClass::getLong64(const char *key, const int64_t defaultValue)
 {
     int64_t value = defaultValue;
-    if (!_started || !key)
+    if (!mStarted || !key)
     {
         return value;
     }
-    esp_err_t err = nvs_get_i64(_handle, key, &value);
+    esp_err_t err = nvs_get_i64(mHandle, key, &value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_get_i64 fail: %s %s", key, nvs_error(err));
@@ -535,11 +535,11 @@ int64_t NvsStorageClass::getLong64(const char *key, const int64_t defaultValue)
 uint64_t NvsStorageClass::getULong64(const char *key, const uint64_t defaultValue)
 {
     uint64_t value = defaultValue;
-    if (!_started || !key)
+    if (!mStarted || !key)
     {
         return value;
     }
-    esp_err_t err = nvs_get_u64(_handle, key, &value);
+    esp_err_t err = nvs_get_u64(mHandle, key, &value);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_get_u64 fail: %s %s", key, nvs_error(err));
@@ -572,11 +572,11 @@ double NvsStorageClass::getDouble(const char* key, const double defaultValue)
 size_t NvsStorageClass::getBytesLength(const char *key)
 {
     size_t len = 0;
-    if (!_started || !key)
+    if (!mStarted || !key)
     {
         return 0;
     }
-    esp_err_t err = nvs_get_blob(_handle, key, NULL, &len);
+    esp_err_t err = nvs_get_blob(mHandle, key, NULL, &len);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_get_blob len fail: %s %s", key, nvs_error(err));
@@ -597,7 +597,7 @@ size_t NvsStorageClass::getBytes(const char *key, void *buf, size_t maxLen)
         ESP_LOGE(TAG, "not enough space in buffer: %u < %u", maxLen, len);
         return 0;
     }
-    esp_err_t err = nvs_get_blob(_handle, key, buf, &len);
+    esp_err_t err = nvs_get_blob(mHandle, key, buf, &len);
     if (err)
     {
         ESP_LOGE(TAG, "nvs_get_blob fail: %s %s", key, nvs_error(err));
