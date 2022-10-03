@@ -32,7 +32,6 @@ private:
   
   TaskHandle_t task_handle;
   bool _started;
-  std::string parameters[10];
   std::vector<std::string> parametersVector;
 
   int workingMode;

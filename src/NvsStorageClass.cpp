@@ -19,7 +19,6 @@
 #include <esp_log.h>
 
 
-
 static const char *TAG = "preferences";
 const char *nvs_errors[] = {"OTHER", "NOT_INITIALIZED", "NOT_FOUND", "TYPE_MISMATCH", "READ_ONLY", "NOT_ENOUGH_SPACE", "INVALID_NAME", "INVALID_HANDLE", "REMOVE_FAILED", "KEY_TOO_LONG", "PAGE_FULL", "INVALID_STATE", "INVALID_LENGTH"};
 
@@ -35,6 +34,8 @@ NvsStorageClass::~NvsStorageClass()
 {
     end();
 }
+
+
 
 bool NvsStorageClass::begin()
 { 
@@ -101,6 +102,7 @@ bool NvsStorageClass::clear()
         return false;
     }
     esp_err_t err = nvs_erase_all(_handle);
+ 
     if (err)
     {
         ESP_LOGE(TAG, "nvs_erase_all fail: %s", nvs_error(err));

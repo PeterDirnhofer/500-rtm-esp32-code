@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <string.h>
+
 #include <memory>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -71,7 +71,7 @@ void UartClass::start()
     uart_set_pin(UART_NUM_1, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
     xTaskCreatePinnedToCore(this->uartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->task_handle, (BaseType_t)0);
-    this->_started=true;
+    this->_started = true;
 }
 
 void UartClass::uartRcvLoop(void *unused)
@@ -133,15 +133,13 @@ void UartClass::uartRcvLoop(void *unused)
 
 int UartClass::send(const char *fmt, ...)
 {
-    
-    
 
     va_list ap;
     va_start(ap, fmt);
 
     char s[100] = {0};
     vsprintf(s, fmt, ap);
-    ESP_LOGI(TAG, "uartsend %s\n",s);
+    ESP_LOGI(TAG, "uartsend %s\n", s);
 
     const int len = strlen(s);
     int rc = uart_write_bytes(UART_NUM_1, s, len);
@@ -200,24 +198,18 @@ extern "C" int UartClass::getPcCommad()
         printf("%s\n", p);
         char buffer[20];
         sprintf(buffer, "%s", p);
-        this->parameters[parametersIndex++] = buffer;
         this->parametersVector.push_back(buffer);
 
         p = std::strtok(NULL, ",");
     }
     free(cstr);
 
-    ESP_LOGI(TAG, "Parameters[0]: %s\n", this->parameters[0].c_str());
+    ESP_LOGI(TAG, "ParametersVector[0]: %s", this->parametersVector[0].c_str());
 
-    ESP_LOGI(TAG, "ParametersVector[0]: %s" , this->parametersVector[0].c_str());
-
-    for (size_t i = 0; i < parameters[0].length(); i++)
+    for (size_t i = 0; i < parametersVector[0].length(); i++)
     {
-        parameters[0][i] = toupper(parameters[0][i]);
         parametersVector[0][i] = toupper(parametersVector[0][i]);
     }
-
-
 
     if (strcmp(this->parametersVector[0].c_str(), "SETUP") == 0)
     {
@@ -231,14 +223,14 @@ extern "C" int UartClass::getPcCommad()
         ESP_LOGI(TAG, "MEASURE detected\n");
         return MODE_MEASURE;
     }
-    else if (strcmp(this->parametersVector[0].c_str(), "PARAM") == 0)
+    else if (strcmp(this->parametersVector[0].c_str(), "PARAMETER") == 0)
     {
         this->workingMode = MODE_PARAMETER;
         ESP_LOGI(TAG, "PARAM detected\n");
         return MODE_PARAMETER;
     }
     else
-        ESP_LOGI(TAG, "INVALID Command");
+        ESP_LOGI(TAG, "INVALID Command %s\n",parametersVector[0].c_str());
     return MODE_INVALID;
 
     return 0;
@@ -249,14 +241,10 @@ int UartClass::getworkingMode()
     return this->workingMode;
 }
 
-std::vector<std::string> UartClass::getParameters(){
+std::vector<std::string> UartClass::getParameters()
+{
 
-    std::vector<std::string> v1;
-    v1.push_back("Zeile1");
-
-    return v1;
-    
-    
+    return this->parametersVector;
 
 
 }
