@@ -141,7 +141,7 @@ int UartClass::send(const char *fmt, ...)
 
     char s[100] = {0};
     vsprintf(s, fmt, ap);
-    ESP_LOGI(TAG, "uartsend");
+    ESP_LOGI(TAG, "uartsend %s\n",s);
 
     const int len = strlen(s);
     int rc = uart_write_bytes(UART_NUM_1, s, len);
@@ -166,8 +166,6 @@ extern "C" int UartClass::getPcCommad()
             // Invert Blue LED
             ledLevel++;
             gpio_set_level(BLUE_LED, ledLevel % 2);
-
-            ESP_LOGI(TAG, "IRQ ");
             this->send("REQUEST\n");
         }
 
@@ -175,9 +173,8 @@ extern "C" int UartClass::getPcCommad()
         i++;
     }
 
-    gpio_set_level(BLUE_LED, 1);
     // Command received from PC
-
+    gpio_set_level(BLUE_LED, 1);
     // Split usbReceive csv to parameters[]
     // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
 
@@ -217,21 +214,24 @@ extern "C" int UartClass::getPcCommad()
     for (size_t i = 0; i < parameters[0].length(); i++)
     {
         parameters[0][i] = toupper(parameters[0][i]);
+        parametersVector[0][i] = toupper(parametersVector[0][i]);
     }
 
-    if (strcmp(this->parameters[0].c_str(), "SETUP") == 0)
+
+
+    if (strcmp(this->parametersVector[0].c_str(), "SETUP") == 0)
     {
         this->workingMode = MODE_MONITOR_TUNNEL_CURRENT;
         ESP_LOGI(TAG, "SETUP detected\n");
         return MODE_MONITOR_TUNNEL_CURRENT;
     }
-    else if (strcmp(this->parameters[0].c_str(), "MEASURE") == 0)
+    else if (strcmp(this->parametersVector[0].c_str(), "MEASURE") == 0)
     {
         this->workingMode = MODE_MEASURE;
         ESP_LOGI(TAG, "MEASURE detected\n");
         return MODE_MEASURE;
     }
-    else if (strcmp(this->parameters[0].c_str(), "PARAM") == 0)
+    else if (strcmp(this->parametersVector[0].c_str(), "PARAM") == 0)
     {
         this->workingMode = MODE_PARAMETER;
         ESP_LOGI(TAG, "PARAM detected\n");
