@@ -42,7 +42,7 @@ static const int RX_BUF_SIZE = 100;
 static const char *TAG = "UartClass";
 
 UartClass::UartClass()
-    : task_handle(NULL)
+    : task_handle(NULL), _started(false)
 {
 }
 
@@ -71,6 +71,7 @@ void UartClass::start()
     uart_set_pin(UART_NUM_1, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
     xTaskCreatePinnedToCore(this->uartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->task_handle, (BaseType_t)0);
+    this->_started=true;
 }
 
 void UartClass::uartRcvLoop(void *unused)
@@ -132,6 +133,8 @@ void UartClass::uartRcvLoop(void *unused)
 
 int UartClass::send(const char *fmt, ...)
 {
+    
+    
 
     va_list ap;
     va_start(ap, fmt);
