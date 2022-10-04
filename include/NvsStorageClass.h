@@ -22,8 +22,7 @@
 #include "nvs.h"
 
 // Copy from
-// https://raw.githubusercontent.com/espressif/arduino-esp32/master/libraries/Preferences/src/Preferences.h
-
+// https://github.com/espressif/arduino-esp32/tree/master/libraries/Preferences/src
 typedef enum {
     PT_I8, PT_U8, PT_I16, PT_U16, PT_I32, PT_U32, PT_I64, PT_U64, PT_STR, PT_BLOB, PT_INVALID
 } PreferenceType;
@@ -67,6 +66,8 @@ class NvsStorageClass {
 
         float putFloat(const char* key, const float value);
         double putDouble(const char* key, const double value);
+        size_t putString(const char* key, const char* value);
+        size_t putString(const char* key, const std::string value);
 
         bool isKey(const char* key);
         PreferenceType getType(const char* key);
@@ -84,6 +85,7 @@ class NvsStorageClass {
         bool getBool(const char* key, bool defaultValue = false);
         float getFloat(const char* key, const float defaultValue);
         double getDouble(const char* key, const double defaultValue);
+        std::string getString(const char* key, char* value, size_t maxLen);
        
         size_t getBytesLength(const char* key);
         size_t getBytes(const char* key, void * buf, size_t maxLen);

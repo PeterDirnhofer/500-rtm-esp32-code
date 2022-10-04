@@ -11,13 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+// https://github.com/espressif/arduino-esp32/tree/master/libraries/Preferences/src
 
 #include "NvsStorageClass.h"
 
 #include "nvs.h"
 #include "nvs_flash.h"
 #include <esp_log.h>
-
 
 static const char *TAG = "preferences";
 const char *nvs_errors[] = {"OTHER", "NOT_INITIALIZED", "NOT_FOUND", "TYPE_MISMATCH", "READ_ONLY", "NOT_ENOUGH_SPACE", "INVALID_NAME", "INVALID_HANDLE", "REMOVE_FAILED", "KEY_TOO_LONG", "PAGE_FULL", "INVALID_STATE", "INVALID_LENGTH"};
@@ -35,13 +35,11 @@ NvsStorageClass::~NvsStorageClass()
     end();
 }
 
-
-
 bool NvsStorageClass::begin()
-{ 
+{
     if (mStarted)
     {
-        ESP_LOGI(TAG,"nvs_arleaady started\n");
+        ESP_LOGI(TAG, "nvs_arleaady started\n");
         return false;
     }
     mReadOnly = false;
@@ -62,8 +60,7 @@ bool NvsStorageClass::begin()
         ESP_LOGE(TAG, "%s", esp_err_to_name(err));
         return false;
     }
-    
-    
+
     // Open
     err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &mHandle);
     if (err != ESP_OK)
@@ -71,7 +68,7 @@ bool NvsStorageClass::begin()
         ESP_LOGE(TAG, "%s", esp_err_to_name(err));
         return false;
     }
-    ESP_LOGI(TAG,"+++ nvs_flash opened\n");
+    ESP_LOGI(TAG, "+++ nvs_flash opened\n");
 
     mStarted = true;
     return true;
@@ -81,14 +78,12 @@ void NvsStorageClass::end()
 {
     if (!mStarted)
     {
-        ESP_LOGE(TAG,"nvs_not started or _readOnly or \n");
+        ESP_LOGE(TAG, "nvs_not started or _readOnly or \n");
         return;
     }
     nvs_close(mHandle);
     mStarted = false;
 }
-
-
 
 /*
  * Clear all keys in opened preferences
@@ -98,11 +93,11 @@ bool NvsStorageClass::clear()
 {
     if (!mStarted || mReadOnly)
     {
-        ESP_LOGE(TAG,"nvs_not started or _readOnly or \n");
+        ESP_LOGE(TAG, "nvs_not started or _readOnly or \n");
         return false;
     }
     esp_err_t err = nvs_erase_all(mHandle);
- 
+
     if (err)
     {
         ESP_LOGE(TAG, "nvs_erase_all fail: %s", nvs_error(err));
@@ -145,22 +140,21 @@ bool NvsStorageClass::remove(const char *key)
 /*
  * Put a key value
  * */
-float NvsStorageClass::putFloat(const char* key, const float value)
+float NvsStorageClass::putFloat(const char *key, const float value)
 {
-  return putBytes(key, (void*)&value, sizeof(float));
+    return putBytes(key, (void *)&value, sizeof(float));
 }
 
-
-double NvsStorageClass::putDouble(const char* key, const double value)
+double NvsStorageClass::putDouble(const char *key, const double value)
 {
-    return putBytes(key, (void*)&value, sizeof(double));
+    return putBytes(key, (void *)&value, sizeof(double));
 }
 
 size_t NvsStorageClass::putChar(const char *key, int8_t value)
 {
     if (!mStarted || !key || mReadOnly)
     {
-        ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
+        ESP_LOGE(TAG, "nvs_not started in printWhatSaved\n");
         return 0;
     }
     esp_err_t err = nvs_set_i8(mHandle, key, value);
@@ -182,7 +176,7 @@ size_t NvsStorageClass::putUChar(const char *key, uint8_t value)
 {
     if (!mStarted || !key || mReadOnly)
     {
-        ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
+        ESP_LOGE(TAG, "nvs_not started in printWhatSaved\n");
         return 0;
     }
     esp_err_t err = nvs_set_u8(mHandle, key, value);
@@ -204,7 +198,7 @@ size_t NvsStorageClass::putShort(const char *key, int16_t value)
 {
     if (!mStarted || !key || mReadOnly)
     {
-        ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
+        ESP_LOGE(TAG, "nvs_not started in printWhatSaved\n");
         return 0;
     }
     esp_err_t err = nvs_set_i16(mHandle, key, value);
@@ -226,7 +220,7 @@ size_t NvsStorageClass::putUShort(const char *key, uint16_t value)
 {
     if (!mStarted || !key || mReadOnly)
     {
-        ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
+        ESP_LOGE(TAG, "nvs_not started in printWhatSaved\n");
         return 0;
     }
     esp_err_t err = nvs_set_u16(mHandle, key, value);
@@ -248,7 +242,7 @@ size_t NvsStorageClass::putInt(const char *key, int32_t value)
 {
     if (!mStarted || !key || mReadOnly)
     {
-        ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
+        ESP_LOGE(TAG, "nvs_not started in printWhatSaved\n");
         return 0;
     }
     esp_err_t err = nvs_set_i32(mHandle, key, value);
@@ -270,7 +264,7 @@ size_t NvsStorageClass::putUInt(const char *key, uint32_t value)
 {
     if (!mStarted || !key || mReadOnly)
     {
-        ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
+        ESP_LOGE(TAG, "nvs_not started in printWhatSaved\n");
         return 0;
     }
     esp_err_t err = nvs_set_u32(mHandle, key, value);
@@ -302,7 +296,7 @@ size_t NvsStorageClass::putLong64(const char *key, int64_t value)
 {
     if (!mStarted || !key || mReadOnly)
     {
-        ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
+        ESP_LOGE(TAG, "nvs_not started in printWhatSaved\n");
         return 0;
     }
     esp_err_t err = nvs_set_i64(mHandle, key, value);
@@ -324,7 +318,7 @@ size_t NvsStorageClass::putULong64(const char *key, uint64_t value)
 {
     if (!mStarted || !key || mReadOnly)
     {
-        ESP_LOGE(TAG,"nvs_not started in printWhatSaved\n");
+        ESP_LOGE(TAG, "nvs_not started in printWhatSaved\n");
         return 0;
     }
     esp_err_t err = nvs_set_u64(mHandle, key, value);
@@ -366,6 +360,31 @@ size_t NvsStorageClass::putBytes(const char *key, const void *value, size_t len)
         return 0;
     }
     return len;
+}
+
+size_t NvsStorageClass::putString(const char *key, const char *value)
+{
+    if (mStarted || !key || !value || mReadOnly)
+    {
+        return 0;
+    }
+    esp_err_t err = nvs_set_str(mHandle, key, value);
+    if (err)
+    {
+        ESP_LOGE(TAG,"nvs_set_str fail: %s %s", key, nvs_error(err));
+        return 0;
+    }
+    err = nvs_commit(mHandle);
+    if (err)
+    {
+        ESP_LOGE(TAG,"nvs_commit fail: %s %s", key, nvs_error(err));
+        return 0;
+    }
+    return strlen(value);
+}
+
+size_t NvsStorageClass::putString(const char* key, const std::string value){
+    return putString(key, value.c_str());
 }
 
 PreferenceType NvsStorageClass::getType(const char *key)
@@ -552,22 +571,19 @@ bool NvsStorageClass::getBool(const char *key, const bool defaultValue)
     return getUChar(key, defaultValue ? 1 : 0) == 1;
 }
 
-
-float NvsStorageClass::getFloat(const char* key, const float defaultValue)
+float NvsStorageClass::getFloat(const char *key, const float defaultValue)
 {
     float value = defaultValue;
-    getBytes(key, (void*) &value, sizeof(float));
+    getBytes(key, (void *)&value, sizeof(float));
     return value;
 }
 
-double NvsStorageClass::getDouble(const char* key, const double defaultValue)
+double NvsStorageClass::getDouble(const char *key, const double defaultValue)
 {
     double value = defaultValue;
-    getBytes(key, (void*) &value, sizeof(double));
+    getBytes(key, (void *)&value, sizeof(double));
     return value;
-
 }
-
 
 size_t NvsStorageClass::getBytesLength(const char *key)
 {
