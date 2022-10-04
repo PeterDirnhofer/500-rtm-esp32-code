@@ -40,11 +40,6 @@
 
 using namespace std;
 
-// static members of UsbPcInterface are declared in UsbPcInterface.h
-// Need to be initialized from outside the class
-//string UsbPcInterface::mUsbReceiveString = "";
-// bool UsbPcInterface::usbAvailable = false;
-
 extern "C" void app_main(void)
 {
 

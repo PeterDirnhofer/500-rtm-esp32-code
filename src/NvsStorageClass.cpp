@@ -19,6 +19,8 @@
 #include "nvs_flash.h"
 #include <esp_log.h>
 
+#include "UsbPcInterface.h"
+
 static const char *TAG = "preferences";
 const char *nvs_errors[] = {"OTHER", "NOT_INITIALIZED", "NOT_FOUND", "TYPE_MISMATCH", "READ_ONLY", "NOT_ENOUGH_SPACE", "INVALID_NAME", "INVALID_HANDLE", "REMOVE_FAILED", "KEY_TOO_LONG", "PAGE_FULL", "INVALID_STATE", "INVALID_LENGTH"};
 
@@ -154,6 +156,7 @@ size_t NvsStorageClass::putChar(const char *key, int8_t value)
         ESP_LOGE(TAG, "nvs_not started in printWhatSaved\n");
         return 0;
     }
+
     esp_err_t err = nvs_set_i8(mHandle, key, value);
     if (err)
     {
@@ -344,9 +347,11 @@ size_t NvsStorageClass::putBytes(const char *key, const void *value, size_t len)
     {
         return 0;
     }
+
     esp_err_t err = nvs_set_blob(mHandle, key, value, len);
     if (err)
     {
+
         ESP_LOGE(TAG, "nvs_set_blob fail: %s %s", key, nvs_error(err));
         return 0;
     }

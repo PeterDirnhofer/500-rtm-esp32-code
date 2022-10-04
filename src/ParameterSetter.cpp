@@ -2,6 +2,11 @@
 #include "ParameterSetter.h"
 #include <esp_log.h>
 #include "UsbPcInterface.h"
+#include <esp_err.h>
+#include <stdio.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 
 using namespace std;
 
@@ -32,7 +37,7 @@ esp_err_t ParameterSetting::putParameters(vector<string> params)
     maxY = (uint16_t) atoi(argv[9]);
 
     */
-    
+    esp_err_t err=ESP_OK;
     ESP_LOGI(TAG, "params.size %d\n", (int)params.size());
     if ((int)params.size() != 10)
     {
@@ -40,23 +45,10 @@ esp_err_t ParameterSetting::putParameters(vector<string> params)
 
         return ESP_ERR_INVALID_ARG;
     }
+    float f=0;
     
-    UsbPcInterface::send("Send kI als float\n");
-    string s = "100";
-
-    float hf = stof(params[1]);
-
-    hf=stof("krampf");
-    UsbPcInterface::send("params: %s   als float: %f\n",params[1].c_str(),hf);
-
-
-    size_t res= this->putFloat("kI",stof(params[1]));
-
-    UsbPcInterface::send("Result %f\n",res);
-
-
-
-
+    ESP_ERROR_CHECK(f= stof(params[1]));
+       // dynamic_cast
     return ESP_OK;
 }
 
