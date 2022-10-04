@@ -85,10 +85,6 @@ void NvsStorageClass::end()
     mStarted = false;
 }
 
-/*
- * Clear all keys in opened preferences
- * */
-
 bool NvsStorageClass::clear()
 {
     if (!mStarted || mReadOnly)
@@ -112,10 +108,6 @@ bool NvsStorageClass::clear()
     return true;
 }
 
-/*
- * Remove a key
- * */
-
 bool NvsStorageClass::remove(const char *key)
 {
     if (!mStarted || !key || mReadOnly)
@@ -136,6 +128,33 @@ bool NvsStorageClass::remove(const char *key)
     }
     return true;
 }
+
+esp_err_t NvsStorageClass::setParameters(std::vector<std::string> params)
+{
+    // 100 1000 10.0 0.01 0 0 0 199 199``
+    // PARAMETER,100,1000,10.0,0.01,0,0,0,199,199
+    ESP_LOGI(TAG, "params.size %d\n", (int)params.size());
+    if ((int)params.size() != 10)
+    {
+        ESP_LOGE(TAG, "setparameter needs 9+1 values. Actual %d\n", (int)params.size());
+
+        return ESP_ERR_INVALID_ARG;
+    }
+    return ESP_OK;
+}
+
+std::vector<std::string> NvsStorageClass::getParameters()
+{
+    std::vector<std::string> returnVector;
+    returnVector.push_back("return1");
+    returnVector.push_back("return2");
+    return returnVector;
+}
+
+
+
+
+// private ******************** P
 
 /*
  * Put a key value

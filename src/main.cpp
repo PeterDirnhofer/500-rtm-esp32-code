@@ -37,6 +37,7 @@
 // private classes
 #include "UsbPcInterface.h"
 #include "ParameterClass.h"
+#include "ParameterSetting.h"
 
 // static members of UsbPcInterface are declared in UsbPcInterface.h
 // Need to be initialized from outside the class
@@ -56,7 +57,10 @@ extern "C" void app_main(void)
     UsbPcInterface usb;
     usb.start();
 
-    ParameterClass parameterClass;
+    // ParameterClass parameterClass;
+    ParameterSetting parameterSetting;
+    
+    
 
     // SELECT Run Mode
     // Wait for command from PC via USB
@@ -88,10 +92,10 @@ extern "C" void app_main(void)
             {
                 usb.send("PARAMETER READ\n");
 
-                for (size_t i = 0; i < parameterClass.getParameters().size(); i++)
+                for (size_t i = 0; i < parameterSetting.getParameters().size(); i++)
                 {
-                    usb.send(parameterClass.getParameters()[i].c_str());
-                    if (i < parameterClass.getParameters().size() - 1)
+                    usb.send(parameterSetting.getParameters()[i].c_str());
+                    if (i < parameterSetting.getParameters().size() - 1)
                     {
                         usb.send(",");
                     }
@@ -114,7 +118,7 @@ extern "C" void app_main(void)
 
             // ################## PARAMETER,100,1000,10.0,0.01,0,0,0,199,199
 
-            esp_err_t err = parameterClass.setParameters(usb.getParameters());
+            esp_err_t err = parameterSetting.setParameters(usb.getParameters());
             if (err == ESP_OK)
             {
                 usb.send("PARAMETER set OK\n");

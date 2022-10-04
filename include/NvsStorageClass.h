@@ -18,6 +18,7 @@
 #include "freertos/task.h"
 #include <cstring>
 #include <string>
+#include <vector>
 #include "nvs_flash.h"
 #include "nvs.h"
 
@@ -47,7 +48,30 @@ class NvsStorageClass {
         void end();
 
         bool clear();
-        bool remove(const char * key);
+        bool remove(const char * key); 
+
+        esp_err_t setParameters(std::vector<std::string> params);
+        std::vector<std::string> getParameters();
+
+
+
+
+
+        size_t putBool(const char* key, bool value);
+        float putFloat(const char* key, const float value);
+        double putDouble(const char* key, const double value);
+        size_t putString(const char* key, const char* value);
+        size_t putString(const char* key, const std::string value);
+
+
+        bool getBool(const char* key, bool defaultValue = false);
+        float getFloat(const char* key, const float defaultValue);
+        double getDouble(const char* key, const double defaultValue);
+        std::string getString(const char* key, char* value, size_t maxLen);
+       
+
+
+    private:
 
         size_t putChar(const char* key, int8_t value);
         size_t putUChar(const char* key, uint8_t value);
@@ -60,15 +84,10 @@ class NvsStorageClass {
         size_t putLong64(const char* key, int64_t value);
         size_t putULong64(const char* key, uint64_t value);
         
-        size_t putBool(const char* key, bool value);
+        
        
         size_t putBytes(const char* key, const void* value, size_t len);
-
-        float putFloat(const char* key, const float value);
-        double putDouble(const char* key, const double value);
-        size_t putString(const char* key, const char* value);
-        size_t putString(const char* key, const std::string value);
-
+        
         bool isKey(const char* key);
         PreferenceType getType(const char* key);
         int8_t getChar(const char* key, int8_t defaultValue = 0);
@@ -81,11 +100,6 @@ class NvsStorageClass {
         uint32_t getULong(const char* key, uint32_t defaultValue = 0);
         int64_t getLong64(const char* key, int64_t defaultValue = 0);
         uint64_t getULong64(const char* key, uint64_t defaultValue = 0);
-       
-        bool getBool(const char* key, bool defaultValue = false);
-        float getFloat(const char* key, const float defaultValue);
-        double getDouble(const char* key, const double defaultValue);
-        std::string getString(const char* key, char* value, size_t maxLen);
        
         size_t getBytesLength(const char* key);
         size_t getBytes(const char* key, void * buf, size_t maxLen);
