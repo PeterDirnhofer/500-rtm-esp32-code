@@ -25,12 +25,12 @@ public:
   void start();
   static int send(const char *fmt, ...);
   int getPcCommadToSetWorkingMode();
-  static bool usbAvailable;
+  inline static bool usbAvailable=false;
   int getWorkingMode();
   vector<string> getParameters();
 
 private:
-  static string mUsbReceiveString;
+  inline static string mUsbReceiveString="";
   static void mUartRcvLoop(void *unused);
 
   TaskHandle_t mTaskHandle;
