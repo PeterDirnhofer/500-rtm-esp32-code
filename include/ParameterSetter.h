@@ -12,6 +12,10 @@
 #include <esp_log.h>
 
 
+/**
+ * @brief Put and get parameters from/to non volatile memory
+ * 
+ */
 class ParameterSetting:public NvsStorageClass
 {
 protected:
@@ -20,7 +24,9 @@ protected:
 public:
   ParameterSetting();  // der Default-Konstruktor
   ~ParameterSetting(); // Destructor
+  
 
+ void adMethod();
   
 
 
