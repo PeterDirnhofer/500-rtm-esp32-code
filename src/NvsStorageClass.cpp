@@ -132,10 +132,6 @@ bool NvsStorageClass::remove(const char *key)
 }
 
 
-
-
-
-
 // private ******************** P
 
 /*

@@ -23,7 +23,7 @@ public:
   ParameterSetting();  // der Default-Konstruktor
   ~ParameterSetting(); // Destructor
 
-  esp_err_t setParameters(vector<string> params);
+  esp_err_t putParameters(vector<string> params);
   vector<string> getParameters();
 
 private:
