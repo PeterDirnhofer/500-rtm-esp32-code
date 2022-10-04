@@ -37,7 +37,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <vector>
-
+using namespace std;
 
 static const int RX_BUF_SIZE = 200;
 static const char *TAG = "UsbPcInterface";
@@ -84,7 +84,7 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
 {
     // https://github.com/espressif/esp-idf/blob/af28c1fa21fc0abf9cb3ac8568db9cbd99a7f4b5/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 
-    std::string rcvString = "";
+    string rcvString = "";
     bool found_CR;
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
@@ -189,7 +189,7 @@ extern "C" int UsbPcInterface::getPcCommadToSetWorkingMode()
     // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
 
     char *cstr = new char[UsbPcInterface::mUsbReceiveString.length() + 1];
-    std::strcpy(cstr, UsbPcInterface::mUsbReceiveString.c_str());
+    strcpy(cstr, UsbPcInterface::mUsbReceiveString.c_str());
 
     // how many comma are in string
     int numberOfValues = 1;
@@ -199,7 +199,7 @@ extern "C" int UsbPcInterface::getPcCommadToSetWorkingMode()
 
     ESP_LOGI(TAG, "numberOfValues %d", numberOfValues);
 
-    char *p = std::strtok(cstr, ",");
+    char *p = strtok(cstr, ",");
 
     this->mParametersVector.clear();
     while (p != 0)
@@ -209,7 +209,7 @@ extern "C" int UsbPcInterface::getPcCommadToSetWorkingMode()
         sprintf(buffer, "%s", p);
         this->mParametersVector.push_back(buffer);
 
-        p = std::strtok(NULL, ",");
+        p = strtok(NULL, ",");
     }
     free(cstr);
 
@@ -250,7 +250,7 @@ int UsbPcInterface::getWorkingMode()
     return this->mWorkingMode;
 }
 
-std::vector<std::string> UsbPcInterface::getParameters()
+vector<string> UsbPcInterface::getParameters()
 {
     return this->mParametersVector;
 }

@@ -12,6 +12,8 @@
 #include <stdarg.h>
 #include "UsbPcInterface.h"
 
+using namespace std;
+
 /**@brief Setup-Helper. Starts display tunnel_current
  */
 static const char *TAG = "controller";
@@ -146,7 +148,7 @@ extern "C" void controllerLoop(void *unused)
         //  regeldifferenz = soll - ist
         e = w - r; // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
 
-        if (std::abs(e) <= remainingTunnelCurrentDifferencenA)
+        if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
             ESP_LOGI(TAG,"regeldifferenz: kleiner remainingTunnelCurrentDifferencenA\n");
             // save to queue

@@ -22,6 +22,7 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 
+using namespace std;
 // Copy from
 // https://github.com/espressif/arduino-esp32/tree/master/libraries/Preferences/src
 typedef enum
@@ -50,8 +51,7 @@ public:
 
     bool clear();
     bool remove(const char *key);
-    esp_err_t setParameters(std::vector<std::string> params);
-    std::vector<std::string> getParameters();
+    
 
     // visible in parent ParameterSetiing. Not in main
 protected:
@@ -70,12 +70,12 @@ protected:
     float putFloat(const char *key, const float value);
     double putDouble(const char *key, const double value);
     size_t putString(const char *key, const char *value);
-    size_t putString(const char *key, const std::string value);
+    size_t putString(const char *key, const string value);
 
     bool getBool(const char *key, bool defaultValue = false);
     float getFloat(const char *key, const float defaultValue);
     double getDouble(const char *key, const double defaultValue);
-    std::string getString(const char *key, char *value, size_t maxLen);
+    string getString(const char *key, char *value, size_t maxLen);
 
 private:
     size_t putChar(const char *key, int8_t value);

@@ -25,6 +25,8 @@ const char *nvs_errors[] = {"OTHER", "NOT_INITIALIZED", "NOT_FOUND", "TYPE_MISMA
 #define nvs_error(e) (((e) > ESP_ERR_NVS_BASE) ? nvs_errors[(e) & ~(ESP_ERR_NVS_BASE)] : nvs_errors[0])
 #define STORAGE_NAMESPACE "nvsparam"
 
+using namespace std;
+
 NvsStorageClass::NvsStorageClass()
     : mHandle(0), mStarted(false), mReadOnly(false)
 {
@@ -129,27 +131,7 @@ bool NvsStorageClass::remove(const char *key)
     return true;
 }
 
-esp_err_t NvsStorageClass::setParameters(std::vector<std::string> params)
-{
-    // 100 1000 10.0 0.01 0 0 0 199 199``
-    // PARAMETER,100,1000,10.0,0.01,0,0,0,199,199
-    ESP_LOGI(TAG, "params.size %d\n", (int)params.size());
-    if ((int)params.size() != 10)
-    {
-        ESP_LOGE(TAG, "setparameter needs 9+1 values. Actual %d\n", (int)params.size());
 
-        return ESP_ERR_INVALID_ARG;
-    }
-    return ESP_OK;
-}
-
-std::vector<std::string> NvsStorageClass::getParameters()
-{
-    std::vector<std::string> returnVector;
-    returnVector.push_back("return1");
-    returnVector.push_back("return2");
-    return returnVector;
-}
 
 
 
@@ -402,7 +384,7 @@ size_t NvsStorageClass::putString(const char *key, const char *value)
     return strlen(value);
 }
 
-size_t NvsStorageClass::putString(const char* key, const std::string value){
+size_t NvsStorageClass::putString(const char* key, const string value){
     return putString(key, value.c_str());
 }
 

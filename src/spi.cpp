@@ -31,6 +31,7 @@
 #include "timer.h"
 
 static const char *TAG = "spi.cpp";
+using namespace std;
 
 /**@brief Init spi for DACs and run one vspiLoop
  * 
@@ -134,7 +135,7 @@ void vspiLoop(void *unused)
     
     ESP_LOGI(TAG,"+++ vspiLoop started\n");
 
-    std::unique_ptr<uint16_t> buffer = std::make_unique<uint16_t>();
+    unique_ptr<uint16_t> buffer = make_unique<uint16_t>();
 
     uint16_t lastXDac = currentXDac;
     uint16_t lastYDac = currentYDac;

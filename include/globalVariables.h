@@ -1,7 +1,8 @@
 #ifndef GLOBALVARIABLES
 #define GLOBALVARIABLES
 
-#include <queue>          // std::queue
+using namespace std;
+#include <queue>          
 #include "esp_err.h"
 #include "driver/spi_slave.h"
 #include "driver/spi_master.h"
@@ -88,7 +89,7 @@ extern uint16_t startX, startY;
 extern bool direction;
 extern uint16_t sendDataAfterXDatasets;
 
-extern std::queue<dataElement> dataQueue;
+extern queue<dataElement> dataQueue;
 extern scanGrid rtmGrid;
 
 

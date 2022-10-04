@@ -42,7 +42,7 @@ uint16_t startX, startY = 0;
 bool direction = 0;
 uint16_t sendDataAfterXDatasets = 100;
 
-std::queue<dataElement> dataQueue;
+queue<dataElement> dataQueue;
 scanGrid rtmGrid(200,200); //default grid
 
 bool configNeeded = true;

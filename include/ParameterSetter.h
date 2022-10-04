@@ -10,28 +10,23 @@
 #include <vector>
 #include "NvsStorageClass.h"
 #include <esp_log.h>
-
+using namespace std;
 
 /**
  * @brief Put and get parameters from/to non volatile memory
- * 
+ *
  */
-class ParameterSetting:public NvsStorageClass
+class ParameterSetting : public NvsStorageClass
 {
 protected:
-  
-
 public:
   ParameterSetting();  // der Default-Konstruktor
   ~ParameterSetting(); // Destructor
-  
 
- void adMethod();
-  
-
+  esp_err_t setParameters(vector<string> params);
+  vector<string> getParameters();
 
 private:
-
 };
 
 #endif

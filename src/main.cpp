@@ -38,9 +38,11 @@
 #include "UsbPcInterface.h"
 #include "ParameterSetter.h"
 
+using namespace std;
+
 // static members of UsbPcInterface are declared in UsbPcInterface.h
 // Need to be initialized from outside the class
-std::string UsbPcInterface::mUsbReceiveString = "";
+string UsbPcInterface::mUsbReceiveString = "";
 bool UsbPcInterface::usbAvailable = false;
 
 extern "C" void app_main(void)
@@ -76,7 +78,7 @@ extern "C" void app_main(void)
     {
         usb.send("PARAMETER STARTED\n");
 
-        std::string p0 = "", p1 = "";
+        string p0 = "", p1 = "";
         p0 = usb.getParameters()[0];
         if (usb.getParameters().size() > 1)
             p1 = usb.getParameters()[1];

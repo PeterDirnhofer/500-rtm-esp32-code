@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-
+using namespace std;
 /**
  * @brief Communication with PC via USB
  * 
@@ -27,15 +27,15 @@ public:
   int getPcCommadToSetWorkingMode();
   static bool usbAvailable;
   int getWorkingMode();
-  std::vector<std::string> getParameters();
+  vector<string> getParameters();
 
 private:
-  static std::string mUsbReceiveString;
+  static string mUsbReceiveString;
   static void mUartRcvLoop(void *unused);
 
   TaskHandle_t mTaskHandle;
   bool mStarted;
-  std::vector<std::string> mParametersVector;
+  vector<string> mParametersVector;
 
   int mWorkingMode;
 };
