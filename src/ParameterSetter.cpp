@@ -56,21 +56,10 @@ esp_err_t ParameterSetting::putParameter(string key, string value){
 }
 
 
+
 esp_err_t ParameterSetting::putParameters(vector<string> params)
 {
-    // 100 1000 10.0 0.01 0 0 0 199 199``
-    /*
-    kI = atof(argv[1]);
-    kP = atof(argv[2]);
-    destinationTunnelCurrentnA = atof(argv[3]);
-    remainingTunnelCurrentDifferencenA = atof(argv[4]);
-    startX = (uint16_t) atoi(argv[5]);
-    startY = (uint16_t) atoi(argv[6]);
-    direction = (bool) atoi(argv[7]);
-    maxX = (uint16_t) atoi(argv[8]);
-    maxY = (uint16_t) atoi(argv[9]);
 
-    */
     esp_err_t err = ESP_OK;
     ESP_LOGI(TAG, "params.size %d\n", (int)params.size());
     if ((int)params.size() != 10)
@@ -100,6 +89,35 @@ esp_err_t ParameterSetting::putParameters(vector<string> params)
     this->putParameter("maxY",params[9]);
 
     return ESP_OK;
+}
+
+esp_err_t ParameterSetting::putDefaultParameters(){
+    // 100 1000 10.0 0.01 0 0 0 199 199``
+    /*
+    kI = atof(argv[1]);
+    kP = atof(argv[2]);
+    destinationTunnelCurrentnA = atof(argv[3]);
+    remainingTunnelCurrentDifferencenA = atof(argv[4]);
+    startX = (uint16_t) atoi(argv[5]);
+    startY = (uint16_t) atoi(argv[6]);
+    direction = (bool) atoi(argv[7]);
+    maxX = (uint16_t) atoi(argv[8]);
+    maxY = (uint16_t) atoi(argv[9]);
+
+    */
+
+
+    this->putParameter("kI","10");
+    this->putParameter("kP","1000");
+    this->putParameter("destinatioNa","10.0");
+    this->putParameter("remainingNa","0.01");
+    this->putParameter("startX","0");
+    this->putParameter("startY","0");
+    this->putParameter("direction","0");
+    this->putParameter("maxX","199");
+    this->putParameter("maxY","199");
+    return ESP_OK;
+
 }
 
 vector<string> ParameterSetting::getParameters()

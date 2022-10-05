@@ -100,7 +100,17 @@ extern "C" void app_main(void)
             // ################## PARAMETER,DEFAULT
             else if (p1.compare("DEFAULT") == 0)
             {
-                usb.send("SET DEFAULT PARAMETER TBD\n");
+                esp_err_t err = parameterSetter.putDefaultParameters();
+            if (err == ESP_OK)
+            {
+                usb.send("DEFAULT PARAMETER set OK\n");
+                esp_restart();
+            }
+            else
+            {
+                usb.send("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,float,float,....\n");
+                esp_restart();
+            }
                 ESP_LOGI(TAG, "SET DEFAULT\n");
                 esp_restart();
             }
