@@ -7,7 +7,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-
 using namespace std;
 
 ParameterSetting::ParameterSetting()
@@ -18,26 +17,28 @@ ParameterSetting::ParameterSetting()
 ParameterSetting::~ParameterSetting()
 {
 }
+static const char *TAG = "ParameterSetting";
 
-
-esp_err_t ParameterSetting::convertStoFloat(string s, float* value){
-    UsbPcInterface::send("convertStoFloat: %s \n",s.c_str());
-    if (s.empty()){
-        UsbPcInterface::send("ESP_ERR_INVALID_ARG (empty)\n");
+esp_err_t ParameterSetting::convertStoFloat(string s, float *value)
+{
+    if (s.empty())
+    {
+        UsbPcInterface::send("ESP_ERR_INVALID_ARG (empty string)\n");
         return ESP_ERR_INVALID_ARG;
     }
 
+    bool valid = s.find_first_not_of("0123456789.") == std::string::npos;
+    if (!valid)
+    {
+        UsbPcInterface::send("ESP_ERR_INVALID_ARG (not 0...9.)\n%s\n", s);
+        return ESP_ERR_INVALID_ARG;
+    }
 
-    
-    
-    *value=stof(s);
+    *value = stof(s);
 
-    UsbPcInterface::send("*value: %f\n",*value);
+    UsbPcInterface::send("*value: %f\n", *value);
     return ESP_OK;
 }
-
-
-static const char *TAG = "ParameterSetting";
 
 esp_err_t ParameterSetting::putParameters(vector<string> params)
 {
@@ -62,17 +63,16 @@ esp_err_t ParameterSetting::putParameters(vector<string> params)
         UsbPcInterface::send("ESP_ERR_INVALID_ARG\n");
         return ESP_ERR_INVALID_ARG;
     }
-    
-    
-    float f=0;
-    
-    convertStoFloat(params[1].c_str(),&f);
 
+    float f = 0;
 
-   
+    if (convertStoFloat(params[1].c_str(), &f) != ESP_OK)
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     UsbPcInterface::send("NACH stof f=%f \n", f);
 
-   
     return ESP_OK;
 }
 
