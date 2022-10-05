@@ -92,32 +92,23 @@ esp_err_t ParameterSetting::putParameters(vector<string> params)
 }
 
 esp_err_t ParameterSetting::putDefaultParameters(){
-    // 100 1000 10.0 0.01 0 0 0 199 199``
-    /*
-    kI = atof(argv[1]);
-    kP = atof(argv[2]);
-    destinationTunnelCurrentnA = atof(argv[3]);
-    remainingTunnelCurrentDifferencenA = atof(argv[4]);
-    startX = (uint16_t) atoi(argv[5]);
-    startY = (uint16_t) atoi(argv[6]);
-    direction = (bool) atoi(argv[7]);
-    maxX = (uint16_t) atoi(argv[8]);
-    maxY = (uint16_t) atoi(argv[9]);
+    
+    vector<string> params;
+    params.push_back("PARAMETER");
+    params.push_back("10");     // kI
+    params.push_back("1000");   // kP
+    params.push_back("10.0");   // destinationTunnelCurrentnA
+    params.push_back("0.01");   // remainingTunnelCurrentDifferencenA
+    params.push_back("0");      // startX
+    params.push_back("0");      // startY
+    params.push_back("0");      // direction
+    params.push_back("199");    // maxX
+    params.push_back("199");    // maxY
 
-    */
 
+    putParameters(params);
 
-    this->putParameter("kI","10");
-    this->putParameter("kP","1000");
-    this->putParameter("destinatioNa","10.0");
-    this->putParameter("remainingNa","0.01");
-    this->putParameter("startX","0");
-    this->putParameter("startY","0");
-    this->putParameter("direction","0");
-    this->putParameter("maxX","199");
-    this->putParameter("maxY","199");
     return ESP_OK;
-
 }
 
 vector<string> ParameterSetting::getParameters()
