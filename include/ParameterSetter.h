@@ -10,6 +10,7 @@
 #include <vector>
 #include "NvsStorageClass.h"
 #include <esp_log.h>
+#include "esp_err.h"
 using namespace std;
 
 /**
@@ -27,6 +28,7 @@ public:
   vector<string> getParameters();
 
 private:
+esp_err_t convertStoFloat(string s, float * value);
 };
 
 #endif

@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+
 using namespace std;
 /**
  * @brief Communication with PC via USB
@@ -32,6 +33,7 @@ public:
 private:
   inline static string mUsbReceiveString="";
   static void mUartRcvLoop(void *unused);
+  esp_err_t convertStoFloat(string s, float * value);
 
   TaskHandle_t mTaskHandle;
   bool mStarted;
