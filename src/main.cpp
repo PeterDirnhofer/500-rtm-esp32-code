@@ -107,10 +107,7 @@ extern "C" void app_main(void)
         }
         else
         {
-            usb.send("SET PARAMETER\n");
-
-            // ################## PARAMETER,100,1000,10.0,0.01,0,0,0,199,199
-
+            //usb.send("SET PARAMETER\n");
             esp_err_t err = parameterSetter.putParameters(usb.getParameters());
             if (err == ESP_OK)
             {

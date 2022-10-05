@@ -25,6 +25,9 @@ public:
   ~ParameterSetting(); // Destructor
 
   esp_err_t putParameters(vector<string> params);
+  esp_err_t putParameter(string key, string value);
+
+
   vector<string> getParameters();
 
 private:
