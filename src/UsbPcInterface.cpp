@@ -259,5 +259,7 @@ void UsbPcInterface::printErrorMessageAndRestart(string error_string){
 
     send("ERROR %s\n",error_string.c_str());
     send("Press Ctrl-C to restart\n");
-    while(1);
+    while(1){
+         vTaskDelete(NULL);
+    }
 }

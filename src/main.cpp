@@ -58,31 +58,33 @@ extern "C" void app_main(void)
     // Wait for command from PC via USB
     usb.getPcCommadToSetWorkingMode();
 
+    if (usb.getWorkingMode() == MODE_INVALID)
+    {
+        UsbPcInterface::printErrorMessageAndRestart("Invalid command. \n 'PARAMETER,?' or 'PARAMETER,DEFAULT' or 'PARAMETER,kI,kP,...'\n");
+    }
+
     if (usb.getWorkingMode() == MODE_SETUP)
     {
-        usb.send("START SETUP\n");
         displayTunnelCurrent();
     }
     else if (usb.getWorkingMode() == MODE_MEASURE)
     {
-        usb.send("START MEASURE\n");
+        usb.send("MEASURE OK\n");
         controllerStart();
     }
+
     else if (usb.getPcCommadToSetWorkingMode() == MODE_PARAMETER)
     {
-        usb.send("PARAMETER STARTED\n");
 
         string p0 = "", p1 = "";
         p0 = usb.getParameters()[0];
+        
         if (usb.getParameters().size() > 1)
-            p1 = usb.getParameters()[1];
-
-        if (usb.getParameters().size() == 2)
         {
-            // ################## PARAMETER,?
+            p1 = usb.getParameters()[1];
+            // PARAMETER,?
             if (p1.compare("?") == 0)
             {
-                usb.send("PARAMETER READ\n");
 
                 for (size_t i = 0; i < parameterSetter.getParameters().size(); i++)
                 {
@@ -96,7 +98,7 @@ extern "C" void app_main(void)
 
                 esp_restart();
             }
-            // ################## PARAMETER,DEFAULT
+            // PARAMETER,DEFAULT
             else if (p1.compare("DEFAULT") == 0)
             {
                 esp_err_t err = parameterSetter.putDefaultParameters();
@@ -110,9 +112,9 @@ extern "C" void app_main(void)
                     UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,float,float,....");
                 }
             }
+            // PARAMETER, p1, p2,.., p9
             else
             {
-                // usb.send("SET PARAMETER\n");
                 esp_err_t err = parameterSetter.putParameters(usb.getParameters());
                 if (err == ESP_OK)
                 {
@@ -121,15 +123,9 @@ extern "C" void app_main(void)
                 }
                 else
                 {
-
-                    UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,float,float,....");
+                    UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,p1,p2,...,p9");
                 }
             }
-        }
-        else
-        {
-
-            UsbPcInterface::printErrorMessageAndRestart("Invalid command");
         }
 
         ESP_LOGI(TAG, "--- delete main task\n");
