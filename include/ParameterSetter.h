@@ -24,15 +24,15 @@ public:
   ParameterSetting();  // der Default-Konstruktor
   ~ParameterSetting(); // Destructor
 
+  void printErrorMessage(string errorString);
   esp_err_t putParameters(vector<string> params);
   esp_err_t putDefaultParameters();
   esp_err_t putParameter(string key, string value);
 
-
   vector<string> getParameters();
 
 private:
-esp_err_t convertStoFloat(string s, float * value);
+  esp_err_t convertStoFloat(string s, float *value);
 };
 
 #endif

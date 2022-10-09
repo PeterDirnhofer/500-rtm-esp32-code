@@ -9,6 +9,8 @@
 
 using namespace std;
 
+
+
 ParameterSetting::ParameterSetting()
 {
     this->begin();
@@ -36,26 +38,25 @@ esp_err_t ParameterSetting::convertStoFloat(string s, float *value)
 
     *value = stof(s);
 
-    //UsbPcInterface::send("*value: %f\n", *value);
+    // UsbPcInterface::send("*value: %f\n", *value);
     return ESP_OK;
 }
-esp_err_t ParameterSetting::putParameter(string key, string value){
-    float vFloat=0;
+
+esp_err_t ParameterSetting::putParameter(string key, string value)
+{
+    float vFloat = 0;
     convertStoFloat(value.c_str(), &vFloat);
-    float resultF=0;
-    resultF= this->putFloat(key.c_str(),resultF);
+    float resultF = 0;
+    resultF = this->putFloat(key.c_str(), resultF);
     if (resultF != sizeof(float))
     {
-        UsbPcInterface::send("ESP_ERR_NVS_INVALID_LENGTH Error putFloat to nvs %s %f\n", key.c_str(),vFloat);
-        return(ESP_ERR_NVS_INVALID_LENGTH);
+        UsbPcInterface::send("ESP_ERR_NVS_INVALID_LENGTH Error putFloat to nvs %s %f\n", key.c_str(), vFloat);
+        return (ESP_ERR_NVS_INVALID_LENGTH);
     }
-    
 
-    //UsbPcInterface::send("putParameter key %s value %f result %f\n",key.c_str(),vFloat,resultF);
+    // UsbPcInterface::send("putParameter key %s value %f result %f\n",key.c_str(),vFloat,resultF);
     return ESP_OK;
 }
-
-
 
 esp_err_t ParameterSetting::putParameters(vector<string> params)
 {
@@ -78,33 +79,33 @@ esp_err_t ParameterSetting::putParameters(vector<string> params)
         }
     }
 
-    this->putParameter("kI",params[1]);
-    this->putParameter("kP",params[2]);
-    this->putParameter("destinatioNa",params[3]);
-    this->putParameter("remainingNa",params[4]);
-    this->putParameter("startX",params[5]);
-    this->putParameter("startY",params[6]);
-    this->putParameter("direction",params[7]);
-    this->putParameter("maxX",params[8]);
-    this->putParameter("maxY",params[9]);
+    this->putParameter("kI", params[1]);
+    this->putParameter("kP", params[2]);
+    this->putParameter("destinatioNa", params[3]);
+    this->putParameter("remainingNa", params[4]);
+    this->putParameter("startX", params[5]);
+    this->putParameter("startY", params[6]);
+    this->putParameter("direction", params[7]);
+    this->putParameter("maxX", params[8]);
+    this->putParameter("maxY", params[9]);
 
     return ESP_OK;
 }
 
-esp_err_t ParameterSetting::putDefaultParameters(){
-    
+esp_err_t ParameterSetting::putDefaultParameters()
+{
+
     vector<string> params;
     params.push_back("PARAMETER");
-    params.push_back("10");     // kI
-    params.push_back("1000");   // kP
-    params.push_back("10.0");   // destinationTunnelCurrentnA
-    params.push_back("0.01");   // remainingTunnelCurrentDifferencenA
-    params.push_back("0");      // startX
-    params.push_back("0");      // startY
-    params.push_back("0");      // direction
-    params.push_back("199");    // maxX
-    params.push_back("199");    // maxY
-
+    params.push_back("10");   // kI
+    params.push_back("1000"); // kP
+    params.push_back("10.0"); // destinationTunnelCurrentnA
+    params.push_back("0.01"); // remainingTunnelCurrentDifferencenA
+    params.push_back("0");    // startX
+    params.push_back("0");    // startY
+    params.push_back("0");    // direction
+    params.push_back("199");  // maxX
+    params.push_back("199");  // maxY
 
     putParameters(params);
 

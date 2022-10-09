@@ -25,6 +25,9 @@ public:
 
   void start();
   static int send(const char *fmt, ...);
+  
+  static void printErrorMessageAndRestart(string error_string);
+
   int getPcCommadToSetWorkingMode();
   inline static bool usbAvailable=false;
   int getWorkingMode();
@@ -43,3 +46,4 @@ private:
 };
 
 #endif
+

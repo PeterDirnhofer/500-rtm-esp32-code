@@ -254,3 +254,10 @@ vector<string> UsbPcInterface::getParameters()
 {
     return this->mParametersVector;
 }
+
+void UsbPcInterface::printErrorMessageAndRestart(string error_string){
+
+    send("ERROR %s\n",error_string.c_str());
+    send("Press Ctrl-C to restart\n");
+    while(1);
+}

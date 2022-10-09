@@ -43,9 +43,8 @@ using namespace std;
 extern "C" void app_main(void)
 {
 
-    esp_log_level_set("*",ESP_LOG_WARN);
+    esp_log_level_set("*", ESP_LOG_WARN);
     static const char *TAG = "main";
-    ESP_LOGI(TAG, "\n+++ START ++++++++++++\n");
 
     gpio_set_direction(BLUE_LED, GPIO_MODE_OUTPUT); // Blue LED as Output
     gpio_set_level(BLUE_LED, 1);
@@ -101,43 +100,39 @@ extern "C" void app_main(void)
             else if (p1.compare("DEFAULT") == 0)
             {
                 esp_err_t err = parameterSetter.putDefaultParameters();
-            if (err == ESP_OK)
-            {
-                usb.send("DEFAULT PARAMETER set OK\n");
-                esp_restart();
+                if (err == ESP_OK)
+                {
+                    usb.send("DEFAULT PARAMETER set OK\n");
+                    esp_restart();
+                }
+                else
+                {
+                    UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,float,float,....");
+                }
             }
             else
             {
-                usb.send("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,float,float,....\n");
-                esp_restart();
-            }
-                ESP_LOGI(TAG, "SET DEFAULT\n");
-                esp_restart();
+                // usb.send("SET PARAMETER\n");
+                esp_err_t err = parameterSetter.putParameters(usb.getParameters());
+                if (err == ESP_OK)
+                {
+                    usb.send("PARAMETER set OK\n");
+                    esp_restart();
+                }
+                else
+                {
+
+                    UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,float,float,....");
+                }
             }
         }
         else
         {
-            //usb.send("SET PARAMETER\n");
-            esp_err_t err = parameterSetter.putParameters(usb.getParameters());
-            if (err == ESP_OK)
-            {
-                usb.send("PARAMETER set OK\n");
-                esp_restart();
-            }
-            else
-            {
-                usb.send("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,float,float,....\n");
-                esp_restart();
-            }
-        }
-    }
-    else
-    {
-        ESP_LOGI(TAG, "Invalid command \n");
-        usb.send("INVALID COMMAND\n");
-        esp_restart();
-    }
 
-    ESP_LOGI(TAG, "--- delete main task\n");
-    vTaskDelete(NULL);
+            UsbPcInterface::printErrorMessageAndRestart("Invalid command");
+        }
+
+        ESP_LOGI(TAG, "--- delete main task\n");
+        vTaskDelete(NULL);
+    }
 }
