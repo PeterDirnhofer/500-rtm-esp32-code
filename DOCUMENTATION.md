@@ -2,7 +2,11 @@
 
 ## Communication with Monitor via additional UART
 
-### Measuring Results
+### SETUP
+
+Reading tunnel current ADC values. Cyclic
+Stop by pressing CTRL-C
+
 
 Results are sent when available automatically via UART
 
