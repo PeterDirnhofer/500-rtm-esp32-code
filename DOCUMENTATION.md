@@ -31,7 +31,6 @@ Press **P** during startup
 
 ---
 
-
 ## Communication between Terminal Raspberry and ESP32 - depracted
 
 ### Terminal
@@ -75,7 +74,9 @@ memcpy(&buf[2], &dataArray[configSend], 8);
 
 bcm2835_spi_writenb(buf, 10);
 ```
+
 # ESP32 Memory
+
 I (369) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM  
 I (375) heap_init: At 3FFB4638 len 0002B9C8 (174 KiB): DRAM  
 I (381) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM  
@@ -85,11 +86,12 @@ I (394) heap_init: At 4008E39C len 00011C64 (71 KiB): IRAM
 0002B9C8 (178.632) Byte / 0x400 (1024) = AE (174) kiB DRAM
 
 # Memory for measuring results
+
 Number of Values for 1 Measurement 6 Byte:  
 DATAELEMENT uint16_t x, uint16_t y, uint16_t z
 
 Number of grid Points 40.000  
-200*200 grid = 40.000  *6
+200*200 grid = 40.000*6
 DATAELEMENT uint16_t x, uint16_t y, uint16_t z = 6 Byte  
 
 Total 40.000 * 6 = 240.000 Byte
