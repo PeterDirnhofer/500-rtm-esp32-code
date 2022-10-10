@@ -54,20 +54,6 @@ extern "C" void app_main(void)
 
     ParameterSetting parameterSetter;
 
-    float testFloat,resultFloat;
-    testFloat=4711;
-    resultFloat=-1;
-
-    parameterSetter.putFloat("P1",testFloat);
-    
-    testFloat=-1;
-    resultFloat=parameterSetter.getFloat("P1",333.333);    
-    
-    UsbPcInterface::send("testFloat: %f  resultFloat %f\n",testFloat,resultFloat);
-  
-   
-    
-
     // SELECT Run Mode
     // Wait for command from PC via USB
     usb.getPcCommadToSetWorkingMode();

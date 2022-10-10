@@ -239,7 +239,7 @@ extern "C" int UsbPcInterface::getPcCommadToSetWorkingMode()
         return MODE_PARAMETER;
     }
     else
-        ESP_LOGI(TAG, "INVALID Command %s\n",mParametersVector[0].c_str());
+        ESP_LOGW(TAG, "INVALID command %s\n",mParametersVector[0].c_str());
     return MODE_INVALID;
 
     return 0;

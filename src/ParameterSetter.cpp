@@ -60,16 +60,7 @@ esp_err_t ParameterSetting::putParameter(string key, string value)
         return (ESP_ERR_NVS_INVALID_LENGTH);
     }
 
-    // Check if saved
-    float resultFloat=-999;
-
-    resultFloat=getFloat(key.c_str(),333.333); 
-    UsbPcInterface::send("resultFloat  [%s]= %f\n",key.c_str(),resultFloat); 
-
     
-
-
-    // UsbPcInterface::send("putParameter key %s value %f result %f\n",key.c_str(),vFloat,resultF);
     return ESP_OK;
 }
 
