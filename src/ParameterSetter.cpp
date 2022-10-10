@@ -20,6 +20,9 @@ ParameterSetting::~ParameterSetting()
 {
 }
 static const char *TAG = "ParameterSetting";
+const char *keys[] = {"kI", "kP","destinatioNa","remainingNa","startX","startY","direction","maxX","maxY"};
+
+
 
 esp_err_t ParameterSetting::convertStoFloat(string s, float *value)
 {
@@ -85,13 +88,21 @@ esp_err_t ParameterSetting::putParameters(vector<string> params)
     float f = 0;
     for (size_t i = 1; i < 10; i++)
     {
-        UsbPcInterface::send("params[%d]=%s \n",i,params[i].c_str());
+        
         if (convertStoFloat(params[i].c_str(), &f) != ESP_OK)
         {
             return ESP_ERR_INVALID_ARG;
         }
     }
 
+    for (size_t i = 1; i < 10; i++)
+    {
+        UsbPcInterface::send("putParameter(%s,%s)\n",keys[i],params[i].c_str());
+        this->putParameter(keys[i-1],params[1].c_str());
+
+    }
+
+    /*
     this->putParameter("kI", params[1].c_str());
     this->putParameter("kP", params[2].c_str());
     this->putParameter("destinatioNa", params[3].c_str());
@@ -101,6 +112,7 @@ esp_err_t ParameterSetting::putParameters(vector<string> params)
     this->putParameter("direction", params[7].c_str());
     this->putParameter("maxX", params[8].c_str());
     this->putParameter("maxY", params[9].c_str());
+    */
 
     return ESP_OK;
 }

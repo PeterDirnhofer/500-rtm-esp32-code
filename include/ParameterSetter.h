@@ -31,6 +31,7 @@ public:
 
   esp_err_t putDefaultParameters();
 
+
 private:
   esp_err_t convertStoFloat(string s, float *value);
   esp_err_t putParameter(string key, string value);
