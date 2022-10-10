@@ -47,12 +47,24 @@ esp_err_t ParameterSetting::putParameter(string key, string value)
     float vFloat = 0;
     convertStoFloat(value.c_str(), &vFloat);
     float resultF = 0;
-    resultF = this->putFloat(key.c_str(), resultF);
+
+    UsbPcInterface::send("putParameter key = %s, vFloat=%f\n",key.c_str(),vFloat);
+    // parameterSetter.putFloat("P1",testFloat);
+    resultF = putFloat(key.c_str(), vFloat);
     if (resultF != sizeof(float))
     {
         UsbPcInterface::send("ESP_ERR_NVS_INVALID_LENGTH Error putFloat to nvs %s %f\n", key.c_str(), vFloat);
         return (ESP_ERR_NVS_INVALID_LENGTH);
     }
+
+    // Check if saved
+    float resultFloat=-999;
+
+    resultFloat=getFloat(key.c_str(),333.333); 
+    UsbPcInterface::send("resultFloat  [%s]= %f\n",key.c_str(),resultFloat); 
+
+    
+
 
     // UsbPcInterface::send("putParameter key %s value %f result %f\n",key.c_str(),vFloat,resultF);
     return ESP_OK;
@@ -73,21 +85,22 @@ esp_err_t ParameterSetting::putParameters(vector<string> params)
     float f = 0;
     for (size_t i = 1; i < 10; i++)
     {
+        UsbPcInterface::send("params[%d]=%s \n",i,params[i].c_str());
         if (convertStoFloat(params[i].c_str(), &f) != ESP_OK)
         {
             return ESP_ERR_INVALID_ARG;
         }
     }
 
-    this->putParameter("kI", params[1]);
-    this->putParameter("kP", params[2]);
-    this->putParameter("destinatioNa", params[3]);
-    this->putParameter("remainingNa", params[4]);
-    this->putParameter("startX", params[5]);
-    this->putParameter("startY", params[6]);
-    this->putParameter("direction", params[7]);
-    this->putParameter("maxX", params[8]);
-    this->putParameter("maxY", params[9]);
+    this->putParameter("kI", params[1].c_str());
+    this->putParameter("kP", params[2].c_str());
+    this->putParameter("destinatioNa", params[3].c_str());
+    this->putParameter("remainingNa", params[4].c_str());
+    this->putParameter("startX", params[5].c_str());
+    this->putParameter("startY", params[6].c_str());
+    this->putParameter("direction", params[7].c_str());
+    this->putParameter("maxX", params[8].c_str());
+    this->putParameter("maxY", params[9].c_str());
 
     return ESP_OK;
 }
@@ -115,7 +128,15 @@ esp_err_t ParameterSetting::putDefaultParameters()
 vector<string> ParameterSetting::getParameters()
 {
     vector<string> returnVector;
-    returnVector.push_back("return1");
+
+    float resultF=4711;
+    resultF = this->getFloat("kP",-999.999);
+    
+
+    UsbPcInterface::send("kP resultF= %f \n",resultF);
+    
+    string help = to_string(resultF);
+    returnVector.push_back(help.c_str());
     returnVector.push_back("return2");
     return returnVector;
 }

@@ -47,11 +47,8 @@ typedef enum
 class NvsStorageClass
 {
 public:
-    
-
     bool clear();
     bool remove(const char *key);
-    
 
     // visible in parent ParameterSetiing. Not in main
 protected:
@@ -67,15 +64,19 @@ protected:
     // bool begin(const char * name, bool readOnly=false, const char* partition_label=NULL);
 
     size_t putBool(const char *key, bool value);
-    float putFloat(const char *key, const float value);
+    // float putFloat(const char *key, const float value);
     double putDouble(const char *key, const double value);
     size_t putString(const char *key, const char *value);
     size_t putString(const char *key, const string value);
 
     bool getBool(const char *key, bool defaultValue = false);
-    float getFloat(const char *key, const float defaultValue);
+    // float getFloat(const char *key, const float defaultValue);
     double getDouble(const char *key, const double defaultValue);
     string getString(const char *key, char *value, size_t maxLen);
+
+public:
+    float putFloat(const char *key, const float value);
+    float getFloat(const char *key, const float defaultValue);
 
 private:
     size_t putChar(const char *key, int8_t value);
