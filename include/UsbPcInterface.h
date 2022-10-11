@@ -31,7 +31,7 @@ public:
   int getPcCommadToSetWorkingMode();
   inline static bool usbAvailable=false;
   int getWorkingMode();
-  vector<string> getParameters();
+  vector<string> getParametersFromPc();
 
 private:
   inline static string mUsbReceiveString="";

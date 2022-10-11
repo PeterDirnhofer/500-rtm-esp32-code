@@ -77,11 +77,11 @@ extern "C" void app_main(void)
     {
 
         string p0 = "", p1 = "";
-        p0 = usb.getParameters()[0];
+        p0 = usb.getParametersFromPc()[0];
         
-        if (usb.getParameters().size() > 1)
+        if (usb.getParametersFromPc().size() > 1)
         {
-            p1 = usb.getParameters()[1];
+            p1 = usb.getParametersFromPc()[1];
             // PARAMETER,?
             if (p1.compare("?") == 0)
             {
@@ -115,7 +115,7 @@ extern "C" void app_main(void)
             // PARAMETER, p1, p2,.., p9
             else
             {
-                esp_err_t err = parameterSetter.putParameters(usb.getParameters());
+                esp_err_t err = parameterSetter.putParameters(usb.getParametersFromPc());
                 if (err == ESP_OK)
                 {
                     usb.send("PARAMETER set OK\n");

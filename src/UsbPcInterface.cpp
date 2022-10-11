@@ -207,6 +207,8 @@ extern "C" int UsbPcInterface::getPcCommadToSetWorkingMode()
         //printf("%s\n", p);
         char buffer[20];
         sprintf(buffer, "%s", p);
+        puts(strupr(buffer));
+
         this->mParametersVector.push_back(buffer);
 
         p = strtok(NULL, ",");
@@ -214,11 +216,6 @@ extern "C" int UsbPcInterface::getPcCommadToSetWorkingMode()
     free(cstr);
 
     ESP_LOGI(TAG, "ParametersVector[0]: %s", this->mParametersVector[0].c_str());
-
-    for (size_t i = 0; i < mParametersVector[0].length(); i++)
-    {
-        mParametersVector[0][i] = toupper(mParametersVector[0][i]);
-    }
 
     if (strcmp(this->mParametersVector[0].c_str(), "SETUP") == 0)
     {
@@ -250,7 +247,7 @@ int UsbPcInterface::getWorkingMode()
     return this->mWorkingMode;
 }
 
-vector<string> UsbPcInterface::getParameters()
+vector<string> UsbPcInterface::getParametersFromPc()
 {
     return this->mParametersVector;
 }
