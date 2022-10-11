@@ -19,7 +19,7 @@ ParameterSetting::~ParameterSetting()
 }
 static const char *TAG = "ParameterSetting";
 const char *keys[] = {"kI", "kP", "destinatioNa", "remainingNa", "startX", "startY", "direction", "maxX", "maxY"};
-// typical             
+// typical
 
 esp_err_t ParameterSetting::convertStoFloat(string s, float *value)
 {
@@ -87,7 +87,7 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
 
     for (int i = 1; i < 10; i++)
     {
-        //UsbPcInterface::send("putParameter(%s,%s)\n", keys[i], params[i].c_str());
+        // UsbPcInterface::send("putParameter(%s,%s)\n", keys[i], params[i].c_str());
         this->putParameterToFlash(keys[i - 1], params[i].c_str());
     }
 
@@ -97,7 +97,7 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
 esp_err_t ParameterSetting::putDefaultParametersToFlash()
 {
 
-    //UsbPcInterface::send("START putDefaaultParametesrToFlash\n");
+    // UsbPcInterface::send("START putDefaaultParametesrToFlash\n");
     vector<string> params;
     params.push_back("PARAMETER");
     params.push_back("10");   // kI
@@ -135,19 +135,25 @@ bool ParameterSetting::parameterIsValid(string key, float minimum, float maximum
     }
 
     resF = getFloat(key.c_str(), NULL);
-    
-    
-    if((resF < minimum) or (resF>maximum)){
-        UsbPcInterface::send("key: %s = %f out off limit %f .. %f\n",key.c_str(),resF,minimum,maximum);
+
+    if ((resF < minimum) or (resF > maximum))
+    {
+        UsbPcInterface::send("key: %s = %f out off limit %f .. %f\n", key.c_str(), resF, minimum, maximum);
         return false;
     }
     UsbPcInterface::send("key: %s= %f OK\n", key.c_str(), resF);
-    
 
     return true;
 }
 
-esp_err_t ParameterSetting::parametersAreValid(){
+esp_err_t ParameterSetting::parametersAreValid()
+{
+    for (int i = 0; i < 9; i++)
+    {
+
+        if(!isKey(keys[i]))
+            return ESP_ERR_FLASH_NOT_INITIALISED;
+    }
 
     return ESP_OK;
 }
@@ -156,10 +162,9 @@ vector<string> ParameterSetting::getParametersFromFlash()
 {
     vector<string> returnVector;
 
-    if(!parameterIsValid("kI",0,0)){
-        
+    if (!parameterIsValid("kI", 0, 0))
+    {
     }
-
 
     float resultF = 0;
 

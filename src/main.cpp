@@ -54,16 +54,14 @@ extern "C" void app_main(void)
     UsbPcInterface::send("+++ START\n");
 
     ParameterSetting parameterSetter;
-
-
-/*
-    if(!parameterSetter.parametersAreValid()){
-
-        UsbPcInterface::send("Set Default parameters\n");
-        
-    }
     
-*/
+
+    // If no parameters in Flash Set Default Parameters
+    if (parameterSetter.parametersAreValid() != ESP_OK){
+
+        parameterSetter.putDefaultParametersToFlash();
+    }
+
     // SELECT Run Mode
     // Wait for command from PC via USB
        

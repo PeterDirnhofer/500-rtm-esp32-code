@@ -170,7 +170,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     while (UsbPcInterface::usbAvailable == false)
     {
 
-        if ((i % 20) == 0)
+        if ((i % 50) == 0)
         {
 
             // Invert Blue LED
