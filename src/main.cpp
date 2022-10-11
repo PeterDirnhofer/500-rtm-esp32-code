@@ -56,12 +56,12 @@ extern "C" void app_main(void)
 
     // SELECT Run Mode
     // Wait for command from PC via USB
-    usb.getPcCommadToSetWorkingMode();
-
-    if (usb.getWorkingMode() == MODE_INVALID)
+       
+    if (usb.getPcCommadToSetWorkingMode() != ESP_OK)
     {
         UsbPcInterface::printErrorMessageAndRestart("Invalid command. \n 'PARAMETER,?' or 'PARAMETER,DEFAULT' or 'PARAMETER,kI,kP,...'\n");
     }
+    
 
     if (usb.getWorkingMode() == MODE_SETUP)
     {

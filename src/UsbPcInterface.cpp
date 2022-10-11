@@ -161,7 +161,7 @@ int UsbPcInterface::send(const char *fmt, ...)
  * Set workingMode to: SETUP or PARAMETER or MEASURE. 
  * getworkingMode() reads workingMode
  */
-extern "C" int UsbPcInterface::getPcCommadToSetWorkingMode()
+extern "C" esp_err_t UsbPcInterface::getPcCommadToSetWorkingMode()
 {
     // Request PC. Wait for PC response
     uint32_t i = 0;
@@ -221,25 +221,25 @@ extern "C" int UsbPcInterface::getPcCommadToSetWorkingMode()
     {
         this->mWorkingMode = MODE_SETUP;
         ESP_LOGI(TAG, "SETUP detected\n");
-        return MODE_SETUP;
+        return ESP_OK;
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "MEASURE") == 0)
     {
         this->mWorkingMode = MODE_MEASURE;
         ESP_LOGI(TAG, "MEASURE detected\n");
-        return MODE_MEASURE;
+        return ESP_OK;
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "PARAMETER") == 0)
     {
         this->mWorkingMode = MODE_PARAMETER;
         ESP_LOGI(TAG, "PARAM detected\n");
-        return MODE_PARAMETER;
+        return ESP_OK;
     }
-    else
-        ESP_LOGW(TAG, "INVALID command %s\n",mParametersVector[0].c_str());
-    return MODE_INVALID;
 
-    return 0;
+    this->mWorkingMode = MODE_INVALID;
+    ESP_LOGW(TAG, "INVALID command %s\n",mParametersVector[0].c_str());
+    return ESP_ERR_INVALID_ARG;
+
 }
 
 int UsbPcInterface::getWorkingMode()
