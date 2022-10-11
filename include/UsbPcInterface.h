@@ -29,6 +29,7 @@ public:
 
    
   static void printErrorMessageAndRestart(string error_string);
+  static void printMessageAndRestart(string msg);
 
   esp_err_t getCommandsFromPC();
   inline static bool usbAvailable=false;
