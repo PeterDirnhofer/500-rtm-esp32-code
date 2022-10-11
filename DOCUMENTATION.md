@@ -2,9 +2,9 @@
 
 ## Communication with Monitor via additional UART
 
-### SETUP
+### ADJUST
 
-Reading tunnel current ADC values. Cyclic
+Reading tunnel current ADC values to adjust RTM tunneling current tip. Cyclic
 Stop by pressing CTRL-C
 
 

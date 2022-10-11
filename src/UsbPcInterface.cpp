@@ -158,7 +158,7 @@ int UsbPcInterface::send(const char *fmt, ...)
 
 /**
  * @brief Read USB input from Computer. 
- * Set workingMode to: SETUP or PARAMETER or MEASURE. 
+ * Set workingMode to: ADJUST or PARAMETER or MEASURE. 
  * getworkingMode() reads workingMode
  */
 extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
@@ -217,10 +217,10 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 
     ESP_LOGI(TAG, "ParametersVector[0]: %s", this->mParametersVector[0].c_str());
 
-    if (strcmp(this->mParametersVector[0].c_str(), "SETUP") == 0)
+    if (strcmp(this->mParametersVector[0].c_str(), "ADJUST") == 0)
     {
-        this->mWorkingMode = MODE_SETUP;
-        ESP_LOGI(TAG, "SETUP detected\n");
+        this->mWorkingMode = MODE_ADJUST_TEST_TIP;
+        ESP_LOGI(TAG, "ADJUST detected\n");
         return ESP_OK;
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "MEASURE") == 0)
@@ -232,7 +232,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     else if (strcmp(this->mParametersVector[0].c_str(), "PARAMETER") == 0)
     {
         this->mWorkingMode = MODE_PARAMETER;
-        ESP_LOGI(TAG, "PARAM detected\n");
+        ESP_LOGI(TAG, "PARAMETER detected\n");
         return ESP_OK;
     }
 
@@ -252,7 +252,8 @@ vector<string> UsbPcInterface::getParametersFromPc()
     return this->mParametersVector;
 }
 
-void UsbPcInterface::printErrorMessageAndRestart(string error_string){
+void UsbPcInterface::printErrorMessageAndRestart(string error_string)
+{
 
     send("ERROR %s\n",error_string.c_str());
     send("Press Ctrl-C to restart\n");

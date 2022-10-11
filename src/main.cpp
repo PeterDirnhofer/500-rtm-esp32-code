@@ -72,7 +72,7 @@ extern "C" void app_main(void)
     }
     
 
-    if (usb.getWorkingMode() == MODE_SETUP)
+    if (usb.getWorkingMode() == MODE_ADJUST_TEST_TIP)
     {
         displayTunnelCurrent();
     }

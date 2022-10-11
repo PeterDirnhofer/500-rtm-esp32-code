@@ -17,7 +17,7 @@ using namespace std;
 /**@brief Setup-Helper. Starts display tunnel_current
  */
 static const char *TAG = "controller";
-/**@brief Loop diplaying tunnelcurrent to setup measuring 
+/**@brief Loop diplaying tunnelcurrent to adjust measuring 
  * 
  * Is started by pessing ESC during startup
  * 

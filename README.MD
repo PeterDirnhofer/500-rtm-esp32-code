@@ -7,7 +7,7 @@ The 500 EUR Raster Tunnel Microscope is controlled by a ESP32. The ESP32 is conn
 - Start:  
   ***ESP32-->Computer*** ESP sends cyclic **REQUEST**. ESP waits for computer response
 
-- ***Computer-->ESP*** Computer answers with **SETUP** or **MEASURE** or **PARAMETER**
+- ***Computer-->ESP*** Computer answers with **ADJUST** or **MEASURE** or **PARAMETER**
   
 ---
 
@@ -18,7 +18,7 @@ The 500 EUR Raster Tunnel Microscope is controlled by a ESP32. The ESP32 is conn
   ESP sends results in two pakets to computer during measuring.  
   ESP sends "DONE" when measure cycle if finished.
 
-- Case computer sends **SETUP**:  
+- Case computer sends **ADJUST**:  
   ESP starts infinite setup loop to send cyclic actual tunnel-current to Computer. Terminate with CTRL-C.
 
 - Case computer sends **PARAMETER**:  
