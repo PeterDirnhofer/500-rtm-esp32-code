@@ -19,6 +19,7 @@ ParameterSetting::~ParameterSetting()
 }
 static const char *TAG = "ParameterSetting";
 const char *keys[] = {"kI", "kP", "destinatioNa", "remainingNa", "startX", "startY", "direction", "maxX", "maxY"};
+// typical             
 
 esp_err_t ParameterSetting::convertStoFloat(string s, float *value)
 {
@@ -47,7 +48,7 @@ esp_err_t ParameterSetting::putParameterToFlash(string key, string value)
     convertStoFloat(value.c_str(), &vFloat);
     float resultF = 0;
 
-    UsbPcInterface::send("putParameter key = %s, vFloat=%f\n", key.c_str(), vFloat);
+    UsbPcInterface::send("%s %f\n", key.c_str(), vFloat);
     // parameterSetter.putFloat("P1",testFloat);
     resultF = putFloat(key.c_str(), vFloat);
     if (resultF != sizeof(float))
@@ -62,8 +63,11 @@ esp_err_t ParameterSetting::putParameterToFlash(string key, string value)
 esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
 {
 
+    // Clear flash
+    this->clear();
+
     esp_err_t err = ESP_OK;
-    ESP_LOGI(TAG, "params.size %d\n", (int)params.size());
+    // ESP_LOGI(TAG, "params.size %d\n", (int)params.size());
     if ((int)params.size() != 10)
     {
         ESP_LOGE(TAG, "setparameter needs 9+1 values. Actual %d\n", (int)params.size());
@@ -81,23 +85,11 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
         }
     }
 
-    for (size_t i = 1; i < 10; i++)
+    for (int i = 1; i < 10; i++)
     {
-        UsbPcInterface::send("putParameter(%s,%s)\n", keys[i], params[i].c_str());
-        this->putParameterToFlash(keys[i - 1], params[1].c_str());
+        //UsbPcInterface::send("putParameter(%s,%s)\n", keys[i], params[i].c_str());
+        this->putParameterToFlash(keys[i - 1], params[i].c_str());
     }
-
-    /*
-    this->putParameter("kI", params[1].c_str());
-    this->putParameter("kP", params[2].c_str());
-    this->putParameter("destinatioNa", params[3].c_str());
-    this->putParameter("remainingNa", params[4].c_str());
-    this->putParameter("startX", params[5].c_str());
-    this->putParameter("startY", params[6].c_str());
-    this->putParameter("direction", params[7].c_str());
-    this->putParameter("maxX", params[8].c_str());
-    this->putParameter("maxY", params[9].c_str());
-    */
 
     return ESP_OK;
 }
@@ -105,6 +97,7 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
 esp_err_t ParameterSetting::putDefaultParametersToFlash()
 {
 
+    //UsbPcInterface::send("START putDefaaultParametesrToFlash\n");
     vector<string> params;
     params.push_back("PARAMETER");
     params.push_back("10");   // kI
@@ -117,7 +110,7 @@ esp_err_t ParameterSetting::putDefaultParametersToFlash()
     params.push_back("199");  // maxX
     params.push_back("199");  // maxY
 
-    putParametersToFlash(params);
+    this->putParametersToFlash(params);
 
     return ESP_OK;
 }

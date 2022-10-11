@@ -84,9 +84,9 @@ extern "C" void app_main(void)
         controllerStart();
     }
 
-    else if (usb.getCommandsFromPC() == MODE_PARAMETER)
+    else if (usb.getWorkingMode() == MODE_PARAMETER)
     {
-
+        
         string p0 = "", p1 = "";
         p0 = usb.getParametersFromPc()[0];
         
@@ -112,6 +112,7 @@ extern "C" void app_main(void)
             // PARAMETER,DEFAULT
             else if (p1.compare("DEFAULT") == 0)
             {
+            
                 esp_err_t err = parameterSetter.putDefaultParametersToFlash();
                 if (err == ESP_OK)
                 {
