@@ -161,7 +161,7 @@ int UsbPcInterface::send(const char *fmt, ...)
  * Set workingMode to: SETUP or PARAMETER or MEASURE. 
  * getworkingMode() reads workingMode
  */
-extern "C" esp_err_t UsbPcInterface::getPcCommadToSetWorkingMode()
+extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 {
     // Request PC. Wait for PC response
     uint32_t i = 0;

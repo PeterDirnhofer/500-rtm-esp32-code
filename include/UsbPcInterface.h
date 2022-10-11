@@ -28,7 +28,7 @@ public:
   
   static void printErrorMessageAndRestart(string error_string);
 
-  esp_err_t getPcCommadToSetWorkingMode();
+  esp_err_t getCommandsFromPC();
   inline static bool usbAvailable=false;
   int getWorkingMode();
   vector<string> getParametersFromPc();

@@ -9,8 +9,6 @@
 
 using namespace std;
 
-
-
 ParameterSetting::ParameterSetting()
 {
     this->begin();
@@ -20,9 +18,7 @@ ParameterSetting::~ParameterSetting()
 {
 }
 static const char *TAG = "ParameterSetting";
-const char *keys[] = {"kI", "kP","destinatioNa","remainingNa","startX","startY","direction","maxX","maxY"};
-
-
+const char *keys[] = {"kI", "kP", "destinatioNa", "remainingNa", "startX", "startY", "direction", "maxX", "maxY"};
 
 esp_err_t ParameterSetting::convertStoFloat(string s, float *value)
 {
@@ -45,13 +41,13 @@ esp_err_t ParameterSetting::convertStoFloat(string s, float *value)
     return ESP_OK;
 }
 
-esp_err_t ParameterSetting::putParameter(string key, string value)
+esp_err_t ParameterSetting::putParameterToFlash(string key, string value)
 {
     float vFloat = 0;
     convertStoFloat(value.c_str(), &vFloat);
     float resultF = 0;
 
-    UsbPcInterface::send("putParameter key = %s, vFloat=%f\n",key.c_str(),vFloat);
+    UsbPcInterface::send("putParameter key = %s, vFloat=%f\n", key.c_str(), vFloat);
     // parameterSetter.putFloat("P1",testFloat);
     resultF = putFloat(key.c_str(), vFloat);
     if (resultF != sizeof(float))
@@ -60,11 +56,10 @@ esp_err_t ParameterSetting::putParameter(string key, string value)
         return (ESP_ERR_NVS_INVALID_LENGTH);
     }
 
-    
     return ESP_OK;
 }
 
-esp_err_t ParameterSetting::putParameters(vector<string> params)
+esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
 {
 
     esp_err_t err = ESP_OK;
@@ -79,7 +74,7 @@ esp_err_t ParameterSetting::putParameters(vector<string> params)
     float f = 0;
     for (size_t i = 1; i < 10; i++)
     {
-        
+
         if (convertStoFloat(params[i].c_str(), &f) != ESP_OK)
         {
             return ESP_ERR_INVALID_ARG;
@@ -88,9 +83,8 @@ esp_err_t ParameterSetting::putParameters(vector<string> params)
 
     for (size_t i = 1; i < 10; i++)
     {
-        UsbPcInterface::send("putParameter(%s,%s)\n",keys[i],params[i].c_str());
-        this->putParameter(keys[i-1],params[1].c_str());
-
+        UsbPcInterface::send("putParameter(%s,%s)\n", keys[i], params[i].c_str());
+        this->putParameterToFlash(keys[i - 1], params[1].c_str());
     }
 
     /*
@@ -108,7 +102,7 @@ esp_err_t ParameterSetting::putParameters(vector<string> params)
     return ESP_OK;
 }
 
-esp_err_t ParameterSetting::putDefaultParameters()
+esp_err_t ParameterSetting::putDefaultParametersToFlash()
 {
 
     vector<string> params;
@@ -123,21 +117,63 @@ esp_err_t ParameterSetting::putDefaultParameters()
     params.push_back("199");  // maxX
     params.push_back("199");  // maxY
 
-    putParameters(params);
+    putParametersToFlash(params);
 
     return ESP_OK;
 }
 
-vector<string> ParameterSetting::getParameters()
+/**
+ * @brief Check if valid parameters in flash. If not set default parameters
+ *
+ * @param key
+ * @param minimum
+ * @param maximum
+ * @param value
+ * @return esp_err_t
+ */
+bool ParameterSetting::parameterIsValid(string key, float minimum, float maximum)
+{
+    float resF = 0;
+
+    if (!isKey(key.c_str()))
+    {
+        UsbPcInterface::send("key: %s not existing.\n", key.c_str());
+        return false;
+    }
+
+    resF = getFloat(key.c_str(), NULL);
+    
+    
+    if((resF < minimum) or (resF>maximum)){
+        UsbPcInterface::send("key: %s = %f out off limit %f .. %f\n",key.c_str(),resF,minimum,maximum);
+        return false;
+    }
+    UsbPcInterface::send("key: %s= %f OK\n", key.c_str(), resF);
+    
+
+    return true;
+}
+
+esp_err_t ParameterSetting::parametersAreValid(){
+
+    return ESP_OK;
+}
+
+vector<string> ParameterSetting::getParametersFromFlash()
 {
     vector<string> returnVector;
 
-    float resultF=4711;
-    resultF = this->getFloat("kP",-999.999);
-    
+    if(!parameterIsValid("kI",0,0)){
+        
+    }
 
-    UsbPcInterface::send("kP resultF= %f \n",resultF);
-    
+
+    float resultF = 0;
+
+    resultF = this->getFloat("kP", -999.999);
+
+    UsbPcInterface::send("kP resultF= %f \n", resultF);
+
     string help = to_string(resultF);
     returnVector.push_back(help.c_str());
     returnVector.push_back("return2");

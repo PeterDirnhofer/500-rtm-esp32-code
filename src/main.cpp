@@ -51,15 +51,26 @@ extern "C" void app_main(void)
 
     UsbPcInterface usb;
     usb.start();
+    UsbPcInterface::send("+++ START\n");
 
     ParameterSetting parameterSetter;
 
+
+/*
+    if(!parameterSetter.parametersAreValid()){
+
+        UsbPcInterface::send("Set Default parameters\n");
+        
+    }
+    
+*/
     // SELECT Run Mode
     // Wait for command from PC via USB
        
-    if (usb.getPcCommadToSetWorkingMode() != ESP_OK)
+    if (usb.getCommandsFromPC() != ESP_OK)
     {
         UsbPcInterface::printErrorMessageAndRestart("Invalid command. \n 'PARAMETER,?' or 'PARAMETER,DEFAULT' or 'PARAMETER,kI,kP,...'\n");
+        esp_restart();
     }
     
 
@@ -73,7 +84,7 @@ extern "C" void app_main(void)
         controllerStart();
     }
 
-    else if (usb.getPcCommadToSetWorkingMode() == MODE_PARAMETER)
+    else if (usb.getCommandsFromPC() == MODE_PARAMETER)
     {
 
         string p0 = "", p1 = "";
@@ -86,10 +97,10 @@ extern "C" void app_main(void)
             if (p1.compare("?") == 0)
             {
 
-                for (size_t i = 0; i < parameterSetter.getParameters().size(); i++)
+                for (size_t i = 0; i < parameterSetter.getParametersFromFlash().size(); i++)
                 {
-                    usb.send(parameterSetter.getParameters()[i].c_str());
-                    if (i < parameterSetter.getParameters().size() - 1)
+                    usb.send(parameterSetter.getParametersFromFlash()[i].c_str());
+                    if (i < parameterSetter.getParametersFromFlash().size() - 1)
                     {
                         usb.send(",");
                     }
@@ -101,7 +112,7 @@ extern "C" void app_main(void)
             // PARAMETER,DEFAULT
             else if (p1.compare("DEFAULT") == 0)
             {
-                esp_err_t err = parameterSetter.putDefaultParameters();
+                esp_err_t err = parameterSetter.putDefaultParametersToFlash();
                 if (err == ESP_OK)
                 {
                     usb.send("DEFAULT PARAMETER set OK\n");
@@ -115,7 +126,7 @@ extern "C" void app_main(void)
             // PARAMETER, p1, p2,.., p9
             else
             {
-                esp_err_t err = parameterSetter.putParameters(usb.getParametersFromPc());
+                esp_err_t err = parameterSetter.putParametersToFlash(usb.getParametersFromPc());
                 if (err == ESP_OK)
                 {
                     usb.send("PARAMETER set OK\n");

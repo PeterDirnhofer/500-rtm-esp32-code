@@ -73,6 +73,7 @@ protected:
     // float getFloat(const char *key, const float defaultValue);
     double getDouble(const char *key, const double defaultValue);
     string getString(const char *key, char *value, size_t maxLen);
+    bool isKey(const char *key);
 
 public:
     float putFloat(const char *key, const float value);
@@ -92,7 +93,7 @@ private:
 
     size_t putBytes(const char *key, const void *value, size_t len);
 
-    bool isKey(const char *key);
+   
     PreferenceType getType(const char *key);
     int8_t getChar(const char *key, int8_t defaultValue = 0);
     uint8_t getUChar(const char *key, uint8_t defaultValue = 0);

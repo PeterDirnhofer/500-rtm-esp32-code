@@ -26,18 +26,21 @@ public:
 
   
 
-  esp_err_t putParameters(vector<string> params);
-  vector<string> getParameters();
+  esp_err_t putParametersToFlash(vector<string> params);
+  vector<string> getParametersFromFlash();
 
-  esp_err_t putDefaultParameters();
+  esp_err_t putDefaultParametersToFlash();
+
+  bool parameterIsValid(string key, float minimum, float maximum);
+  esp_err_t parametersAreValid();
 
 
 private:
   esp_err_t convertStoFloat(string s, float *value);
-  esp_err_t putParameter(string key, string value);
-  esp_err_t getParameter(string key, float *value);
+  esp_err_t putParameterToFlash(string key, string value);
 
-
+  //esp_err_t getParameterToFlash(string key, float *value);
+  
 };
 
 #endif
