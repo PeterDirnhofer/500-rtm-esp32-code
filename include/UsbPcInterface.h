@@ -25,7 +25,9 @@ public:
 
   void start();
   static int send(const char *fmt, ...);
-  
+  static int sendInfo(const char *fmt, ...);
+
+   
   static void printErrorMessageAndRestart(string error_string);
 
   esp_err_t getCommandsFromPC();

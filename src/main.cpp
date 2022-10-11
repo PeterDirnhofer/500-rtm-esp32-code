@@ -51,42 +51,44 @@ extern "C" void app_main(void)
 
     UsbPcInterface usb;
     usb.start();
-    UsbPcInterface::send("+++ START\n");
+    UsbPcInterface::sendInfo("PROGRAM START\n");
 
     ParameterSetting parameterSetter;
     
 
     // If no parameters in Flash Set Default Parameters
     if (parameterSetter.parametersAreValid() != ESP_OK){
-
         parameterSetter.putDefaultParametersToFlash();
     }
 
+    
+    // ##############################################################
     // SELECT Run Mode
+
     // Wait for command from PC via USB
-       
     if (usb.getCommandsFromPC() != ESP_OK)
     {
         UsbPcInterface::printErrorMessageAndRestart("Invalid command. \n 'PARAMETER,?' or 'PARAMETER,DEFAULT' or 'PARAMETER,kI,kP,...'\n");
         esp_restart();
     }
-    
 
+    string p0 = "", p1 = "";
+    p0 = usb.getParametersFromPc()[0];
+    
     if (usb.getWorkingMode() == MODE_ADJUST_TEST_TIP)
     {
+        UsbPcInterface::sendInfo("ADJUST START\n");
         displayTunnelCurrent();
     }
     else if (usb.getWorkingMode() == MODE_MEASURE)
     {
-        usb.send("MEASURE OK\n");
+        UsbPcInterface::sendInfo("MEASURE START\n");
         controllerStart();
     }
-
     else if (usb.getWorkingMode() == MODE_PARAMETER)
     {
         
-        string p0 = "", p1 = "";
-        p0 = usb.getParametersFromPc()[0];
+        
         
         if (usb.getParametersFromPc().size() > 1)
         {
@@ -114,7 +116,7 @@ extern "C" void app_main(void)
                 esp_err_t err = parameterSetter.putDefaultParametersToFlash();
                 if (err == ESP_OK)
                 {
-                    usb.send("DEFAULT PARAMETER set OK\n");
+                    usb.sendInfo("DEFAULT PARAMETER set OK\n");
                     esp_restart();
                 }
                 else
@@ -128,7 +130,7 @@ extern "C" void app_main(void)
                 esp_err_t err = parameterSetter.putParametersToFlash(usb.getParametersFromPc());
                 if (err == ESP_OK)
                 {
-                    usb.send("PARAMETER set OK\n");
+                    usb.sendInfo("PARAMETER set OK\n");
                     esp_restart();
                 }
                 else
@@ -138,6 +140,8 @@ extern "C" void app_main(void)
             }
         }
 
+        UsbPcInterface::printErrorMessageAndRestart("PARAMETER \nRequired Format is \nPARAMETER,float,float,....");
+        
         ESP_LOGI(TAG, "--- delete main task\n");
         vTaskDelete(NULL);
     }
