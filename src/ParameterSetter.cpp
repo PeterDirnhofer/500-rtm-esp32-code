@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "globalVariables.h"
 
 using namespace std;
 
@@ -111,7 +112,6 @@ esp_err_t ParameterSetting::putDefaultParametersToFlash()
     params.push_back("199");  // maxY
 
     return (this->putParametersToFlash(params));
-
 }
 
 /**
@@ -150,7 +150,7 @@ esp_err_t ParameterSetting::parametersAreValid()
     for (int i = 0; i < 9; i++)
     {
 
-        if(!isKey(keys[i]))
+        if (!isKey(keys[i]))
             return ESP_ERR_FLASH_NOT_INITIALISED;
     }
 
@@ -159,20 +159,52 @@ esp_err_t ParameterSetting::parametersAreValid()
 
 vector<string> ParameterSetting::getParametersFromFlash()
 {
-    vector<string> returnVector;
 
-    if (!parameterIsValid("kI", 0, 0))
+    vector<string> returnVector;
+    string key = "test";
+    string valString = "";
+    float valFloat = 0;
+    for (int i = 0; i < 9; i++)
     {
+        key = keys[i];
+        valFloat = this->getFloat(key.c_str(), valFloat);
+        valString = to_string(valFloat);
+        returnVector.push_back(valString);
+        UsbPcInterface::sendInfo("%s %s\n",key.c_str(),valString.c_str());
     }
 
-    float resultF = 0;
+    /*
+    extern double kI, kP, destinationTunnelCurrentnA, currentTunnelCurrentnA, remainingTunnelCurrentDifferencenA;
+    extern uint16_t startX, startY;
+    extern bool direction;
 
-    resultF = this->getFloat("kP", -999.999);
+    const char *keys[] = {"kI", "kP", "destinatioNa", "remainingNa", "startX", "startY", "direction", "maxX", "maxY"};
+                            0     1    2               3              4         5         6            7       8
 
-    UsbPcInterface::send("kP resultF= %f \n", resultF);
+    */
+    kI = (double)getFloat(keys[0], NULL);
+    UsbPcInterface::send("kI:%f\n",kI);
 
-    string help = to_string(resultF);
-    returnVector.push_back(help.c_str());
-    returnVector.push_back("return2");
+    kP = (double)getFloat(keys[1], NULL);
+    UsbPcInterface::send("kP:%f\n",kP);
+
+    destinationTunnelCurrentnA = (double)getFloat(keys[2], destinationTunnelCurrentnA);
+    UsbPcInterface::send("destinationTunnelCurrentnA:%f\n",destinationTunnelCurrentnA);
+
+    remainingTunnelCurrentDifferencenA = (double)getFloat(keys[3], remainingTunnelCurrentDifferencenA);
+    UsbPcInterface::send("remainingTunnelCurrentDifferencenA:%f\n",remainingTunnelCurrentDifferencenA);
+
+    startX =(uint16_t)getFloat(keys[4],NULL);
+    UsbPcInterface::send("startX:%u\n",startX);
+    
+    startY =(uint16_t)getFloat(keys[5],NULL);
+    UsbPcInterface::send("startY:%u\n",startY);
+
+    direction=(bool)getFloat(keys[6],NULL);
+    UsbPcInterface::send("direction:%d\n",direction);
+    
+
+
+
     return returnVector;
 }

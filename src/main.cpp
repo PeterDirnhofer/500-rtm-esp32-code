@@ -99,15 +99,8 @@ extern "C" void app_main(void)
     // PARAMETER,?
     if (p1.compare("?") == 0)
     {
-        for (size_t i = 0; i < parameterSetter.getParametersFromFlash().size(); i++)
-        {
-            usb.send(parameterSetter.getParametersFromFlash()[i].c_str());
-            if (i < parameterSetter.getParametersFromFlash().size() - 1)
-            {
-                usb.send(",");
-            }
-        }
-        usb.send("\n");
+        parameterSetter.getParametersFromFlash();
+
         UsbPcInterface::printErrorMessageAndRestart("");
     }
     // PARAMETER,DEFAULT
