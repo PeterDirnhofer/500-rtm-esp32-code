@@ -72,8 +72,10 @@ extern "C" void app_main(void)
     }
 
     string p0 = "", p1 = "";
+    int parameterCount;
     p0 = usb.getParametersFromPc()[0];
-    if (usb.getParametersFromPc().size() > 1)
+    parameterCount=usb.getParametersFromPc().size();
+    if (parameterCount == 2)
         p1 = usb.getParametersFromPc()[1];
 
     if (usb.getWorkingMode() == MODE_ADJUST_TEST_TIP)
@@ -126,8 +128,8 @@ extern "C" void app_main(void)
         }
     }
 
-    // PARAMETER, p1, p2,.., p9
-    else
+    // PARAMETER,10,1000,10.0,0.01,0,0,0,199,199
+    else if (parameterCount==10)
     {
         UsbPcInterface::sendInfo("PARAMETER, p1, p2, p3..p9, START\n");
         esp_err_t err = parameterSetter.putParametersToFlash(usb.getParametersFromPc());
@@ -140,6 +142,9 @@ extern "C" void app_main(void)
         {
             UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,p1,p2,...,p9");
         }
+    }
+    else {
+        UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nInvalid numer of parameters");
     }
 
     ESP_LOGI(TAG, "--- delete main task\n");
