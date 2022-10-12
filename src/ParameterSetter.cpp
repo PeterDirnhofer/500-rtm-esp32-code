@@ -48,7 +48,7 @@ esp_err_t ParameterSetting::putParameterToFlash(string key, string value)
     convertStoFloat(value.c_str(), &vFloat);
     float resultF = 0;
 
-    UsbPcInterface::send("%s %f\n", key.c_str(), vFloat);
+    // UsbPcInterface::send("%s %f\n", key.c_str(), vFloat);
     // parameterSetter.putFloat("P1",testFloat);
     resultF = putFloat(key.c_str(), vFloat);
     if (resultF != sizeof(float))
@@ -110,9 +110,8 @@ esp_err_t ParameterSetting::putDefaultParametersToFlash()
     params.push_back("199");  // maxX
     params.push_back("199");  // maxY
 
-    this->putParametersToFlash(params);
+    return (this->putParametersToFlash(params));
 
-    return ESP_OK;
 }
 
 /**

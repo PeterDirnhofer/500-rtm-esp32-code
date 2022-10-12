@@ -117,7 +117,7 @@ extern "C" void app_main(void)
         esp_err_t err = parameterSetter.putDefaultParametersToFlash();
         if (err == ESP_OK)
         {
-
+            
             UsbPcInterface::printMessageAndRestart("DEFAULT PARAMETER set OK");
             //usb.sendInfo("DEFAULT PARAMETER set OK\n");
             //esp_restart();
