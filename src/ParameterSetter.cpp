@@ -19,7 +19,7 @@ ParameterSetting::~ParameterSetting()
 {
 }
 static const char *TAG = "ParameterSetting";
-const char *keys[] = {"kI", "kP", "destinatioNa", "remainingNa", "startX", "startY", "direction", "maxX", "maxY","multiplicator"};
+const char *keys[] = {"kI", "kP", "destinatioNa", "remainingNa", "startX", "startY", "direction", "maxX", "maxY", "multiplicator"};
 // typical
 
 esp_err_t ParameterSetting::convertStoFloat(string s, float *value)
@@ -67,7 +67,7 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
     // Clear flash
     this->clear();
 
-    esp_err_t err = ESP_OK;
+  
     // ESP_LOGI(TAG, "params.size %d\n", (int)params.size());
     if ((int)params.size() != 11)
     {
@@ -130,6 +130,7 @@ esp_err_t ParameterSetting::putDefaultParametersToFlash()
 bool ParameterSetting::parameterIsValid(string key, float minimum, float maximum)
 {
     float resF = 0;
+    
 
     if (!isKey(key.c_str()))
     {
@@ -137,7 +138,7 @@ bool ParameterSetting::parameterIsValid(string key, float minimum, float maximum
         return false;
     }
 
-    resF = getFloat(key.c_str(), NULL);
+    resF = getFloat(key.c_str(), __FLT_MAX__);
 
     if ((resF < minimum) or (resF > maximum))
     {
@@ -171,7 +172,7 @@ esp_err_t ParameterSetting::getParametersFromFlash(bool display)
     void setDirection(bool);
     void setMultiplicatorGridAdc(uint16_t);
 
-    
+
     extern double kI, kP, destinationTunnelCurrentnA, currentTunnelCurrentnA, remainingTunnelCurrentDifferencenA;
     extern uint16_t startX, startY;
     extern bool direction;
@@ -180,50 +181,50 @@ esp_err_t ParameterSetting::getParametersFromFlash(bool display)
                             0     1    2               3              4         5         6            7       8       9
     */
 
-    kI = (double)getFloat(keys[0], NULL);
+    kI = (double)getFloat(keys[0], __FLT_MAX__);
     if (display)
         UsbPcInterface::sendInfo("kI,%f\n", kI);
 
-    kP = (double)getFloat(keys[1], NULL);
+    kP = (double)getFloat(keys[1], __FLT_MAX__);
     if (display)
         UsbPcInterface::sendInfo("kP,%f\n", kP);
 
-    destinationTunnelCurrentnA = (double)getFloat(keys[2], destinationTunnelCurrentnA);
+    destinationTunnelCurrentnA = (double)getFloat(keys[2], __FLT_MAX__);
     if (display)
         UsbPcInterface::sendInfo("destinationTunnelCurrentnA,%f\n", destinationTunnelCurrentnA);
 
-    remainingTunnelCurrentDifferencenA = (double)getFloat(keys[3], remainingTunnelCurrentDifferencenA);
+    remainingTunnelCurrentDifferencenA = (double)getFloat(keys[3], __FLT_MAX__);
     if (display)
         UsbPcInterface::sendInfo("remainingTunnelCurrentDifferencenA,%f\n", remainingTunnelCurrentDifferencenA);
 
-    startX = (uint16_t)getFloat(keys[4], NULL);
+    startX = (uint16_t)getFloat(keys[4], __FLT_MAX__);
     rtmGrid.setStartX(startX);
     if (display)
         UsbPcInterface::sendInfo("startX,%u\n", startX);
 
-    startY = (uint16_t)getFloat(keys[5], NULL);
+    startY = (uint16_t)getFloat(keys[5], __FLT_MAX__);
     rtmGrid.setStartY(startY);
     if (display)
         UsbPcInterface::sendInfo("startY,%u\n", startY);
 
-    direction = (bool)getFloat(keys[6], NULL);
+    direction = (bool)getFloat(keys[6], __FLT_MAX__);
     if (display)
         UsbPcInterface::sendInfo("direction,%d\n", direction);
 
-    uint16_t mMaxX = (uint16_t)getFloat(keys[7], NULL);
+    uint16_t mMaxX = (uint16_t)getFloat(keys[7], __FLT_MAX__);
     rtmGrid.setMaxX(mMaxX);
     if (display)
         UsbPcInterface::sendInfo("maxX,%d\n", mMaxX);
 
-    uint16_t mMaxY = (uint16_t)getFloat(keys[8], NULL);
+    uint16_t mMaxY = (uint16_t)getFloat(keys[8], __FLT_MAX__);
     rtmGrid.setMaxY(mMaxY);
     if (display)
         UsbPcInterface::sendInfo("maxY,%d\n", mMaxY);
 
-    uint16_t mMultiplicator = (uint16_t)getFloat(keys[9],NULL);
+    uint16_t mMultiplicator = (uint16_t)getFloat(keys[9], __FLT_MAX__);
     rtmGrid.setMultiplicatorGridAdc(mMultiplicator);
-    if(display)
-    UsbPcInterface::sendInfo("MultiplicatorGridAdc,%d\n", mMultiplicator);
+    if (display)
+        UsbPcInterface::sendInfo("MultiplicatorGridAdc,%d\n", mMultiplicator);
 
     return ESP_OK;
 }

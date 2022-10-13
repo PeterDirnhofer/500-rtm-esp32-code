@@ -31,8 +31,7 @@ void null_task(void *pvParam)
  */
 void timer_tg0_isr(void* arg)
 {
-	static int io_state = 0;
-
+	
 	//Reset irq and set for next time
     TIMERG0.int_clr_timers.t0 = 1;
     TIMERG0.hw_timer[0].config.alarm_en = 1;

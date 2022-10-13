@@ -38,6 +38,10 @@
 #include "UsbPcInterface.h"
 #include "ParameterSetter.h"
 
+
+// Wenn spi nicht geht suche in vspiInit() PeDi Added
+// .rx_flow_ctrl_thresh = 0,  Added in uart_config
+// devcfgDacY 
 using namespace std;
 
 extern "C" void app_main(void)

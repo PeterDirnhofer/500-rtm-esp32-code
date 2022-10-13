@@ -30,17 +30,13 @@ public:
   esp_err_t getParametersFromFlash(bool display=false);
 
   esp_err_t putDefaultParametersToFlash();
-
-  bool parameterIsValid(string key, float minimum, float maximum);
   esp_err_t parametersAreValid();
 
 
 private:
+bool parameterIsValid(string key, float minimum, float maximum);
   esp_err_t convertStoFloat(string s, float *value);
   esp_err_t putParameterToFlash(string key, string value);
-
-  //esp_err_t getParameterToFlash(string key, float *value);
-  
 };
 
 #endif

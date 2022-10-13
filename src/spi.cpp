@@ -34,12 +34,12 @@ static const char *TAG = "spi.cpp";
 using namespace std;
 
 /**@brief Init spi for DACs and run one vspiLoop
- * 
+ *
  */
 void vspiStart()
 {
 
-    ESP_LOGI("TAG","+++ START vspiStart\n");
+    ESP_LOGI("TAG", "+++ START vspiStart\n");
     vspiInit();
     xTaskCreatePinnedToCore(vspiLoop, "vspiloop", 10000, NULL, 3, &handleVspiLoop, 1);
 }
@@ -55,7 +55,14 @@ void vspiInit()
         .sclk_io_num = GPIO_SCLK_VSPI,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-       
+        .data4_io_num = 0,    // PeDi Added
+        .data5_io_num = 0,    // PeDi Added
+        .data6_io_num = 0,    // PeDi Added
+        .data7_io_num = 0,    // PeDi Added
+        .max_transfer_sz = 0, // PeDi Added
+        .flags = 0,           // PeDi Added
+        .intr_flags = 0,      // PeDi Added
+
     };
 
     // Configuration for the SPI slave devices -> syntax configuration
@@ -65,10 +72,15 @@ void vspiInit()
         .dummy_bits = 0,
         .mode = 0,                 // CPOL = 0, CPHA = 0 -> Mode 0
         .duty_cycle_pos = 128,     // 50% duty cycle
+        .cs_ena_pretrans = 0,      // PeDi added
         .cs_ena_posttrans = 3,     // Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK
         .clock_speed_hz = 5000000, // 5MHz
+        .input_delay_ns = 0,       // PeDi added
         .spics_io_num = GPIO_CS_VSPI_DACX,
-        .queue_size = 3};
+        .flags = 0, // PeDi added
+        .queue_size = 3,
+        .pre_cb = 0,   // PeDi added
+        .post_cb = 0}; // PeDi added
 
     spi_device_interface_config_t devcfgDacY = {
         .command_bits = 8,
@@ -76,10 +88,15 @@ void vspiInit()
         .dummy_bits = 0,
         .mode = 0,                 // CPOL = 0, CPHA = 0 -> Mode 0
         .duty_cycle_pos = 128,     // 50% duty cycle
+        .cs_ena_pretrans = 0,      // PeDi added
         .cs_ena_posttrans = 3,     // Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK
         .clock_speed_hz = 5000000, // 5MHz
+        .input_delay_ns = 0,       // PeDi added
         .spics_io_num = GPIO_CS_VSPI_DACY,
-        .queue_size = 3};
+        .flags = 0, // PeDi added
+        .queue_size = 3,
+        .pre_cb = 0,   // PeDi added
+        .post_cb = 0}; // PeDi added
 
     spi_device_interface_config_t devcfgDacZ = {
         .command_bits = 8,
@@ -87,16 +104,23 @@ void vspiInit()
         .dummy_bits = 0,
         .mode = 0,                 // CPOL = 0, CPHA = 0 -> Mode 0
         .duty_cycle_pos = 128,     // 50% duty cycle
+        .cs_ena_pretrans = 0,      // PeDi added
         .cs_ena_posttrans = 3,     // Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK
         .clock_speed_hz = 5000000, // 5MHz
+        .input_delay_ns = 0,       // PeDi added
         .spics_io_num = GPIO_CS_VSPI_DACZ,
-        .queue_size = 3};
+        .flags = 0, // PeDi added
+        .queue_size = 3,
+        .pre_cb = 0,   // PeDi added
+        .post_cb = 0}; // PeDi added
 
     // printf("test3 \n");
     // Configuration for the CS lines
     gpio_config_t io_conf = {
         .pin_bit_mask = (1 << GPIO_CS_VSPI_DACX) | (1 << GPIO_CS_VSPI_DACY) | (1 << GPIO_CS_VSPI_DACZ),
         .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,     // PeDi added
+        .pull_down_en = GPIO_PULLDOWN_DISABLE, // PeDi added
         .intr_type = GPIO_INTR_DISABLE};
 
     // Configure cs as output
@@ -117,23 +141,22 @@ void vspiInit()
     memset(recvbufferVspi, 0, 3);
 
     memset(&tVspi, 0, sizeof(tVspi));
-    
 }
 
 /**@brief update DACs over SPI
- * 
+ *
  * Suspends after running.
  * Resuming by controller
- * 
+ *
  * currentXDac, currentYDac is set by movementXY.cpp
  * currentZDac is set by controller
- * 
- * @param unused 
+ *
+ * @param unused
  */
 void vspiLoop(void *unused)
 {
-    
-    ESP_LOGI(TAG,"+++ vspiLoop started\n");
+
+    ESP_LOGI(TAG, "+++ vspiLoop started\n");
 
     unique_ptr<uint16_t> buffer = make_unique<uint16_t>();
 
@@ -145,30 +168,29 @@ void vspiLoop(void *unused)
 
     vspiSendDac(currentXDac, buffer.get(), handleDacX); // Dac X
     vspiSendDac(currentYDac, buffer.get(), handleDacY); // Dac Y
-    //printf("--- Suspend vspiLoop (self)\n");
+    // printf("--- Suspend vspiLoop (self)\n");
     vTaskSuspend(NULL); // will be resumed by controller
-    
-    
+
     // Resumed by Controller
     while (1)
     {
-        //ESP_LOGI(TAG,"X, new: %d, old: %d \n", currentXDac, lastXDac);
+        // ESP_LOGI(TAG,"X, new: %d, old: %d \n", currentXDac, lastXDac);
 
         if (currentXDac != lastXDac)
         {                                                       // only if new value has been written to currentXDac
             vspiSendDac(currentXDac, buffer.get(), handleDacX); // Dac X
             lastXDac = currentXDac;
-            ESP_LOGI(TAG,"new X=%d\n",currentXDac);
+            ESP_LOGI(TAG, "new X=%d\n", currentXDac);
         }
         if (currentYDac != lastYDac)
         {                                                       // only if new value has been written to currentYDac
             vspiSendDac(currentYDac, buffer.get(), handleDacY); // Dac Y
             lastYDac = currentYDac;
-            ESP_LOGI(TAG,"new Y=%d\n",currentYDac);
+            ESP_LOGI(TAG, "new Y=%d\n", currentYDac);
         }
 
         vspiSendDac(currentZDac, buffer.get(), handleDacZ); // Dac Z
-        //printf("--- Suspend vspiLoop (self)\n");
+        // printf("--- Suspend vspiLoop (self)\n");
         vTaskSuspend(NULL); // will be resumed by controller
     }
 }
@@ -189,4 +211,3 @@ void vspiSendDac(uint16_t dacValue, uint16_t *tx_buffer, spi_device_handle_t dac
 
     retVspi = spi_device_transmit(dacDeviceHandle, &tVspi);
 }
-
