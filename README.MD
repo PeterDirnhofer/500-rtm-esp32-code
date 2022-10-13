@@ -5,7 +5,7 @@ The 500 EUR Raster Tunnel Microscope is controlled by a ESP32. The ESP32 is conn
 ## Communication-Protocol ESP32 to Computer
 
 - Start:  
-  ***ESP32-->Computer*** ESP sends cyclic **REQUEST**. ESP waits for computer response
+  ***ESP32-->Computer*** ESP sends cyclic **IDLE**. ESP waits for computer response
 
 - ***Computer-->ESP*** Computer answers with **ADJUST** or **MEASURE** or **PARAMETER**
   

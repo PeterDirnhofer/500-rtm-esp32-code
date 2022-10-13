@@ -202,7 +202,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
             // Invert Blue LED
             ledLevel++;
             gpio_set_level(BLUE_LED, ledLevel % 2);
-            this->send("REQUEST\n");
+            this->send("IDLE\n");
         }
 
         vTaskDelay(100 / portTICK_RATE_MS);

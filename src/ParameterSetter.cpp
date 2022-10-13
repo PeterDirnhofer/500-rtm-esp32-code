@@ -67,7 +67,6 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
     // Clear flash
     this->clear();
 
-  
     // ESP_LOGI(TAG, "params.size %d\n", (int)params.size());
     if ((int)params.size() != 11)
     {
@@ -130,7 +129,6 @@ esp_err_t ParameterSetting::putDefaultParametersToFlash()
 bool ParameterSetting::parameterIsValid(string key, float minimum, float maximum)
 {
     float resF = 0;
-    
 
     if (!isKey(key.c_str()))
     {

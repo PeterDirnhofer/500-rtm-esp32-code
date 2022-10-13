@@ -55,14 +55,9 @@ extern "C" void app_main(void)
 
     UsbPcInterface usb;
     usb.start();
-    UsbPcInterface::sendInfo("PROGRAM START\n");
+    // UsbPcInterface::sendInfo("PROGRAM START\n");
 
     ParameterSetting parameterSetter;
-
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //UsbPcInterface::send("PARAMETER CLEAR\n");
-    //parameterSetter.clear();
 
     // If no parameters in Flash Set Default Parameters
     if (parameterSetter.parametersAreValid() != ESP_OK)
@@ -109,20 +104,19 @@ extern "C" void app_main(void)
     if (p1.compare("?") == 0)
     {
         parameterSetter.getParametersFromFlash(true);
+        esp_restart();
 
         UsbPcInterface::printErrorMessageAndRestart("");
     }
     // PARAMETER,DEFAULT
     else if (p1.compare("DEFAULT") == 0)
     {
-        UsbPcInterface::sendInfo("PARAMETER,DEFAULT START\n");
+
         esp_err_t err = parameterSetter.putDefaultParametersToFlash();
         if (err == ESP_OK)
         {
-            
-            UsbPcInterface::printMessageAndRestart("DEFAULT PARAMETER set OK");
-            //usb.sendInfo("DEFAULT PARAMETER set OK\n");
-            //esp_restart();
+            parameterSetter.getParametersFromFlash(true);
+            esp_restart();
         }
         else
         {
@@ -133,11 +127,12 @@ extern "C" void app_main(void)
     // PARAMETER,10,1000,10.0,0.01,0,0,0,199,199,10
     else if (parameterCount==11)
     {
-        UsbPcInterface::sendInfo("PARAMETER, p1, p2, p3..p10, START\n");
+
         esp_err_t err = parameterSetter.putParametersToFlash(usb.getParametersFromPc());
         if (err == ESP_OK)
         {
-            usb.sendInfo("PARAMETER set OK\n");
+            parameterSetter.getParametersFromFlash(true);
+            //usb.sendInfo("PARAMETER set OK\n");
             esp_restart();
         }
         else
