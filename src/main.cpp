@@ -99,7 +99,7 @@ extern "C" void app_main(void)
     // PARAMETER,?
     if (p1.compare("?") == 0)
     {
-        parameterSetter.getParametersFromFlash();
+        parameterSetter.getParametersFromFlash(true);
 
         UsbPcInterface::printErrorMessageAndRestart("");
     }

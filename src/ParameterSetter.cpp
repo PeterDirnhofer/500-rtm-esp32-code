@@ -157,21 +157,9 @@ esp_err_t ParameterSetting::parametersAreValid()
     return ESP_OK;
 }
 
-vector<string> ParameterSetting::getParametersFromFlash()
+esp_err_t ParameterSetting::getParametersFromFlash(bool display)
 {
-
-    vector<string> returnVector;
-    string key = "test";
-    string valString = "";
-    float valFloat = 0;
-    for (int i = 0; i < 9; i++)
-    {
-        key = keys[i];
-        valFloat = this->getFloat(key.c_str(), valFloat);
-        valString = to_string(valFloat);
-        returnVector.push_back(valString);
-        UsbPcInterface::sendInfo("%s %s\n",key.c_str(),valString.c_str());
-    }
+    // replaces dataStoring.saveConfigParam
 
     /*
     extern double kI, kP, destinationTunnelCurrentnA, currentTunnelCurrentnA, remainingTunnelCurrentDifferencenA;
@@ -180,31 +168,49 @@ vector<string> ParameterSetting::getParametersFromFlash()
 
     const char *keys[] = {"kI", "kP", "destinatioNa", "remainingNa", "startX", "startY", "direction", "maxX", "maxY"};
                             0     1    2               3              4         5         6            7       8
-
     */
+
     kI = (double)getFloat(keys[0], NULL);
-    UsbPcInterface::send("kI:%f\n",kI);
+    if (display)
+        UsbPcInterface::sendInfo("kI,%f\n", kI);
 
     kP = (double)getFloat(keys[1], NULL);
-    UsbPcInterface::send("kP:%f\n",kP);
+    if (display)
+        UsbPcInterface::sendInfo("kP,%f\n", kP);
 
     destinationTunnelCurrentnA = (double)getFloat(keys[2], destinationTunnelCurrentnA);
-    UsbPcInterface::send("destinationTunnelCurrentnA:%f\n",destinationTunnelCurrentnA);
+    if (display)
+        UsbPcInterface::sendInfo("destinationTunnelCurrentnA,%f\n", destinationTunnelCurrentnA);
 
     remainingTunnelCurrentDifferencenA = (double)getFloat(keys[3], remainingTunnelCurrentDifferencenA);
-    UsbPcInterface::send("remainingTunnelCurrentDifferencenA:%f\n",remainingTunnelCurrentDifferencenA);
+    if (display)
+        UsbPcInterface::sendInfo("remainingTunnelCurrentDifferencenA,%f\n", remainingTunnelCurrentDifferencenA);
 
-    startX =(uint16_t)getFloat(keys[4],NULL);
-    UsbPcInterface::send("startX:%u\n",startX);
-    
-    startY =(uint16_t)getFloat(keys[5],NULL);
-    UsbPcInterface::send("startY:%u\n",startY);
+    startX = (uint16_t)getFloat(keys[4], NULL);
+    rtmGrid.setStartX(startX);
+    if (display)
+        UsbPcInterface::sendInfo("startX,%u\n", startX);
 
-    direction=(bool)getFloat(keys[6],NULL);
-    UsbPcInterface::send("direction:%d\n",direction);
-    
+    startY = (uint16_t)getFloat(keys[5], NULL);
+    rtmGrid.setStartY(startY);
+    if (display)
+        UsbPcInterface::sendInfo("startY,%u\n", startY);
 
+    direction = (bool)getFloat(keys[6], NULL);
+    if (display)
+        UsbPcInterface::sendInfo("direction,%d\n", direction);
 
+    uint16_t mMaxX = (uint16_t)getFloat(keys[7], NULL);
+    rtmGrid.setMaxX(mMaxX);
+    if (display)
+        UsbPcInterface::sendInfo("maxX,%d\n", mMaxX);
 
-    return returnVector;
+    uint16_t mMaxY = (uint16_t)getFloat(keys[8], NULL);
+    rtmGrid.setMaxY(mMaxY);
+    if (display)
+        UsbPcInterface::sendInfo("maxY,%d\n", mMaxY);
+
+    // rtmGrid.setMultiplicatorGridAdc((uint16_t) param);
+
+    return ESP_OK;
 }
