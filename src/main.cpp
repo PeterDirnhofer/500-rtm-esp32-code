@@ -55,6 +55,11 @@ extern "C" void app_main(void)
 
     ParameterSetting parameterSetter;
 
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //UsbPcInterface::send("PARAMETER CLEAR\n");
+    //parameterSetter.clear();
+
     // If no parameters in Flash Set Default Parameters
     if (parameterSetter.parametersAreValid() != ESP_OK)
     {
@@ -121,10 +126,10 @@ extern "C" void app_main(void)
         }
     }
 
-    // PARAMETER,10,1000,10.0,0.01,0,0,0,199,199
-    else if (parameterCount==10)
+    // PARAMETER,10,1000,10.0,0.01,0,0,0,199,199,10
+    else if (parameterCount==11)
     {
-        UsbPcInterface::sendInfo("PARAMETER, p1, p2, p3..p9, START\n");
+        UsbPcInterface::sendInfo("PARAMETER, p1, p2, p3..p10, START\n");
         esp_err_t err = parameterSetter.putParametersToFlash(usb.getParametersFromPc());
         if (err == ESP_OK)
         {
@@ -137,7 +142,7 @@ extern "C" void app_main(void)
         }
     }
     else {
-        UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nInvalid numer of parameters");
+        UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nInvalid number of parameters");
     }
 
     ESP_LOGI(TAG, "--- delete main task\n");

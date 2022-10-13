@@ -23,7 +23,7 @@ The 500 EUR Raster Tunnel Microscope is controlled by a ESP32. The ESP32 is conn
 
 - Case computer sends **PARAMETER**:  
   ESP receives parameters from Computer and saves parameters to its non volatile memory.  
-  **Example** PARAMETER,10,1000,10.0,0.01,0,0,0,199,199
+  **Example** PARAMETER,10,1000,10.0,0.01,0,0,0,199,199,10
 
 - Case computer sends **PARAMETER,DEFAULT**:  
   Save default parameter in ESP  
@@ -36,6 +36,7 @@ The 500 EUR Raster Tunnel Microscope is controlled by a ESP32. The ESP32 is conn
     direction = 0  
     maxX = 199  
     maxY = 199
+    multiplicator = 10
 
 - Case computer sends **PARAMETER,?**:  
   ESP sends actual parameters to computer

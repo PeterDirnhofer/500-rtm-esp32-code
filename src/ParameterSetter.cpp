@@ -19,7 +19,7 @@ ParameterSetting::~ParameterSetting()
 {
 }
 static const char *TAG = "ParameterSetting";
-const char *keys[] = {"kI", "kP", "destinatioNa", "remainingNa", "startX", "startY", "direction", "maxX", "maxY"};
+const char *keys[] = {"kI", "kP", "destinatioNa", "remainingNa", "startX", "startY", "direction", "maxX", "maxY","multiplicator"};
 // typical
 
 esp_err_t ParameterSetting::convertStoFloat(string s, float *value)
@@ -69,7 +69,7 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
 
     esp_err_t err = ESP_OK;
     // ESP_LOGI(TAG, "params.size %d\n", (int)params.size());
-    if ((int)params.size() != 10)
+    if ((int)params.size() != 11)
     {
         ESP_LOGE(TAG, "setparameter needs 9+1 values. Actual %d\n", (int)params.size());
         UsbPcInterface::send("ESP_ERR_INVALID_ARG\n");
@@ -77,7 +77,7 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
     }
     // Check, if all parameters are Numbers
     float f = 0;
-    for (size_t i = 1; i < 10; i++)
+    for (size_t i = 1; i < 11; i++)
     {
 
         if (convertStoFloat(params[i].c_str(), &f) != ESP_OK)
@@ -86,7 +86,7 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
         }
     }
 
-    for (int i = 1; i < 10; i++)
+    for (int i = 1; i < 11; i++)
     {
         // UsbPcInterface::send("putParameter(%s,%s)\n", keys[i], params[i].c_str());
         this->putParameterToFlash(keys[i - 1], params[i].c_str());
@@ -110,8 +110,12 @@ esp_err_t ParameterSetting::putDefaultParametersToFlash()
     params.push_back("0");    // direction
     params.push_back("199");  // maxX
     params.push_back("199");  // maxY
+    params.push_back("100");  // multiplicator
 
-    return (this->putParametersToFlash(params));
+    esp_err_t err;
+    err = this->putParametersToFlash(params);
+
+    return err;
 }
 
 /**
@@ -147,7 +151,7 @@ bool ParameterSetting::parameterIsValid(string key, float minimum, float maximum
 
 esp_err_t ParameterSetting::parametersAreValid()
 {
-    for (int i = 0; i < 9; i++)
+    for (int i = 0; i < 10; i++)
     {
 
         if (!isKey(keys[i]))
@@ -159,15 +163,21 @@ esp_err_t ParameterSetting::parametersAreValid()
 
 esp_err_t ParameterSetting::getParametersFromFlash(bool display)
 {
-    // replaces dataStoring.saveConfigParam
+    /* replaces dataStoring.saveConfigParam
+    void setMaxX(uint16_t);
+    void setMaxY(uint16_t);
+    void setStartX(uint16_t);
+    void setStartY(uint16_t);
+    void setDirection(bool);
+    void setMultiplicatorGridAdc(uint16_t);
 
-    /*
+    
     extern double kI, kP, destinationTunnelCurrentnA, currentTunnelCurrentnA, remainingTunnelCurrentDifferencenA;
     extern uint16_t startX, startY;
     extern bool direction;
 
-    const char *keys[] = {"kI", "kP", "destinatioNa", "remainingNa", "startX", "startY", "direction", "maxX", "maxY"};
-                            0     1    2               3              4         5         6            7       8
+    const char *keys[] = {"kI", "kP", "destinatioNa", "remainingNa", "startX", "startY", "direction", "maxX", "maxY", "multiplicator"};
+                            0     1    2               3              4         5         6            7       8       9
     */
 
     kI = (double)getFloat(keys[0], NULL);
@@ -210,7 +220,10 @@ esp_err_t ParameterSetting::getParametersFromFlash(bool display)
     if (display)
         UsbPcInterface::sendInfo("maxY,%d\n", mMaxY);
 
-    // rtmGrid.setMultiplicatorGridAdc((uint16_t) param);
+    uint16_t mMultiplicator = (uint16_t)getFloat(keys[9],NULL);
+    rtmGrid.setMultiplicatorGridAdc(mMultiplicator);
+    if(display)
+    UsbPcInterface::sendInfo("MultiplicatorGridAdc,%d\n", mMultiplicator);
 
     return ESP_OK;
 }
