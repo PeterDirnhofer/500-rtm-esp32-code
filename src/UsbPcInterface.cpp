@@ -64,9 +64,9 @@ void UsbPcInterface::start()
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-        .rx_flow_ctrl_thresh = 0,  // !!! PeDi Added to avoid Warning -Wmissing-field-initializers
+        .rx_flow_ctrl_thresh = 0, // !!! PeDi Added to avoid Warning -Wmissing-field-initializers
         .source_clk = UART_SCLK_APB,
-        
+
     };
     // We won't use a buffer for sending data.
     uart_driver_install(UART_NUM_1, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
@@ -78,9 +78,9 @@ void UsbPcInterface::start()
 }
 
 /**
- * @brief Read CR terminated string from PC-usb into usbReceiveString. Set usbAvailable.    
- * 
- * 
+ * @brief Read CR terminated string from PC-usb into usbReceiveString. Set usbAvailable.
+ *
+ *
  */
 void UsbPcInterface::mUartRcvLoop(void *unused)
 {
@@ -158,33 +158,48 @@ int UsbPcInterface::send(const char *fmt, ...)
     return rc;
 }
 
-int UsbPcInterface::sendInfo(const char *fmt, ...){
+int UsbPcInterface::sendInfo(const char *fmt, ...)
+{
     va_list ap;
     va_start(ap, fmt);
 
     char s[100] = {0};
     vsprintf(s, fmt, ap);
-    
-    
+
     ESP_LOGI(TAG, "uartsend %s\n", s);
-    string s1="INFO,";
-    
+    string s1 = "INFO,";
 
     int len = strlen(s);
-    s1.append(s,len);
+    s1.append(s, len);
     len = strlen(s1.c_str());
     int rc = uart_write_bytes(UART_NUM_1, s1.c_str(), len);
-
     va_end(ap);
-
     return rc;
-    
 }
 
+esp_err_t UsbPcInterface::sendData()
+{
+    // replaces hspiLoop
+    vTaskSuspend(handleControllerLoop);
+    while (!dataQueue.empty())
+    {
+        dataQueue.front();
+        uint16_t X = dataQueue.front().getDataX();
+        uint16_t Y = dataQueue.front().getDataY();
+        uint16_t Z = dataQueue.front().getDataZ();
+        send("DATA,%d,%d,%d\n", X, Y, Z);
+        dataQueue.pop();
+    }
+    send("DATA,COMPLETE\n");
+
+
+
+    return ESP_OK;
+}
 
 /**
- * @brief Read USB input from Computer. 
- * Set workingMode to: ADJUST or PARAMETER or MEASURE. 
+ * @brief Read USB input from Computer.
+ * Set workingMode to: ADJUST or PARAMETER or MEASURE.
  * getworkingMode() reads workingMode
  */
 extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
@@ -230,7 +245,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     this->mParametersVector.clear();
     while (p != 0)
     {
-        //printf("%s\n", p);
+        // printf("%s\n", p);
         char buffer[20];
         sprintf(buffer, "%s", p);
         puts(strupr(buffer));
@@ -263,9 +278,8 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     }
 
     this->mWorkingMode = MODE_INVALID;
-    ESP_LOGW(TAG, "INVALID command %s\n",mParametersVector[0].c_str());
+    ESP_LOGW(TAG, "INVALID command %s\n", mParametersVector[0].c_str());
     return ESP_ERR_INVALID_ARG;
-
 }
 
 int UsbPcInterface::getWorkingMode()
@@ -281,18 +295,20 @@ vector<string> UsbPcInterface::getParametersFromPc()
 void UsbPcInterface::printErrorMessageAndRestart(string error_string)
 {
 
-    send("ERROR %s\n",error_string.c_str());
+    send("ERROR %s\n", error_string.c_str());
     send("Press Ctrl-C to restart\n");
-    while(1){
-         vTaskDelete(NULL);
+    while (1)
+    {
+        vTaskDelete(NULL);
     }
 }
 
 void UsbPcInterface::printMessageAndRestart(string msg)
 {
-    send("%s\n",msg.c_str());
+    send("%s\n", msg.c_str());
     send("Press Ctrl-C to restart\n");
-    while(1){
-         vTaskDelete(NULL);
+    while (1)
+    {
+        vTaskDelete(NULL);
     }
 }

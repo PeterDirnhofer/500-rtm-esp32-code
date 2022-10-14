@@ -165,10 +165,7 @@ extern "C" void controllerLoop(void *unused)
                 rtmDataReady = true; // damit weiss hspiLoop, dass Daten verfügbar sind
 
                 //vTaskResume(handleHspiLoop); // sends datasets to raspberry pi, will resume after task for sending suspends itself
-                ESP_LOGI(TAG,"ERSATZ HspiLoop\n");
-                while(1)
-                ;
-                
+                UsbPcInterface::sendData();
                 vTaskSuspend(NULL);
                 unsentDatasets = 0;
                 timer_start(TIMER_GROUP_0, TIMER_0); // resume timer

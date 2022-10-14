@@ -30,15 +30,18 @@ public:
    
   static void printErrorMessageAndRestart(string error_string);
   static void printMessageAndRestart(string msg);
+  static esp_err_t sendData();
 
   esp_err_t getCommandsFromPC();
   inline static bool usbAvailable=false;
   int getWorkingMode();
   vector<string> getParametersFromPc();
 
+
 private:
   inline static string mUsbReceiveString="";
   static void mUartRcvLoop(void *unused);
+  
   esp_err_t convertStoFloat(string s, float * value);
 
   TaskHandle_t mTaskHandle;
