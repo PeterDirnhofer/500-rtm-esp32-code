@@ -108,7 +108,7 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
             while ((i < rxCount) && (found_CR == false))
             {
 
-                if (data[i] == 0xD) // Carriage Return
+                if (data[i] == 0xA) // Linefeed
                 {
                     found_CR = true;
                 }
@@ -125,7 +125,7 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
 
             if (found_CR)
             {
-                ESP_LOGI(TAG, "#### 13 found.  \n");
+                ESP_LOGI(TAG, "#### 0A found.  \n");
 
                 UsbPcInterface::mUsbReceiveString.clear();
                 UsbPcInterface::mUsbReceiveString.append(rcvString);
@@ -148,7 +148,7 @@ int UsbPcInterface::send(const char *fmt, ...)
 
     char s[100] = {0};
     vsprintf(s, fmt, ap);
-    ESP_LOGI(TAG, "uartsend %s\n", s);
+    ESP_LOGI(TAG, "uartsend %s\r", s);
 
     const int len = strlen(s);
     int rc = uart_write_bytes(UART_NUM_1, s, len);
@@ -234,7 +234,6 @@ int UsbPcInterface::sendAdjust(const char *fmt, ...)
     return rc;
 }
 
-
 esp_err_t UsbPcInterface::sendData()
 {
     // replaces hspiLoop
@@ -245,7 +244,7 @@ esp_err_t UsbPcInterface::sendData()
         uint16_t X = dataQueue.front().getDataX();
         uint16_t Y = dataQueue.front().getDataY();
         uint16_t Z = dataQueue.front().getDataZ();
-        send("DATA,%d,%d,%d\n", X, Y, Z);
+        send("DATA,%d,%d,%d\r", X, Y, Z);
         dataQueue.pop();
     }
     send("DATA,COMPLETE\n");

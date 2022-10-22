@@ -55,7 +55,7 @@ extern "C" void app_main(void)
 
     UsbPcInterface usb;
     usb.start();
-    UsbPcInterface::sendStatus("IDLE\n");
+    UsbPcInterface::send("IDLE\n");
 
     ParameterSetting parameterSetter;
 
@@ -84,14 +84,14 @@ extern "C" void app_main(void)
 
     if (usb.getWorkingMode() == MODE_ADJUST_TEST_TIP)
     {
-        UsbPcInterface::sendStatus("ADJUST\n");
+        //UsbPcInterface::send("ADJUST\n");
         displayTunnelCurrent();
         vTaskDelete(NULL);
 
     }
     else if (usb.getWorkingMode() == MODE_MEASURE)
     {
-        UsbPcInterface::sendStatus("MEASURE\n");
+        //UsbPcInterface::sendStatus("MEASURE\n");
         controllerStart();
         vTaskDelete(NULL);
     }
