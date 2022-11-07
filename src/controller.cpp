@@ -59,7 +59,7 @@ extern "C" void displayTunnelCurrent()
         //  regeldifferenz = soll - ist
         e = w - r; // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse     
         
-        UsbPcInterface::send("%f\n", currentTunnelCurrentnA);
+        UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
         //UsbPcInterface::sendAdjust("%f", currentTunnelCurrentnA);
         
         // Invert Blue LED        
