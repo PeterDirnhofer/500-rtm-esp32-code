@@ -18,13 +18,19 @@ scanGrid::scanGrid(uint16_t maxX, uint16_t maxY, uint16_t startX, uint16_t start
  * Es werden lediglich die DAC Werte berechnet. Die eigentliche Ansteuerung des Piezo erfolgt später in der vspiLoop. 
  * 
  *    
- * Scanmuster:   
- * x+ >>>>>>>>>>>>>>>> ↓\n           
- * x- ↓ <<<<<<<<<<<<<<<<\n        
- * x+ >>>>>>>>>>>>>>>> ↓\n         
- * x- ↓ <<<<<<<<<<<<<<<<\n         
- * x+ >>>>>>>>>>>>>>>> ↓
- * usw. bis Y max erreicht ist   
+ * Scanpattern  
+ * 
+ * Y=000    X=000 +++ X=199    Line 00,001 -  00,200       
+ * Y=001    X=199 --- X=000    Line 00,201 -  00,400
+ * Y=002    X=000 +++ X=199    Line 00,401 -  00,600
+ * Y=003    X=199 --- X=000    Line 00,601 -  00,800   
+ * ...
+ * ...
+ * Y=196    x=000 +++ X=199    Line 39,201 -  39,400
+ * Y=197    X=199 --- X=000    Line 39,401 -  39,600
+ * Y=198    x=000 +++ X=199    Line 39,601 -  39,800
+ * Y=199    X=199 --- X=000    Line 39,801 -  40,000
+  * 
  * @return true, wenn grid komplett abgefahren ist
  */
 bool scanGrid::moveOn()
