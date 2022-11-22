@@ -17,60 +17,6 @@ using namespace std;
 /**@brief Setup-Helper. Starts display tunnel_current
  */
 static const char *TAG = "controller";
-/**@brief Loop diplaying tunnelcurrent to adjust measuring 
- * 
- * Is started by pessing ESC during startup
- * 
- */
-extern "C" void displayTunnelCurrent()
-{
-    ESP_LOGI(TAG,"+++ START Display Current Channel");
-    
-    static double e,w,r = 0;
-    esp_err_t errTemp = i2cInit(); // Init I2C for XYZ DACs
-    if (errTemp != 0)
-    {
-        ESP_LOGE(TAG,"ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
-    }
-
-    // Set X,Y,Z to 0
-    vspiStart(); // Init and loop for DACs
-    currentXDac=0;
-    currentYDac=0;
-    currentZDac=0;  
-    vTaskResume(handleVspiLoop); // Start for one run. Will suspend itself 
-    
-    ESP_LOGI(TAG,"+++ Display Tunnel Current\n");
-    ESP_LOGI(TAG,"Set X,Y,Z =");
-
-    w = destinationTunnelCurrentnA;      
-    const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
-    int ledLevel=1;
-    
-    // loop
-    while (1)
-    {
-        
-        uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
-
-        currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM); // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
-        r = currentTunnelCurrentnA;                                                                           // conversion from voltage to equivalent current
-        // w=r+0.001;
-        //  regeldifferenz = soll - ist
-        e = w - r; // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse     
-        
-        UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
-        //UsbPcInterface::sendAdjust("%f", currentTunnelCurrentnA);
-        
-        // Invert Blue LED        
-        
-        gpio_set_level(BLUE_LED, ledLevel % 2);
-        ledLevel++;
-        
-        vTaskDelay(xDelay);
-
-    }
-}
 
 /**@brief Initialialze vspi and i2c. Start single controllerLoop. Initialize 1 ms Timer for restarting controllerLoop
  * @details
@@ -237,4 +183,46 @@ extern "C" uint16_t saturate16bit(uint32_t input, uint16_t min, uint16_t max)
         return max;
     }
     return (uint16_t)input;
+}
+/**@brief Loop diplaying tunnelcurrent to help adjusting measure tip 
+ * 
+ */
+extern "C" void displayTunnelCurrent()
+{
+    ESP_LOGI(TAG,"+++ START Display Current Channel");
+    
+    esp_err_t errTemp = i2cInit(); // Init I2C for XYZ DACs
+    if (errTemp != 0)
+    {
+        ESP_LOGE(TAG,"ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
+    }
+
+    // Set X,Y,Z to 0
+    currentXDac=0;
+    currentYDac=0;
+    currentZDac=0;  
+    vspiStart(); // Init and loop for DACs  
+    vTaskResume(handleVspiLoop); // Start for one run. Will suspend itself 
+    
+    ESP_LOGI(TAG,"+++ Display Tunnel Current\n");
+    ESP_LOGI(TAG,"Set X,Y,Z =");
+  
+    const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
+    int ledLevel=1;
+    
+    while (1)
+    {
+        
+        uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
+        currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM); 
+        // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
+        UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
+      
+        // Invert Blue LED        
+        gpio_set_level(BLUE_LED, ledLevel % 2);
+        ledLevel++;
+        
+        vTaskDelay(xDelay);
+
+    }
 }
