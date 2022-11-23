@@ -14,8 +14,6 @@
 
 using namespace std;
 
-/**@brief Setup-Helper. Starts display tunnel_current
- */
 static const char *TAG = "controller";
 
 /**@brief Initialialze vspi and i2c. Start single controllerLoop. Initialize 1 ms Timer for restarting controllerLoop
@@ -35,12 +33,28 @@ extern "C" void controllerStart()
         ESP_LOGE(TAG,"ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
     }
     
-    vspiStart(); // Init and loop for DACs
+    vspiDacStart(); // Init and loop for DACs
     xTaskCreatePinnedToCore(controllerLoop, "controllerLoop", 10000, NULL, 2, &handleControllerLoop, 1);
     timer_tg0_initialise(1200); // us -> 10^6us/860SPS = 1162 -> 1200
 }
 
-/**@brief Steuerung des RTM. Messen Tunnelstrom. Berechnen neue Piezoposition für X,Y und Z. Speichern Messdaten
+int sendPaketWithData()
+{
+
+    timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer during dataset sending
+
+    rtmDataReady = true; // damit weiss hspiLoop, dass Daten verfügbar sind
+
+    //vTaskResume(handleHspiLoop); // sends datasets to raspberry pi, will resume after task for sending suspends itself
+    UsbPcInterface::sendData();
+    vTaskSuspend(NULL);
+    timer_start(TIMER_GROUP_0, TIMER_0); // resume timer
+    return 0;
+}
+
+
+/**@brief 
+ * Steuerung des RTM. Messen Tunnelstrom. Berechnen neue Piezoposition für X,Y und Z. Speichern Messdaten
  *
  * @details
  * Messung Tunnelstrom. Berechnung neuer Abstand Z zur Probe
@@ -57,7 +71,7 @@ extern "C" void controllerStart()
  *    - sleep
  * - Current Out off limit
  *    - controllerloop calculates new Z value currentZDac
- *    - resume vspiLoop
+ *    - resume vspiDacLoop
  *    - sleep
  *    
  * - wait for next timer
@@ -91,57 +105,26 @@ extern "C" void controllerLoop(void *unused)
 
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM); // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
         r = currentTunnelCurrentnA;                                                                           // conversion from voltage to equivalent current
-        // w=r+0.001;
-        //  regeldifferenz = soll - ist
-        e = w - r; // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
+    
+        // abweichung     = soll             - ist
+        // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
+        e = w - r; 
 
+        // Abweichung im Limit ?
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
-            ESP_LOGI(TAG,"regeldifferenz: kleiner remainingTunnelCurrentDifferencenA\n");
+            ESP_LOGI(TAG,"regeldifferenz im limit. Messen.\n");
             // save to queue
-            dataQueue.emplace(dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac)); // add dateElememt to queue
-            unsentDatasets++;
+            dataQueue.emplace(dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac)); 
 
-            // Paket mit 100 Messwerten vollständig                                                                        // increment
-            if (unsentDatasets >= sendDataAfterXDatasets)
+            // Paket mit 100 Messwerten vollständig -> Unterbrechen und senden                                                                        // increment
+            if (++ unsentDatasets >= sendDataAfterXDatasets)
             {
-                // printf("enough datasets to send \n");
-                timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer during dataset sending
-                unsentDatasets = 0;
-                rtmDataReady = true; // damit weiss hspiLoop, dass Daten verfügbar sind
-
-                //vTaskResume(handleHspiLoop); // sends datasets to raspberry pi, will resume after task for sending suspends itself
-                UsbPcInterface::sendData();
-                vTaskSuspend(NULL);
-                unsentDatasets = 0;
-                timer_start(TIMER_GROUP_0, TIMER_0); // resume timer
-            }
-
-            {
-                // printf("Not enough datasets to send %d\n", unsentDatasets);
+                unsentDatasets= sendPaketWithData();
             }
 
             // Berechne nächste X,Y Piezo Position. move tip
-            if (rtmGrid.moveOn()) // true, wenn Scan fertig ist moveTip
-            {
-                // Scan ist abgeschlossen
-                timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer, will be resumed at next new scan
-                // all points scanned, end controllerLoop
-                if (!dataQueue.empty())
-                {
-                    ESP_LOGI(TAG,"Last datasets to send \n");
-                    //vTaskResume(handleHspiLoop); // sends datasets to raspberry pi, will resume after task for sending suspends itself
-                    ESP_LOGI(TAG,"ERSATZ HspiLoop\n");
-                    while(1)
-                        ;
-                }
-                else
-                {
-                    ESP_LOGI(TAG,"All points scanned, already sent all datasets.\n");
-                }
-                vTaskDelete(NULL);
-            }
-            else
+            if (!rtmGrid.moveOn()) 
             {
                 // noch nicht alle Positionen angefahren
                 
@@ -150,18 +133,28 @@ extern "C" void controllerLoop(void *unused)
                 vTaskResume(handleVspiLoop); // will suspend itself 
 
             }
+            else
+            {
+                // Alle Positionen erledigt
+                timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer, will be resumed at next new scan
+                // Send rest of data
+                if (!dataQueue.empty())
+                {
+                    sendPaketWithData();
+                }
+                vTaskDelete(NULL);
+            }
         }
         // regeldifferenz ist zu gross
         // Z Wert nachjustieren
         else
         {
-
             y = kP * e + kI * eOld + yOld; // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt
 
             eOld = e;
             ySaturate = saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
             currentZDac = ySaturate;                                  // set new z height
-            ESP_LOGI(TAG,"new ZDac: %i. resume vspiLoop\n",currentZDac);
+            ESP_LOGI(TAG,"new ZDac: %i. resume vspiDacLoop\n",currentZDac);
 
             // handleVspiLoop stellt neue Z Position auf currentZDac
             vTaskResume(handleVspiLoop); // will suspend itself
@@ -201,7 +194,7 @@ extern "C" void displayTunnelCurrent()
     currentXDac=0;
     currentYDac=0;
     currentZDac=0;  
-    vspiStart(); // Init and loop for DACs  
+    vspiDacStart(); // Init and loop for DACs  
     vTaskResume(handleVspiLoop); // Start for one run. Will suspend itself 
     
     ESP_LOGI(TAG,"+++ Display Tunnel Current\n");
@@ -226,3 +219,4 @@ extern "C" void displayTunnelCurrent()
 
     }
 }
+

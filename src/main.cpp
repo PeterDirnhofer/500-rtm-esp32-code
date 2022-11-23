@@ -39,7 +39,7 @@
 #include "ParameterSetter.h"
 
 
-// Wenn spi nicht geht suche in vspiInit() PeDi Added
+// Wenn spi nicht geht suche in vspiDacInit() PeDi Added
 // .rx_flow_ctrl_thresh = 0,  Added in uart_config
 // devcfgDacY 
 using namespace std;

@@ -33,18 +33,18 @@
 static const char *TAG = "spi.cpp";
 using namespace std;
 
-/**@brief Init spi for DACs and run one vspiLoop
+/**@brief Init spi for DACs and run one vspiDacLoop
  *
  */
-void vspiStart()
+void vspiDacStart()
 {
 
-    ESP_LOGI("TAG", "+++ START vspiStart\n");
-    vspiInit();
-    xTaskCreatePinnedToCore(vspiLoop, "vspiloop", 10000, NULL, 3, &handleVspiLoop, 1);
+    ESP_LOGI("TAG", "+++ START vspiDacStart\n");
+    vspiDacInit();
+    xTaskCreatePinnedToCore(vspiDacLoop, "vspiloop", 10000, NULL, 3, &handleVspiLoop, 1);
 }
 
-void vspiInit()
+void vspiDacInit()
 {
 
     // Connection to DACs
@@ -153,10 +153,10 @@ void vspiInit()
  *
  * @param unused
  */
-void vspiLoop(void *unused)
+void vspiDacLoop(void *unused)
 {
 
-    ESP_LOGI(TAG, "+++ vspiLoop started\n");
+    ESP_LOGI(TAG, "+++ vspiDacLoop started\n");
 
     unique_ptr<uint16_t> buffer = make_unique<uint16_t>();
 
@@ -168,7 +168,7 @@ void vspiLoop(void *unused)
 
     vspiSendDac(currentXDac, buffer.get(), handleDacX); // Dac X
     vspiSendDac(currentYDac, buffer.get(), handleDacY); // Dac Y
-    // printf("--- Suspend vspiLoop (self)\n");
+    // printf("--- Suspend vspiDacLoop (self)\n");
     vTaskSuspend(NULL); // will be resumed by controller
 
     // Resumed by Controller
@@ -190,7 +190,7 @@ void vspiLoop(void *unused)
         }
 
         vspiSendDac(currentZDac, buffer.get(), handleDacZ); // Dac Z
-        // printf("--- Suspend vspiLoop (self)\n");
+        // printf("--- Suspend vspiDacLoop (self)\n");
         vTaskSuspend(NULL); // will be resumed by controller
     }
 }

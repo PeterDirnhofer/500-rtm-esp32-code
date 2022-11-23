@@ -15,7 +15,7 @@ scanGrid::scanGrid(uint16_t maxX, uint16_t maxY, uint16_t startX, uint16_t start
 
 /**
  * @brief Berechnung der Piezo-DAC Werte 'currentXDac' und 'currentYDac' für die nächste anzusteuernde Position.      
- * Es werden lediglich die DAC Werte berechnet. Die eigentliche Ansteuerung des Piezo erfolgt später in der vspiLoop. 
+ * Es werden lediglich die DAC Werte berechnet. Die eigentliche Ansteuerung des Piezo erfolgt später in der vspiDacLoop. 
  * 
  *    
  * Scanpattern  
