@@ -93,7 +93,7 @@ extern queue<dataElement> dataQueue;
 extern scanGrid rtmGrid;
 
 
-extern bool configNeeded, rtmDataReady;
+extern bool configNeeded;
 extern uint16_t configExisting; //each bit stands for one config param. specifier 2 will write to second byte 
 extern uint16_t lastConfigExisting;
 

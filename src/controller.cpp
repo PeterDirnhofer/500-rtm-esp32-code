@@ -33,60 +33,28 @@ extern "C" void controllerStart()
         ESP_LOGE(TAG,"ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
     }
     
-    vspiDacStart(); // Init and loop for DACs
     xTaskCreatePinnedToCore(controllerLoop, "controllerLoop", 10000, NULL, 2, &handleControllerLoop, 1);
     timer_tg0_initialise(1200); // us -> 10^6us/860SPS = 1162 -> 1200
 }
 
-int sendPaketWithData()
-{
-
-    timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer during dataset sending
-
-    rtmDataReady = true; // damit weiss hspiLoop, dass Daten verfügbar sind
-
-    //vTaskResume(handleHspiLoop); // sends datasets to raspberry pi, will resume after task for sending suspends itself
-    UsbPcInterface::sendData();
-    vTaskSuspend(NULL);
-    timer_start(TIMER_GROUP_0, TIMER_0); // resume timer
-    return 0;
-}
 
 
-/**@brief 
- * Steuerung des RTM. Messen Tunnelstrom. Berechnen neue Piezoposition für X,Y und Z. Speichern Messdaten
- *
- * @details
- * Messung Tunnelstrom. Berechnung neuer Abstand Z zur Probe
- *
- * Die while Schleife setzt sich gleich am Anfang in den sleep modus.(mit vTaskSuspend)
- * Die schleife wird danach geweckt durch den ms Timer oder von der hspiLoop
- *
- * *
- * @Ablauf:
- * - Timer starts controllerloop cyclic
- *  - ADC Current is in limit
- *    - controllerloop saves valid values
- *    - rtmGrid.moveOn to set next XY Position currentX and currentY
- *    - sleep
- * - Current Out off limit
- *    - controllerloop calculates new Z value currentZDac
- *    - resume vspiDacLoop
- *    - sleep
- *    
- * - wait for next timer
-
- * Lesen Tunnelstrom 'adcValue' und Berechnung der Regeldifferenz
- *
- * Regeldifferenz liegt im Limit:
- * Gültiger Messwert. 'CurrentX', 'CurrentY' und 'CurrentZac' werden in der queue gespeichert.
- * Sind 100 Messwerte in der queue, wird die hspiLoop gestartet umd die Daten zu senden. 
- * Neue XY Position berechnen i
- * Die Loop selbst geht in sleep.
- *
- * Regeldifferenz out off limit:
- * Z Wert nachjustieren. 
- * Neuen globalen Stellwert currentZDac berechnen. vpsiLoop Starten. Suspend selbst. 
+/**@brief Run one Measure Cycle. Save data if valid. Control Position of microscopes measure tip.
+ * 
+ * 
+ * @Steps:
+ * - Controllerloop is started cyclic by timer
+ * - Measure ADC current
+ * - If ADC current is in limit: 
+ *    - controllerloop saves current ADC value and X,Y,Z Position to queue. 
+ *    - If 100 values are in queue, pause loop and send data to PC
+ *    - Request next XY Position
+ *    - resume vspiDacLoop to move tip to new X Y position
+ *    - stop ControllerLoop. Wait for next timer
+ * - If ADC current is out off limit. Correction of Z distance
+ *    - calculate new Z value and request new Z position
+ *    - resume vspiDacLoop to move tip to new Z position
+ *    - stop ControllerLoop. Wait for next timer
  */
 extern "C" void controllerLoop(void *unused)
 {
@@ -95,6 +63,7 @@ extern "C" void controllerLoop(void *unused)
     uint16_t ySaturate = 0;
     w = destinationTunnelCurrentnA;
     uint16_t unsentDatasets = 0;
+ 
   
     //
     while (1)
@@ -165,7 +134,7 @@ extern "C" void controllerLoop(void *unused)
     }
 }
 
-extern "C" uint16_t saturate16bit(uint32_t input, uint16_t min, uint16_t max)
+uint16_t saturate16bit(uint32_t input, uint16_t min, uint16_t max)
 {
     if (input < min)
     {
@@ -177,6 +146,22 @@ extern "C" uint16_t saturate16bit(uint32_t input, uint16_t min, uint16_t max)
     }
     return (uint16_t)input;
 }
+
+int sendPaketWithData()
+{
+
+    timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer during dataset sending
+
+    //rtmDataReady = true; // damit weiss hspiLoop, dass Daten verfügbar sind
+
+    //vTaskResume(handleHspiLoop); // sends datasets to raspberry pi, will resume after task for sending suspends itself
+    UsbPcInterface::sendData();
+    vTaskSuspend(NULL);
+    timer_start(TIMER_GROUP_0, TIMER_0); // resume timer
+    return 0;
+}
+
+
 /**@brief Loop diplaying tunnelcurrent to help adjusting measure tip 
  * 
  */

@@ -51,7 +51,7 @@ uint8_t lastConfigByte=100;
 /**
  * @brief Kompletter Messdatensatz verfügbar in queue. Wird von controller gesetzt
  */
-bool rtmDataReady = false;
+//bool rtmDataReady = false;
 uint16_t configExisting = 0;
 uint16_t lastConfigExisting = 1000;
 
