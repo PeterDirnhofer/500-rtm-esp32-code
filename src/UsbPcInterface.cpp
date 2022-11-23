@@ -237,7 +237,7 @@ int UsbPcInterface::sendAdjust(const char *fmt, ...)
 esp_err_t UsbPcInterface::sendData()
 {
     // replaces hspiLoop
-    vTaskSuspend(handleControllerLoop);
+    //vTaskSuspend(handleControllerLoop);
     while (!dataQueue.empty())
     {
         dataQueue.front();

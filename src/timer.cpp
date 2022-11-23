@@ -61,5 +61,5 @@ void timer_tg0_initialise (int timer_period_us)
     timer_isr_register(TIMER_GROUP_0, TIMER_0, &timer_tg0_isr, NULL, 0, &s_timer_handle);
     //printf("done init \n");
     timer_start(TIMER_GROUP_0, TIMER_0);
-    printf("*** Sekundentimer Interrupt für resume controllerLoop gestartet\n");
+    printf("*** Start timer\n");
 }

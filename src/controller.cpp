@@ -26,15 +26,24 @@ static const char *TAG = "controller";
 extern "C" void controllerStart()
 {
     ESP_LOGI(TAG,"+++ controllerStart\n");
+    printf("+++++++++++++++++++++ controllerStart\n");
 
     esp_err_t errTemp = i2cInit(); // Init ADC
     if (errTemp != 0)
     {
         ESP_LOGE(TAG,"ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
     }
+
+    // Init DACs
+    vspiDacStart(); // Init and loop for DACs  
+    vTaskResume(handleVspiLoop); // Start for one run. Will suspend itself 
+    
     
     xTaskCreatePinnedToCore(controllerLoop, "controllerLoop", 10000, NULL, 2, &handleControllerLoop, 1);
-    timer_tg0_initialise(1200); // us -> 10^6us/860SPS = 1162 -> 1200
+    timer_tg0_initialise(1200*1000); // us -> 10^6us/860SPS = 1162 -> 1200
+    printf("Timer Period set to 1200*1000\n");
+    controllerLoop(NULL);
+   
 }
 
 
@@ -43,7 +52,7 @@ extern "C" void controllerStart()
  * 
  * 
  * @Steps:
- * - Controllerloop is started cyclic by timer
+ * - Controllerloop is started cyclic by timer (timer_tg0_isr)
  * - Measure ADC current
  * - If ADC current is in limit: 
  *    - controllerloop saves current ADC value and X,Y,Z Position to queue. 
@@ -68,7 +77,10 @@ extern "C" void controllerLoop(void *unused)
     //
     while (1)
     {
+        printf("1000 tick \n");
         vTaskSuspend(NULL);  // Wecken durch timer
+    
+        
 
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
 
@@ -79,10 +91,13 @@ extern "C" void controllerLoop(void *unused)
         // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
         e = w - r; 
 
+
+
         // Abweichung im Limit ?
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
             ESP_LOGI(TAG,"regeldifferenz im limit. Messen.\n");
+            printf("Limit ok\n");
             // save to queue
             dataQueue.emplace(dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac)); 
 
@@ -118,11 +133,13 @@ extern "C" void controllerLoop(void *unused)
         // Z Wert nachjustieren
         else
         {
+            printf("Off limits\n");
             y = kP * e + kI * eOld + yOld; // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt
 
             eOld = e;
             ySaturate = saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
             currentZDac = ySaturate;                                  // set new z height
+            printf("new ZDac: %i. resume vspiDacLoop\n",currentZDac);
             ESP_LOGI(TAG,"new ZDac: %i. resume vspiDacLoop\n",currentZDac);
 
             // handleVspiLoop stellt neue Z Position auf currentZDac
@@ -151,12 +168,8 @@ int sendPaketWithData()
 {
 
     timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer during dataset sending
-
-    //rtmDataReady = true; // damit weiss hspiLoop, dass Daten verfügbar sind
-
-    //vTaskResume(handleHspiLoop); // sends datasets to raspberry pi, will resume after task for sending suspends itself
-    UsbPcInterface::sendData();
     vTaskSuspend(NULL);
+    UsbPcInterface::sendData();
     timer_start(TIMER_GROUP_0, TIMER_0); // resume timer
     return 0;
 }
