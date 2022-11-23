@@ -36,7 +36,7 @@ scanGrid::scanGrid(uint16_t maxX, uint16_t maxY, uint16_t startX, uint16_t start
 bool scanGrid::moveOn()
 {
     //printf("moveOn %d\n",(int)currentDirection);
-    switch (currentDirection)
+    switch ((int)currentDirection)
     {
     case false:
        
