@@ -43,7 +43,8 @@ bool direction = 0;
 uint16_t sendDataAfterXDatasets = 100;
 
 queue<dataElement> dataQueue;
-scanGrid rtmGrid(200,200); //default grid
+// scanGrid rtmGrid(200,200); //default grid
+scanGrid rtmGrid(200,10); //default grid
 
 bool configNeeded = true;
 uint8_t lastConfigByte=100;
@@ -54,6 +55,7 @@ uint8_t lastConfigByte=100;
 //bool rtmDataReady = false;
 uint16_t configExisting = 0;
 uint16_t lastConfigExisting = 1000;
+int64_t controller_start_time = 0;
 
 uint16_t maxNumberAttemptsSPI = 10;
 

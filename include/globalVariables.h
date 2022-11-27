@@ -96,6 +96,7 @@ extern scanGrid rtmGrid;
 extern bool configNeeded;
 extern uint16_t configExisting; //each bit stands for one config param. specifier 2 will write to second byte 
 extern uint16_t lastConfigExisting;
+extern int64_t controller_start_time;
 
 
 extern uint16_t maxNumberAttemptsSPI;
@@ -103,11 +104,15 @@ extern uint16_t maxNumberAttemptsSPI;
 extern intr_handle_t s_timer_handle;
 extern uint8_t lastConfigByte;
 
+
+
 #define MODE_INVALID -1
 #define MODE_ADJUST_TEST_TIP 1
 #define MODE_MEASURE 2
 #define MODE_PARAMETER 3
 
 #define BLUE_LED GPIO_NUM_2
+
+
 
 #endif
