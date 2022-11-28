@@ -12,6 +12,21 @@ scanGrid::scanGrid(uint16_t maxX, uint16_t maxY, uint16_t startX, uint16_t start
 {
 }
 
+bool ledIsOn = false;
+void toggleLed()
+{
+    if (ledIsOn){
+        gpio_set_level(BLUE_LED, 0);
+    }
+    else{
+        gpio_set_level(BLUE_LED, 1);
+
+    }
+    ledIsOn = !ledIsOn;
+
+
+}
+
 
 /**
  * @brief Berechnung der Piezo-DAC Werte 'currentXDac' und 'currentYDac' für die nächste anzusteuernde Position.      
@@ -52,6 +67,7 @@ bool scanGrid::moveOn()
              
             if (currentY != maxY)
             {
+                toggleLed();
                 currentY++; // next row
                 currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
                 currentDirection = true; // direction change
@@ -75,6 +91,7 @@ bool scanGrid::moveOn()
         {
             if (currentY != maxY)
             {
+                toggleLed();
                 currentY++; // next row
                 currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
                 currentDirection = false; // direction change
