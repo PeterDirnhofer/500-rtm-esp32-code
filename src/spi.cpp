@@ -26,7 +26,7 @@
 
 #include "globalVariables.h"
 #include "spi.h"
-//#include "communication.h"
+// #include "communication.h"
 #include "controller.h"
 #include "timer.h"
 

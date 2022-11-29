@@ -210,10 +210,13 @@ esp_err_t ParameterSetting::getParametersFromFlash(bool display)
 
     uint16_t mMaxX = (uint16_t)getFloat(keys[7], __FLT_MAX__);
     rtmGrid.setMaxX(mMaxX);
+    nvs_maxX = mMaxX;
+
     if (display)
         UsbPcInterface::sendParameter("maxX,%d\n", mMaxX);
 
     uint16_t mMaxY = (uint16_t)getFloat(keys[8], __FLT_MAX__);
+    nvs_maxY = mMaxY;
     rtmGrid.setMaxY(mMaxY);
     if (display)
         UsbPcInterface::sendParameter("maxY,%d\n", mMaxY);

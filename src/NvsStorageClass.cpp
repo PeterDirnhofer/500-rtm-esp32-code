@@ -133,7 +133,6 @@ bool NvsStorageClass::remove(const char *key)
     return true;
 }
 
-
 // private ******************** P
 
 /*
@@ -373,19 +372,20 @@ size_t NvsStorageClass::putString(const char *key, const char *value)
     esp_err_t err = nvs_set_str(mHandle, key, value);
     if (err)
     {
-        ESP_LOGE(TAG,"nvs_set_str fail: %s %s", key, nvs_error(err));
+        ESP_LOGE(TAG, "nvs_set_str fail: %s %s", key, nvs_error(err));
         return 0;
     }
     err = nvs_commit(mHandle);
     if (err)
     {
-        ESP_LOGE(TAG,"nvs_commit fail: %s %s", key, nvs_error(err));
+        ESP_LOGE(TAG, "nvs_commit fail: %s %s", key, nvs_error(err));
         return 0;
     }
     return strlen(value);
 }
 
-size_t NvsStorageClass::putString(const char* key, const string value){
+size_t NvsStorageClass::putString(const char *key, const string value)
+{
     return putString(key, value.c_str());
 }
 

@@ -86,6 +86,7 @@ extern i2c_config_t i2cConf;
 
 extern double kI, kP, destinationTunnelCurrentnA, currentTunnelCurrentnA, remainingTunnelCurrentDifferencenA;
 extern uint16_t startX, startY;
+extern uint16_t nvs_maxX, nvs_maxY;
 extern bool direction;
 extern uint16_t sendDataAfterXDatasets;
 

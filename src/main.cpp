@@ -38,10 +38,9 @@
 #include "UsbPcInterface.h"
 #include "ParameterSetter.h"
 
-
 // Wenn spi nicht geht suche in vspiDacInit() PeDi Added
 // .rx_flow_ctrl_thresh = 0,  Added in uart_config
-// devcfgDacY 
+// devcfgDacY
 using namespace std;
 
 extern "C" void app_main(void)
@@ -78,20 +77,20 @@ extern "C" void app_main(void)
     string p0 = "", p1 = "";
     int parameterCount;
     p0 = usb.getParametersFromPc()[0];
-    parameterCount=usb.getParametersFromPc().size();
+    parameterCount = usb.getParametersFromPc().size();
     if (parameterCount == 2)
         p1 = usb.getParametersFromPc()[1];
 
     if (usb.getWorkingMode() == MODE_ADJUST_TEST_TIP)
     {
-        //UsbPcInterface::send("ADJUST\n");
+        // UsbPcInterface::send("ADJUST\n");
         displayTunnelCurrent();
         vTaskDelete(NULL);
-
     }
     else if (usb.getWorkingMode() == MODE_MEASURE)
     {
-        //UsbPcInterface::sendStatus("MEASURE\n");
+        // UsbPcInterface::sendStatus("MEASURE\n");
+        parameterSetter.getParametersFromFlash(false); // get measure parameter from nvs
         controllerStart();
         vTaskDelete(NULL);
     }
@@ -125,14 +124,14 @@ extern "C" void app_main(void)
     }
 
     // PARAMETER,10,1000,10.0,0.01,0,0,0,199,199,10
-    else if (parameterCount==11)
+    else if (parameterCount == 11)
     {
 
         esp_err_t err = parameterSetter.putParametersToFlash(usb.getParametersFromPc());
         if (err == ESP_OK)
         {
             parameterSetter.getParametersFromFlash(true);
-            //usb.sendInfo("PARAMETER set OK\n");
+            // usb.sendInfo("PARAMETER set OK\n");
             esp_restart();
         }
         else
@@ -140,7 +139,8 @@ extern "C" void app_main(void)
             UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,p1,p2,...,p9");
         }
     }
-    else {
+    else
+    {
         UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nInvalid number of parameters");
     }
 

@@ -1,17 +1,16 @@
 #include "dataStoring.h"
-//#include "communication.h"
+// #include "communication.h"
 #include "globalVariables.h"
 
-
-//constructor of dataElement for queue
+// constructor of dataElement for queue
 dataElement::dataElement(uint16_t x, uint16_t y, uint16_t z)
-: x(x), y(y), z(z)
-{}
-
-void saveConfigParamWoCommunication_h(){
-
+    : x(x), y(y), z(z)
+{
 }
 
+void saveConfigParamWoCommunication_h()
+{
+}
 
 /*
 void saveConfigParam(double param, uint8_t configDescriptionByte){
@@ -50,20 +49,22 @@ void saveConfigParam(double param, uint8_t configDescriptionByte){
             break;
 
     }
-    
+
 
 }
 
 */
-void sendDatasets(void* unused){
-    //unnecessary task...
+void sendDatasets(void *unused)
+{
+    // unnecessary task...
     printf("Created task for sending datasets to Pi\n");
-    while(1){
-        //vTaskResume(handleHspiLoop);
+    while (1)
+    {
+        // vTaskResume(handleHspiLoop);
         printf("ERSATZ HspiLoop\n");
-                while(1)
-                ;
+        while (1)
+            ;
 
-        vTaskSuspend(NULL); //suspend sendDatasets task, so controller will resume
+        vTaskSuspend(NULL); // suspend sendDatasets task, so controller will resume
     }
 }
