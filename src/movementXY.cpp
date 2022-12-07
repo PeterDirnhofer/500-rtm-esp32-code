@@ -12,40 +12,60 @@ scanGrid::scanGrid(uint16_t maxX, uint16_t maxY, uint16_t startX, uint16_t start
 {
 }
 
+bool ledIsOn = false;
+void toggleLed()
+{
+    if (ledIsOn)
+    {
+        gpio_set_level(BLUE_LED, 0);
+    }
+    else
+    {
+        gpio_set_level(BLUE_LED, 1);
+    }
+    ledIsOn = !ledIsOn;
+}
 
 /**
- * @brief Berechnung der Piezo-DAC Werte 'currentXDac' und 'currentYDac' für die nächste anzusteuernde Position.      
- * Es werden lediglich die DAC Werte berechnet. Die eigentliche Ansteuerung des Piezo erfolgt später in der vspiLoop. 
- * 
- *    
- * Scanmuster:   
- * x+ >>>>>>>>>>>>>>>> ↓\n           
- * x- ↓ <<<<<<<<<<<<<<<<\n        
- * x+ >>>>>>>>>>>>>>>> ↓\n         
- * x- ↓ <<<<<<<<<<<<<<<<\n         
- * x+ >>>>>>>>>>>>>>>> ↓
- * usw. bis Y max erreicht ist   
+ * @brief Berechnung der Piezo-DAC Werte 'currentXDac' und 'currentYDac' für die nächste anzusteuernde Position.
+ * Es werden lediglich die DAC Werte berechnet. Die eigentliche Ansteuerung des Piezo erfolgt später in der vspiDacLoop.
+ *
+ *
+ * Scanpattern
+ *
+ * Y=000    X=000 +++ X=199    Line 00,001 -  00,200
+ * Y=001    X=199 --- X=000    Line 00,201 -  00,400
+ * Y=002    X=000 +++ X=199    Line 00,401 -  00,600
+ * Y=003    X=199 --- X=000    Line 00,601 -  00,800
+ * ...
+ * ...
+ * Y=196    x=000 +++ X=199    Line 39,201 -  39,400
+ * Y=197    X=199 --- X=000    Line 39,401 -  39,600
+ * Y=198    x=000 +++ X=199    Line 39,601 -  39,800
+ * Y=199    X=199 --- X=000    Line 39,801 -  40,000
+ *
  * @return true, wenn grid komplett abgefahren ist
  */
 bool scanGrid::moveOn()
 {
-    //printf("moveOn %d\n",(int)currentDirection);
-    switch (currentDirection)
+    // printf("moveOn %d\n",(int)currentDirection);
+    switch ((int)currentDirection)
     {
     case false:
-       
+
         if (currentX < maxX)
         {
             currentX++; // rightwise
-            //printf("moveOn currentX++ %d\n", currentX);
+            // printf("moveOn currentX++ %d\n", currentX);
 
             currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
         }
         else
         {
-             
+
             if (currentY != maxY)
             {
+                toggleLed();
                 currentY++; // next row
                 currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
                 currentDirection = true; // direction change
@@ -59,7 +79,6 @@ bool scanGrid::moveOn()
         break;
     case true:
 
-        
         if (currentX > 0)
         {
             currentX--; // leftwise
@@ -69,6 +88,7 @@ bool scanGrid::moveOn()
         {
             if (currentY != maxY)
             {
+                toggleLed();
                 currentY++; // next row
                 currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
                 currentDirection = false; // direction change
@@ -148,12 +168,12 @@ uint16_t scanGrid::getMultiplicatorGridAdc()
 
 /**
  * @brief Berechnung Piezo DAC Wert aus gewünschter Piezo Koordinate (X oder Y)
- * 
- * @param currentGridValue Gewünschte X oder Y Koordinate im Grid   
- * @param maxGridValue 
- * @param maxValueDac 
- * @param multiplicator 
- * @return uint16_t ADC Wert für eine Koordinate, der an Piezo übergeben werden kann 
+ *
+ * @param currentGridValue Gewünschte X oder Y Koordinate im Grid
+ * @param maxGridValue
+ * @param maxValueDac
+ * @param multiplicator
+ * @return uint16_t ADC Wert für eine Koordinate, der an Piezo übergeben werden kann
  */
 uint16_t gridToDacValue(uint16_t currentGridValue, uint16_t maxGridValue, uint16_t maxValueDac, uint16_t multiplicator)
 {

@@ -58,7 +58,8 @@
         "future": "cpp",
         "mutex": "cpp",
         "thread": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "iostream": "cpp"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

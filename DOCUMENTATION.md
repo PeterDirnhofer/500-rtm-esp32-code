@@ -1,10 +1,47 @@
-# Communication between Terminal Raspberry and ESP32
+# ESP32 esp-idf for STM
 
-## Terminal
+## Communication with Monitor via additional UART
+
+### ADJUST
+
+Reading tunnel current ADC values to adjust RTM tunneling current tip. Cyclic
+Stop by pressing CTRL-C
+
+
+Results are sent when available automatically via UART
+
+### Monitoring the test probes height
+
+Press **ESC** during startup
+
+### Measuring Parameter
+
+Press **P** during startup
+
+---
+
+## Process flow controller (after initialisation)
+
+- Timer starts controllerloop cyclic
+
+- If tunnel-current is in limit
+  - controllerloop saves valid values
+  - rtmGrid.moveOn to set next XY Position currentX and currentY
+  - sleep
+- if tunnel-current Out off limit
+  - controllerloop calculates new Z value currentZDac
+  - sleep
+- wait for next timer
+
+---
+
+## Communication between Terminal Raspberry and ESP32 - depracted
+
+### Terminal
 
 ``sudo ./rtm_pi 100 1000 10.0 0.01 0 0 0 199 199``
 
-## Raspberry
+### Raspberry
 
 Receive parameter from Terminal in
 
@@ -42,28 +79,23 @@ memcpy(&buf[2], &dataArray[configSend], 8);
 bcm2835_spi_writenb(buf, 10);
 ```
 
---
+# ESP32 Memory
 
-## Programmieren über die JTAG Schnittstelle mit ESP-Prog
+I (369) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM  
+I (375) heap_init: At 3FFB4638 len 0002B9C8 (174 KiB): DRAM  
+I (381) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM  
+I (388) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM  
+I (394) heap_init: At 4008E39C len 00011C64 (71 KiB): IRAM  
 
+0002B9C8 (178.632) Byte / 0x400 (1024) = AE (174) kiB DRAM
 
-Während der Entwicklung des Programms wird das ESP-Prog Tool um den Code von Visual Studio auf den ESP zu übertragen.    
-So bleibt die Standard ESP USB Schnittstelle für die Kommunikation mit dem Anwender frei.
+# Memory for measuring results
 
-So gehts:
+Number of Values for 1 Measurement 6 Byte:  
+DATAELEMENT uint16_t x, uint16_t y, uint16_t z
 
-<https://docs.platformio.org/en/latest/plus/debug-tools/esp-prog.html>
+Number of grid Points 40.000  
+200*200 grid = 40.000*6
+DATAELEMENT uint16_t x, uint16_t y, uint16_t z = 6 Byte  
 
-In platformio.ini:
-
-``
-upload_port = 
-upload_protocol = esp-prog``
-
-Verbindung ESP32-ESP-Prog Tool:
-
-GND  
-ESP-TMS GPIO_14  
-ESP-TCK GPIO_13  
-ESP_TDO GPIO_15  
-ESP-TDI GPIO_12  
+Total 40.000 * 6 = 240.000 Byte

@@ -1,7 +1,8 @@
 #ifndef GLOBALVARIABLES
 #define GLOBALVARIABLES
 
-#include <queue>          // std::queue
+using namespace std;
+#include <queue>          
 #include "esp_err.h"
 #include "driver/spi_slave.h"
 #include "driver/spi_master.h"
@@ -15,17 +16,9 @@
 #define MODUS_RUN 0
 #define MODUS_MONITOR_TUNNEL_CURRENT 1
 
-#define GPIO_HANDSHAKE_HSPI GPIO_NUM_2
-#define GPIO_MOSI_HSPI GPIO_NUM_13
-#define GPIO_MISO_HSPI GPIO_NUM_12
-#define GPIO_SCLK_HSPI GPIO_NUM_14
-#define GPIO_CS_HSPI GPIO_NUM_15
 
-#define DMA_CHAN_HSPI 0
-
-extern esp_err_t retHspi;
-extern spi_slave_transaction_t tHspi;
-extern spi_slave_transaction_t tPreviousHspi;
+#define TXD_PIN (GPIO_NUM_33)
+#define RXD_PIN (GPIO_NUM_32)
 
 
 #define GPIO_MOSI_VSPI 23
@@ -40,19 +33,10 @@ extern spi_slave_transaction_t tPreviousHspi;
 extern esp_err_t retVspi;
 extern spi_transaction_t tVspi;
 
-extern WORD_ALIGNED_ATTR char sendbufferHspi[10];
-extern WORD_ALIGNED_ATTR char recvbufferHspi[10];
-
-extern WORD_ALIGNED_ATTR char oldSendbufferHspi[10];
-extern WORD_ALIGNED_ATTR char oldRecvbufferHspi[10];
-
-extern WORD_ALIGNED_ATTR char sendbufferUart[10];
-extern WORD_ALIGNED_ATTR char recvbufferUart[10];
 
 extern WORD_ALIGNED_ATTR char sendbufferVspi[3];
 extern WORD_ALIGNED_ATTR char recvbufferVspi[3];
 
-extern TaskHandle_t handleHspiLoop;
 extern TaskHandle_t handleUartLoop;
 extern TaskHandle_t handleUartRcvLoop;
 
@@ -102,16 +86,18 @@ extern i2c_config_t i2cConf;
 
 extern double kI, kP, destinationTunnelCurrentnA, currentTunnelCurrentnA, remainingTunnelCurrentDifferencenA;
 extern uint16_t startX, startY;
+extern uint16_t nvs_maxX, nvs_maxY;
 extern bool direction;
 extern uint16_t sendDataAfterXDatasets;
 
-extern std::queue<dataElement> dataQueue;
+extern queue<dataElement> dataQueue;
 extern scanGrid rtmGrid;
 
 
-extern bool configNeeded, rtmDataReady;
+extern bool configNeeded;
 extern uint16_t configExisting; //each bit stands for one config param. specifier 2 will write to second byte 
 extern uint16_t lastConfigExisting;
+extern int64_t controller_start_time;
 
 
 extern uint16_t maxNumberAttemptsSPI;
@@ -120,9 +106,13 @@ extern intr_handle_t s_timer_handle;
 extern uint8_t lastConfigByte;
 
 
-#define MODE_MEASURE 0
-#define MODE_MONITOR_TUNNEL_CURRENT 1
-extern uint16_t modeWorking;
+
+#define MODE_INVALID -1
+#define MODE_ADJUST_TEST_TIP 1
+#define MODE_MEASURE 2
+#define MODE_PARAMETER 3
+
+#define BLUE_LED GPIO_NUM_2
 
 
 
