@@ -273,6 +273,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
             ledLevel++;
             gpio_set_level(BLUE_LED, ledLevel % 2);
             this->send("IDLE\n");
+            ESP_LOGW(TAG,"IDLE");
         }
 
         vTaskDelay(100 / portTICK_RATE_MS);

@@ -55,6 +55,7 @@ extern "C" void app_main(void)
     UsbPcInterface usb;
     usb.start();
     UsbPcInterface::send("IDLE\n");
+    ESP_LOGW(TAG,"IDLE");
 
     ParameterSetting parameterSetter;
 
