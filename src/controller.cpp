@@ -92,9 +92,8 @@ extern "C" void controllerLoop(void *unused)
         // ESP_LOGW(TAG,"%i: 1000 tick \n",runtime_ms());
         vTaskSuspend(NULL); // Wecken durch timer
 
-        // uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
-        uint16_t adcValue = 111; // read current voltageoutput of preamplifier
-
+        uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
+       
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM); // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
         r = currentTunnelCurrentnA;                                                                           // conversion from voltage to equivalent current
 
