@@ -1,6 +1,6 @@
 # RTM ESP32 - API
 
-The 500 EUR Raster Tunnel Microscope is controlled by a ESP32. The ESP32 is connected to a Computer via an additional USB Interface.
+The 500 EUR Raster Tunnel Microscope is controlled by a ESP32. The ESP32 has an additional USB Interface for communication with the computer.
 
 ## Communication-Protocol ESP32 to Computer
 
