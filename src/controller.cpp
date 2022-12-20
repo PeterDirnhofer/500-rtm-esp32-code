@@ -101,9 +101,10 @@ extern "C" void controllerLoop(void *unused)
         // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
         e = w - r;
 
-        // Abweichung im Limit ?
+        // Abweichung im Limit ? 
         if (abs(e) <= remainingTunnelCurrentDifferencenA) 
         {
+            printf("KLEIN GENUG");
             // ESP_LOGI(TAG,"OR TRUE regeldifferenz im limit. Messen.\n");
 
             // save to queue
