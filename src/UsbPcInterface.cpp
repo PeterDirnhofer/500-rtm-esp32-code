@@ -133,11 +133,11 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
                 rcvString.clear();
                 found_CR = false;
                 ESP_LOGI(TAG, "usbReceive %s\n", mUsbReceiveString.c_str());
-                free(data);
+                //free(data);
             }
         }
     }
-    free(data);
+    //free(data);
 }
 
 int UsbPcInterface::send(const char *fmt, ...)
@@ -275,10 +275,17 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 
     ESP_LOGI(TAG, "ParametersVector[0]: %s", this->mParametersVector[0].c_str());
 
+
     if (strcmp(this->mParametersVector[0].c_str(), "ADJUST") == 0)
     {
         this->mWorkingMode = MODE_ADJUST_TEST_TIP;
         ESP_LOGI(TAG, "ADJUST detected\n");
+        return ESP_OK;
+    }
+    else if (strcmp(this->mParametersVector[0].c_str(), "TIP") == 0)
+    {
+        this->mWorkingMode = MODE_MOVE_TIP;
+        ESP_LOGI(TAG, "MODE_MOVE_TIP detected\n");
         return ESP_OK;
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "MEASURE") == 0)

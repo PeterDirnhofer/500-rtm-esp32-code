@@ -57,6 +57,7 @@ extern "C" void app_main(void)
     UsbPcInterface::send("IDLE\n");
 
     ParameterSetting parameterSetter;
+    bool displayTunnelCurrentIsrunning = false;
 
     // If no parameters in Flash Set Default Parameters
     if (parameterSetter.parametersAreValid() != ESP_OK)
@@ -85,8 +86,22 @@ extern "C" void app_main(void)
     {
         // UsbPcInterface::send("ADJUST\n");
         displayTunnelCurrent();
+        displayTunnelCurrentIsrunning = true;
         vTaskDelete(NULL);
     }
+    else if (usb.getWorkingMode() == MODE_MOVE_TIP)
+    {
+        if(displayTunnelCurrentIsrunning == false)
+            vTaskDelete(NULL);
+
+        if (parameterCount == 2){
+            ESP_LOGW(TAG, "TIP detected %s\n", p1.c_str());
+            
+        }
+        
+    }
+
+
     else if (usb.getWorkingMode() == MODE_MEASURE)
     {
         // UsbPcInterface::sendStatus("MEASURE\n");
