@@ -103,8 +103,7 @@ extern "C" void controllerLoop(void *unused)
         e = w - r;
 
         // Abweichung im Limit ?
-        // if (abs(e) <= remainingTunnelCurrentDifferencenA) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        if (abs(e) > remainingTunnelCurrentDifferencenA)
+        if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
             // ESP_LOGI(TAG,"OR TRUE regeldifferenz im limit. Messen.\n");
 
