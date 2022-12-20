@@ -31,7 +31,7 @@ int runtime_ms()
  * Start single run controllerLoop.
  * Init 1 ms Timer tG0 to trigger single controllerLoop run.
  */
-extern "C" void controllerStart()
+extern "C" void measurementStart()
 {
     controller_start_time = esp_timer_get_time();
 
@@ -48,7 +48,7 @@ extern "C" void controllerStart()
     vspiDacStart();              // Init and loop for DACs
     vTaskResume(handleVspiLoop); // Start for one run. Will suspend itself
 
-    xTaskCreatePinnedToCore(controllerLoop, "controllerLoop", 10000, NULL, 2, &handleControllerLoop, 1);
+    xTaskCreatePinnedToCore(measurementLoop, "controllerLoop", 10000, NULL, 2, &handleControllerLoop, 1);
     printf("Timer Period set to 1200*1000\n");
     // timer_tg0_initialise(1200*5000); // us -> 10^6us/860SPS = 1162 -> 1200
     timer_tg0_initialise(1200 * 1);
@@ -72,7 +72,7 @@ extern "C" void controllerStart()
  *    - resume vspiDacLoop to move tip to new Z position
  *    - stop ControllerLoop. Wait for next timer
  */
-extern "C" void controllerLoop(void *unused)
+extern "C" void measurementLoop(void *unused)
 {
     ESP_LOGI(TAG, "+++ controllerLoopStart\n");
     printf("+++ controllerLoopStart\n");
@@ -81,20 +81,14 @@ extern "C" void controllerLoop(void *unused)
     w = destinationTunnelCurrentnA;
     uint16_t unsentDatasets = 0;
 
-    // printf("nvs_maxX %d nvs_maxY%d\n", nvs_maxX, nvs_maxY);
-    // rtmGrid.setMaxX(nvs_maxX);
-    // rtmGrid.setMaxY(nvs_maxY);
-
-    //
+    
     while (true)
     {
-        // printf("%i: 1000 tick \n",runtime_ms());
-        // ESP_LOGW(TAG,"%i: 1000 tick \n",runtime_ms());
-        vTaskSuspend(NULL); // Wecken durch timer
+       
+        vTaskSuspend(NULL); // Sleep. Will be restarted by timer
 
-        // uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
-        uint16_t adcValue = 111; // read current voltageoutput of preamplifier
-
+        uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
+        
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM); // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
         r = currentTunnelCurrentnA;                                                                           // conversion from voltage to equivalent current
 
@@ -102,53 +96,39 @@ extern "C" void controllerLoop(void *unused)
         // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
         e = w - r;
 
-        // Abweichung im Limit ?
+        // current in limit ?
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
-            // ESP_LOGI(TAG,"OR TRUE regeldifferenz im limit. Messen.\n");
-
             // save to queue
             dataQueue.emplace(dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
-            // printf("unsent datasets %i\n",unsentDatasets);
-            // printf("queue Size %i\n", dataQueue.size());
-
-            // Paket mit 100 Messwerten vollständig -> Unterbrechen und senden                                                                        // increment
+            
+            // Paket with 100 results complete -> Interrupt mesuring and send data vis USB 
             if (++unsentDatasets >= sendDataAfterXDatasets)
-            // if (++ unsentDatasets >=10)
-
             {
                 unsentDatasets = sendPaketWithData();
             }
 
-            // Berechne nächste X,Y Piezo Position. move tip
+            // New XY calculation. Move tip XY
             if (!rtmGrid.moveOn())
             {
-                // noch nicht alle Positionen angefahren
-                // ESP_LOGW(TAG,"!rtmGrid.moveOn\n");
-                // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PeDi
-                // HAb ich eingeführt
-                // vTaskResume(handleVspiLoop); // will suspend itself
+                // Last XY position not yet reached
+                // PEDI: hab ich eingeführt
+                vTaskResume(handleVspiLoop); // will suspend itself
             }
             else
             {
-                // Alle Positionen erledigt
-                ESP_LOGW(TAG, "Alle Positionen erledigt\n");
+                // All X Y positions complete
+                ESP_LOGW(TAG, "All X Y positions complete\n");
                 timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer, will be resumed at next new scan
-                // Send rest of data
-                if (!dataQueue.empty())
-                {
-                    sendPaketWithData();
-                }
-
-                sendPaketWithData(1);
+                sendPaketWithData(1); // 1: Send rest of data and 'DONE'
                 esp_restart();
+            
             }
         }
-        // regeldifferenz ist zu gross
-        // Z Wert nachjustieren
+        // regeldifferenz out off limit
+        // new Z value
         else
         {
-            printf("Off limits\n");
             y = kP * e + kI * eOld + yOld; // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt
 
             eOld = e;
@@ -162,7 +142,6 @@ extern "C" void controllerLoop(void *unused)
         }
 
         yOld = ySaturate;
-        // end while
     }
 }
 
@@ -212,8 +191,7 @@ extern "C" int sendPaketWithData(bool terminate)
  */
 extern "C" void displayTunnelCurrent()
 {
-    ESP_LOGI(TAG, "+++ START Display Current Channel");
-
+    
     esp_err_t errTemp = i2cInit(); // Init I2C for XYZ DACs
     if (errTemp != 0)
     {
@@ -227,6 +205,8 @@ extern "C" void displayTunnelCurrent()
     vspiDacStart();              // Init and loop for DACs
     vTaskResume(handleVspiLoop); // Start for one run. Will suspend itself
 
+
+    esp_log_level_set("*", ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++ Display Tunnel Current\n");
     ESP_LOGI(TAG, "Set X,Y,Z =");
 

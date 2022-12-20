@@ -148,8 +148,7 @@ int UsbPcInterface::send(const char *fmt, ...)
 
     char s[100] = {0};
     vsprintf(s, fmt, ap);
-    ESP_LOGI(TAG, "uartsend %s\r", s);
-
+    
     const int len = strlen(s);
     int rc = uart_write_bytes(UART_NUM_1, s, len);
 
@@ -158,43 +157,6 @@ int UsbPcInterface::send(const char *fmt, ...)
     return rc;
 }
 
-int UsbPcInterface::sendInfo(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-
-    char s[100] = {0};
-    vsprintf(s, fmt, ap);
-
-    ESP_LOGI(TAG, "uartsend %s\n", s);
-    string s1 = "INFO,";
-
-    int len = strlen(s);
-    s1.append(s, len);
-    len = strlen(s1.c_str());
-    int rc = uart_write_bytes(UART_NUM_1, s1.c_str(), len);
-    va_end(ap);
-    return rc;
-}
-
-int UsbPcInterface::sendStatus(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-
-    char s[100] = {0};
-    vsprintf(s, fmt, ap);
-
-    ESP_LOGI(TAG, "uartsend %s\n", s);
-    string s1 = "STATUS,";
-
-    int len = strlen(s);
-    s1.append(s, len);
-    len = strlen(s1.c_str());
-    int rc = uart_write_bytes(UART_NUM_1, s1.c_str(), len);
-    va_end(ap);
-    return rc;
-}
 
 int UsbPcInterface::sendParameter(const char *fmt, ...)
 {

@@ -91,7 +91,7 @@ extern "C" void app_main(void)
     {
         // UsbPcInterface::sendStatus("MEASURE\n");
         parameterSetter.getParametersFromFlash(false); // get measure parameter from nvs
-        controllerStart();
+        measurementStart();
         vTaskDelete(NULL);
     }
     else if (usb.getWorkingMode() != MODE_PARAMETER)
