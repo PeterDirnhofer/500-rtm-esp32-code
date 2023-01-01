@@ -133,6 +133,7 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
                 rcvString.clear();
                 found_CR = false;
                 ESP_LOGI(TAG, "usbReceive %s\n", mUsbReceiveString.c_str());
+                
                 //free(data);
             }
         }
@@ -222,6 +223,8 @@ esp_err_t UsbPcInterface::sendData()
 extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 {
     // Request PC. Wait for PC response
+    esp_log_level_set("*", ESP_LOG_INFO);
+
     uint32_t i = 0;
     int ledLevel = 0;
 
@@ -284,6 +287,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "TIP") == 0)
     {
+        ESP_LOGI(TAG, "MODE_MOVE_TIP detected\n");
         this->mWorkingMode = MODE_MOVE_TIP;
         ESP_LOGI(TAG, "MODE_MOVE_TIP detected\n");
         return ESP_OK;

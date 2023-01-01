@@ -40,7 +40,7 @@ Strings are terminated with Linefeed \n = LF = 0x0A
     startY = 0  
     direction = 0  
     maxX = 199  
-    maxY = 199
+    maxY = 199  
     multiplicator = 10
 
 - Case computer sends **PARAMETER,?**:  

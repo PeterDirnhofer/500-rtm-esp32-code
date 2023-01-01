@@ -97,6 +97,11 @@ extern "C" void app_main(void)
         if (parameterCount == 2){
             ESP_LOGW(TAG, "TIP detected %s\n", p1.c_str());
             
+            // ySaturate = controller.saturate16bit((uint32_t)newy, 0, DAC_VALUE_MAX); // set to boundaries of DAC
+
+            setTip(4711);
+
+            
         }
         
     }

@@ -78,7 +78,7 @@ extern "C" void measurementLoop(void *unused)
     printf("+++ controllerLoopStart\n");
     static double e, w, r, y, eOld, yOld = 0;
     uint16_t ySaturate = 0;
-    w = destinationTunnelCurrentnA;
+    w = destinationTunnelCurrentnA; 
     uint16_t unsentDatasets = 0;
 
     
@@ -96,7 +96,7 @@ extern "C" void measurementLoop(void *unused)
         // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
         e = w - r;
 
-        // current in limit ?
+        // Abweichung soll/ist im limit --> Messwerte speichern und nächste XY Position anfordern
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
             // save to queue
@@ -125,12 +125,11 @@ extern "C" void measurementLoop(void *unused)
             
             }
         }
-        // regeldifferenz out off limit
-        // new Z value
-        else
+
+        // Abweichung soll/ist zu gross --> Z muss nachgeregelt werden
+        else 
         {
             y = kP * e + kI * eOld + yOld; // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt
-
             eOld = e;
             ySaturate = saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
             currentZDac = ySaturate;                                  // set new z height
@@ -227,4 +226,10 @@ extern "C" void displayTunnelCurrent()
 
         vTaskDelay(xDelay);
     }
+}
+
+extern "C" void setTip(uint32_t z){
+
+    ESP_LOGI(TAG,"setTip %d\n",z);
+
 }
