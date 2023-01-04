@@ -41,6 +41,7 @@ using namespace std;
 
 static const int RX_BUF_SIZE = 200;
 static const char *TAG = "UsbPcInterface";
+int numberOfValues=1;
 
 UsbPcInterface::UsbPcInterface()
     : mTaskHandle(NULL), mStarted(false)
@@ -133,8 +134,7 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
                 rcvString.clear();
                 found_CR = false;
                 ESP_LOGI(TAG, "usbReceive %s\n", mUsbReceiveString.c_str());
-                
-                //free(data);
+      
             }
         }
     }
@@ -196,80 +196,11 @@ esp_err_t UsbPcInterface::sendData()
     return ESP_OK;
 }
 
-/**
- * @brief Read USB input from Computer.
- * Set workingMode to: ADJUST or PARAMETER or MEASURE.
- * getworkingMode() reads workingMode
- */
-extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
-{
-    // Request PC. Wait for PC response
-    esp_log_level_set("*", ESP_LOG_INFO);
 
-    uint32_t i = 0;
-    int ledLevel = 0;
-
-    while (UsbPcInterface::usbAvailable == false)
-    {
-
-        if ((i % 50) == 0)
-        {
-
-            // Invert Blue LED
-            ledLevel++;
-            gpio_set_level(BLUE_LED, ledLevel % 2);
-            this->send("IDLE\n");
-        }
-
-        vTaskDelay(100 / portTICK_RATE_MS);
-        i++;
-    }
-
-    // Command received from PC
-    gpio_set_level(BLUE_LED, 1);
-    // Split usbReceive csv to parameters[]
-    // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
-
-    char *cstr = new char[UsbPcInterface::mUsbReceiveString.length() + 1];
-    strcpy(cstr, UsbPcInterface::mUsbReceiveString.c_str());
-
-    // how many comma are in string
-    int numberOfValues = 1;
-    for (int i = 0; i < UsbPcInterface::mUsbReceiveString.length(); i++)
-        if (cstr[i] == ',')
-            numberOfValues++;
-
-    ESP_LOGI(TAG, "numberOfValues %d", numberOfValues);
-
-    char *p = strtok(cstr, ",");
-
-    this->mParametersVector.clear();
-    while (p != 0)
-    {
-        // printf("%s\n", p);
-        char buffer[20];
-        sprintf(buffer, "%s", p);
-        puts(strupr(buffer));
-
-        this->mParametersVector.push_back(buffer);
-
-        p = strtok(NULL, ",");
-    }
-    free(cstr);
-
-    ESP_LOGI(TAG, "ParametersVector[0]: %s", this->mParametersVector[0].c_str());
-
-
-    if (strcmp(this->mParametersVector[0].c_str(), "ADJUST") == 0)
-    {   ESP_LOGI(TAG,"ADJUST detected");
-        this->mWorkingMode = MODE_ADJUST_TEST_TIP;
-        ESP_LOGI(TAG, "ADJUST detected\n");
-        return ESP_OK;
-    }
-    else if (strcmp(this->mParametersVector[0].c_str(), "TIP") == 0)
-    {
-        ESP_LOGI(TAG,"TIP detected. Number of variable: %d",numberOfValues);
-        if(this->mWorkingMode != MODE_ADJUST_TEST_TIP)
+esp_err_t UsbPcInterface::updateTip(){
+    
+    ESP_LOGI(TAG,"TIP detected. Number of variable: %d",numberOfValues);
+        if(mWorkingMode != MODE_ADJUST_TEST_TIP)
         {
             ESP_LOGW(TAG, "INVALID command. TIP Needs ADJUST before %s\n", mParametersVector[0].c_str());
             return ESP_ERR_INVALID_ARG;
@@ -290,8 +221,6 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
                 return ESP_ERR_INVALID_ARG;
 
             }
-            
-
             i = (int16_t)il;
             //ESP_LOGI(TAG,"Nach atoi: %d endPtr:%s len(endPtr):%d",i,endPtr,strlen(endPtr));
             
@@ -303,16 +232,88 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 
             UsbPcInterface::send("TIP,%d,%d\n",currentZDac,newZ);
             ESP_LOGI(TAG,"TIP detected TIP,%d,%d\n",currentZDac,newZ);
-            //UsbPcInterface::send("TIP,%d,%d",currentZDac,newZ);
-            currentZDac = (uint16_t)newZ;
-            
-       
+            currentZDac = (uint16_t)newZ;       
             vTaskResume(handleVspiLoop); // realize newZ. Will suspend itself
             return ESP_OK;
         }
         this->mWorkingMode = MODE_INVALID;
         ESP_LOGW(TAG, "INVALID command %s\n", mParametersVector[0].c_str());
         return ESP_ERR_INVALID_ARG;
+    return ESP_OK;
+}
+
+/**
+ * @brief Read USB input from Computer.
+ * Set workingMode to: ADJUST or PARAMETER or MEASURE.
+ * getworkingMode() reads workingMode
+ */
+extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
+{
+   
+    esp_log_level_set("*", ESP_LOG_INFO);
+
+    uint32_t i = 0;
+    int ledLevel = 0;
+    // Request PC. Wait for PC response
+    while (UsbPcInterface::usbAvailable == false)
+    {
+        if (((i % 50) == 0) and (this ->getWorkingMode()==MODE_IDLE))
+        {
+            
+            // Invert Blue LED
+            ledLevel++;
+            gpio_set_level(BLUE_LED, ledLevel % 2);
+            this->send("IDLE\n");
+        }
+
+        vTaskDelay(100 / portTICK_RATE_MS);
+        i++;
+    }
+
+    // Command received from PC
+    gpio_set_level(BLUE_LED, 1);
+    // Split usbReceive csv to parameters[]
+    // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
+
+    char *cstr = new char[UsbPcInterface::mUsbReceiveString.length() + 1];
+    strcpy(cstr, UsbPcInterface::mUsbReceiveString.c_str());
+
+    // how many comma are in string
+    numberOfValues = 1;
+    for (int i = 0; i < UsbPcInterface::mUsbReceiveString.length(); i++)
+        if (cstr[i] == ',')
+            numberOfValues++;
+
+    ESP_LOGI(TAG, "numberOfValues %d", numberOfValues);
+
+    char *p = strtok(cstr, ",");
+
+    this->mParametersVector.clear();
+    while (p != 0)
+    {
+        // printf("%s\n", p);
+        char buffer[20];
+        sprintf(buffer, "%s", p);
+        puts(strupr(buffer));
+        this->mParametersVector.push_back(buffer);
+        p = strtok(NULL, ",");
+    }
+    free(cstr);
+
+    ESP_LOGI(TAG, "ParametersVector[0]: %s", this->mParametersVector[0].c_str());
+
+
+    if (strcmp(this->mParametersVector[0].c_str(), "ADJUST") == 0)
+    {   ESP_LOGI(TAG,"ADJUST detected");
+        this->mWorkingMode = MODE_ADJUST_TEST_TIP;
+        ESP_LOGI(TAG, "ADJUST detected\n");
+        return ESP_OK;
+    }
+    else if (strcmp(this->mParametersVector[0].c_str(), "TIP") == 0)
+    {
+        
+        updateTip();
+        
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "MEASURE") == 0)
     {

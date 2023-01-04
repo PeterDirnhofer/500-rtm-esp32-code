@@ -106,7 +106,7 @@ extern intr_handle_t s_timer_handle;
 extern uint8_t lastConfigByte;
 
 
-
+#define MODE_IDLE  0
 #define MODE_INVALID -1
 #define MODE_ADJUST_TEST_TIP 1
 #define MODE_MEASURE 2

@@ -189,7 +189,7 @@ extern "C" int sendPaketWithData(bool terminate)
 /**@brief Loop diplaying tunnelcurrent to help adjusting measure tip
  *
  */
-extern "C" void displayTunnelCurrent(UsbPcInterface usb)
+extern "C" void displayTunnelCurrentLoop(UsbPcInterface usb)
 {
     
     esp_err_t errTemp = i2cInit(); // Init I2C for XYZ DACs
@@ -197,36 +197,21 @@ extern "C" void displayTunnelCurrent(UsbPcInterface usb)
     {
         ESP_LOGE(TAG, "ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
     }
-
-    // Set X,Y,Z to 0
-    currentXDac = 0;
-    currentYDac = 0;
-    currentZDac = 0;
     vspiDacStart();              // Init and loop for DACs
-    vTaskResume(handleVspiLoop); // Start for one run. Will suspend itself
-
-
     esp_log_level_set("*", ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++ Display Tunnel Current\n");
-    ESP_LOGI(TAG, "Set X,Y,Z =");
-
     const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
     int ledLevel = 1;
 
     while (1)
     {
         usb.getCommandsFromPC();
-        ESP_LOGI(TAG,"getWorkingMode %d",usb.getWorkingMode());
-        
-        
+        ESP_LOGI(TAG,"getWorkingMode %d",usb.getWorkingMode());    
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
         // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
         UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
       
-
-        
-
         // Invert Blue LED
         gpio_set_level(BLUE_LED, ledLevel % 2);
         ledLevel++;
@@ -235,8 +220,4 @@ extern "C" void displayTunnelCurrent(UsbPcInterface usb)
     }
 }
 
-extern "C" void setTip(uint32_t z){
 
-    ESP_LOGI(TAG,"setTip %d\n",z);
-
-}

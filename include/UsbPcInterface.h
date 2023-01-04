@@ -27,7 +27,7 @@ public:
   static int send(const char *fmt, ...);
 
   static int sendParameter(const char *fmt, ...);
-  
+  esp_err_t updateTip();
 
    
   static void printErrorMessageAndRestart(string error_string);

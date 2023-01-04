@@ -57,7 +57,6 @@ extern "C" void app_main(void)
     UsbPcInterface::send("IDLE\n");
 
     ParameterSetting parameterSetter;
-    bool displayTunnelCurrentIsrunning = false;
 
     // If no parameters in Flash Set Default Parameters
     if (parameterSetter.parametersAreValid() != ESP_OK)
@@ -84,13 +83,10 @@ extern "C" void app_main(void)
 
     if (usb.getWorkingMode() == MODE_ADJUST_TEST_TIP)
     {
-        // UsbPcInterface::send("ADJUST\n");
-        displayTunnelCurrent(usb);
-        displayTunnelCurrentIsrunning = true;
+
+        displayTunnelCurrentLoop(usb);
         vTaskDelete(NULL);
     }
-    
-
 
     else if (usb.getWorkingMode() == MODE_MEASURE)
     {
