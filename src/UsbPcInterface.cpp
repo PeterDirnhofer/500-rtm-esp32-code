@@ -178,25 +178,6 @@ int UsbPcInterface::sendParameter(const char *fmt, ...)
     return rc;
 }
 
-int UsbPcInterface::sendAdjust(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-
-    char s[100] = {0};
-    vsprintf(s, fmt, ap);
-
-    ESP_LOGI(TAG, "uartsend %s\n", s);
-    string s1 = "ADJUST,";
-
-    int len = strlen(s);
-    s1.append(s, len);
-    len = strlen(s1.c_str());
-    int rc = uart_write_bytes(UART_NUM_1, s1.c_str(), len);
-    va_end(ap);
-    return rc;
-}
-
 esp_err_t UsbPcInterface::sendData()
 {
     // replaces hspiLoop
@@ -280,17 +261,58 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 
 
     if (strcmp(this->mParametersVector[0].c_str(), "ADJUST") == 0)
-    {
+    {   ESP_LOGI(TAG,"ADJUST detected");
         this->mWorkingMode = MODE_ADJUST_TEST_TIP;
         ESP_LOGI(TAG, "ADJUST detected\n");
         return ESP_OK;
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "TIP") == 0)
     {
-        ESP_LOGI(TAG, "MODE_MOVE_TIP detected\n");
-        this->mWorkingMode = MODE_MOVE_TIP;
-        ESP_LOGI(TAG, "MODE_MOVE_TIP detected\n");
-        return ESP_OK;
+        ESP_LOGI(TAG,"TIP detected. Number of variable: %d",numberOfValues);
+        if(this->mWorkingMode != MODE_ADJUST_TEST_TIP)
+        {
+            ESP_LOGW(TAG, "INVALID command. TIP Needs ADJUST before %s\n", mParametersVector[0].c_str());
+            return ESP_ERR_INVALID_ARG;
+
+        }
+        if(numberOfValues == 2)
+        {
+
+            char * p1 = const_cast<char*> ( this->mParametersVector[1].c_str());
+            // Check if input[1] is a number
+            int i; 
+             
+            char* endPtr;
+            long int il = strtol(p1,&endPtr,10);
+            if(strlen(endPtr) > 0)
+            {
+                ESP_LOGW(TAG, "INVALID command. TIP,1 is no number %s\n", p1);
+                return ESP_ERR_INVALID_ARG;
+
+            }
+            
+
+            i = (int16_t)il;
+            //ESP_LOGI(TAG,"Nach atoi: %d endPtr:%s len(endPtr):%d",i,endPtr,strlen(endPtr));
+            
+            int newZ=currentZDac+i;
+            if (newZ < 0)
+                newZ = 0;
+            if (newZ > DAC_VALUE_MAX)
+                newZ = DAC_VALUE_MAX;
+
+            UsbPcInterface::send("TIP,%d,%d\n",currentZDac,newZ);
+            ESP_LOGI(TAG,"TIP detected TIP,%d,%d\n",currentZDac,newZ);
+            //UsbPcInterface::send("TIP,%d,%d",currentZDac,newZ);
+            currentZDac = (uint16_t)newZ;
+            
+       
+            vTaskResume(handleVspiLoop); // realize newZ. Will suspend itself
+            return ESP_OK;
+        }
+        this->mWorkingMode = MODE_INVALID;
+        ESP_LOGW(TAG, "INVALID command %s\n", mParametersVector[0].c_str());
+        return ESP_ERR_INVALID_ARG;
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "MEASURE") == 0)
     {

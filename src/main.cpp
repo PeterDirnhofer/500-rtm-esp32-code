@@ -85,26 +85,11 @@ extern "C" void app_main(void)
     if (usb.getWorkingMode() == MODE_ADJUST_TEST_TIP)
     {
         // UsbPcInterface::send("ADJUST\n");
-        displayTunnelCurrent();
+        displayTunnelCurrent(usb);
         displayTunnelCurrentIsrunning = true;
         vTaskDelete(NULL);
     }
-    else if (usb.getWorkingMode() == MODE_MOVE_TIP)
-    {
-        if(displayTunnelCurrentIsrunning == false)
-            vTaskDelete(NULL);
-
-        if (parameterCount == 2){
-            ESP_LOGW(TAG, "TIP detected %s\n", p1.c_str());
-            
-            // ySaturate = controller.saturate16bit((uint32_t)newy, 0, DAC_VALUE_MAX); // set to boundaries of DAC
-
-            setTip(4711);
-
-            
-        }
-        
-    }
+    
 
 
     else if (usb.getWorkingMode() == MODE_MEASURE)

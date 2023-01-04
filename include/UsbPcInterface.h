@@ -27,7 +27,7 @@ public:
   static int send(const char *fmt, ...);
 
   static int sendParameter(const char *fmt, ...);
-  static int sendAdjust(const char *fmt, ...);
+  
 
    
   static void printErrorMessageAndRestart(string error_string);

@@ -92,14 +92,14 @@ extern "C" void measurementLoop(void *unused)
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM); // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
         r = currentTunnelCurrentnA;                                                                           // conversion from voltage to equivalent current
 
-        // abweichung     = soll             - ist
+        // abweichung     = soll (10.0)      - ist
         // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
         e = w - r;
 
         // Abweichung soll/ist im limit --> Messwerte speichern und nächste XY Position anfordern
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
-            // save to queue
+            // save to queue  Grid(x)  Grid(y)  Z_DAC
             dataQueue.emplace(dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
             
             // Paket with 100 results complete -> Interrupt mesuring and send data vis USB 
@@ -129,6 +129,7 @@ extern "C" void measurementLoop(void *unused)
         // Abweichung soll/ist zu gross --> Z muss nachgeregelt werden
         else 
         {
+                                           //               1000                10
             y = kP * e + kI * eOld + yOld; // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt
             eOld = e;
             ySaturate = saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
@@ -188,7 +189,7 @@ extern "C" int sendPaketWithData(bool terminate)
 /**@brief Loop diplaying tunnelcurrent to help adjusting measure tip
  *
  */
-extern "C" void displayTunnelCurrent()
+extern "C" void displayTunnelCurrent(UsbPcInterface usb)
 {
     
     esp_err_t errTemp = i2cInit(); // Init I2C for XYZ DACs
@@ -214,11 +215,17 @@ extern "C" void displayTunnelCurrent()
 
     while (1)
     {
-
+        usb.getCommandsFromPC();
+        ESP_LOGI(TAG,"getWorkingMode %d",usb.getWorkingMode());
+        
+        
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
         // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
         UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
+      
+
+        
 
         // Invert Blue LED
         gpio_set_level(BLUE_LED, ledLevel % 2);
