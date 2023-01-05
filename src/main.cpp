@@ -27,20 +27,15 @@
 #include <string>
 #include <cstring>
 
-// private includes
 #include "globalVariables.h"
 #include "spi.h"
 #include "adc.h"
 #include "controller.h"
 #include "dataStoring.h"
 
-// private classes
 #include "UsbPcInterface.h"
 #include "ParameterSetter.h"
 
-// Wenn spi nicht geht suche in vspiDacInit() PeDi Added
-// .rx_flow_ctrl_thresh = 0,  Added in uart_config
-// devcfgDacY
 using namespace std;
 
 extern "C" void app_main(void)
@@ -54,7 +49,7 @@ extern "C" void app_main(void)
 
     UsbPcInterface usb;
     usb.start();
-    //UsbPcInterface::start();
+
     UsbPcInterface::send("IDLE\n");
 
     ParameterSetting parameterSetter;
