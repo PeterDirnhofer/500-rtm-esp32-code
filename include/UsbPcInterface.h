@@ -2,15 +2,21 @@
 // https://marketplace.visualstudio.com/items?itemName=FleeXo.cpp-class-creator
 #ifndef UARTCLASS_H
 #define UARTCLASS_H
-
 #pragma once
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <cstring>
-#include <string>
 #include <vector>
+#include <memory>
+#include <esp_log.h>
+#include "esp_system.h"
+#include "driver/uart.h" 
+#include "driver/gpio.h"
+#include "globalVariables.h"
 
+
+static const int RX_BUF_SIZE = 200;
 using namespace std;
 /**
  * @brief Communication with PC via USB

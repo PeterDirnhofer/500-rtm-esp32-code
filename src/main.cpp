@@ -54,6 +54,7 @@ extern "C" void app_main(void)
 
     UsbPcInterface usb;
     usb.start();
+    //UsbPcInterface::start();
     UsbPcInterface::send("IDLE\n");
 
     ParameterSetting parameterSetter;

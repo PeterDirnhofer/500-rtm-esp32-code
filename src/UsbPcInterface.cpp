@@ -1,39 +1,8 @@
 #include <UsbPcInterface.h>
 // https://github.com/espressif/esp-idf/blob/30e8f19f5ac158fc57e80ff97c62b6cc315aa337/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
-#include <stdio.h>
-#include <stdint.h>
-#include <stddef.h>
 
-#include <memory>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_system.h"
-#include "driver/uart.h" // esp uart
-#include "string.h"
-#include "driver/gpio.h"
-#include "string"
-#include "globalVariables.h"
-
-#include "spi.h"
-#include "controller.h"
-#include "timer.h"
-#include "string.h"
-#include <iostream>
-#include <string>
-#include <cstring>
-#include <esp_log.h>
-#include "timer.h"
-#include <stdarg.h>
-
-#include "UsbPcInterface.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include <vector>
-using namespace std;
-
-static const int RX_BUF_SIZE = 200;
 static const char *TAG = "UsbPcInterface";
-//int numberOfValues = 1;
+
 
 UsbPcInterface::UsbPcInterface()
     : mTaskHandle(NULL), mStarted(false)
