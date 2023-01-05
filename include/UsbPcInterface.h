@@ -4,8 +4,8 @@
 #define UARTCLASS_H
 #pragma once
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+//#include "freertos/FreeRTOS.h"
+//#include "freertos/task.h"
 #include <cstring>
 #include <vector>
 #include <memory>
@@ -16,7 +16,7 @@
 #include "globalVariables.h"
 
 
-static const int RX_BUF_SIZE = 200;
+// static const int RX_BUF_SIZE = 200;
 using namespace std;
 /**
  * @brief Communication with PC via USB
@@ -25,8 +25,8 @@ using namespace std;
 class UsbPcInterface
 {
 public:
-  UsbPcInterface();  // der Default-Konstruktor
-  ~UsbPcInterface(); // Destructor
+  UsbPcInterface();  // default-construktor
+  ~UsbPcInterface(); // destructor
 
   void start();
   static int send(const char *fmt, ...);
@@ -38,10 +38,12 @@ public:
   int getWorkingMode();
   vector<string> getParametersFromPc();
 
+  static const int RX_BUF_SIZE = 200;
+  
+
 private:
   static void mUartRcvLoop(void *unused);
   esp_err_t mUpdateTip();
-
   inline static string mUsbReceiveString = "";
   inline static bool mUsbAvailable = false;
   TaskHandle_t mTaskHandle;
