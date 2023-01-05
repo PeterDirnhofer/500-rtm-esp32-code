@@ -166,7 +166,6 @@ esp_err_t UsbPcInterface::mUpdateTip()
     }
     if (numberOfValues == 2)
     {
-
         char *p1 = const_cast<char *>(this->mParametersVector[1].c_str());
         // Check if input[1] is a number
         int i;
@@ -216,7 +215,6 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     {
         if (((i % 50) == 0) and (this->getWorkingMode() == MODE_IDLE))
         {
-
             // Invert Blue LED
             ledLevel++;
             gpio_set_level(BLUE_LED, ledLevel % 2);
@@ -270,6 +268,11 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     {
 
         mUpdateTip();
+        
+        UsbPcInterface::mUsbAvailable = false;
+        this->mWorkingMode = MODE_ADJUST_TEST_TIP;
+        return ESP_OK;
+
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "MEASURE") == 0)
     {

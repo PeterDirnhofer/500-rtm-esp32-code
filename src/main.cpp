@@ -51,7 +51,6 @@ extern "C" void app_main(void)
     usb.start();
 
     UsbPcInterface::send("IDLE\n");
-
     ParameterSetting parameterSetter;
 
     // If no parameters in Flash Set Default Parameters
