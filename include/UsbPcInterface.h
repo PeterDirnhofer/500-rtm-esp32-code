@@ -11,11 +11,10 @@
 #include <string>
 #include <vector>
 
-
 using namespace std;
 /**
  * @brief Communication with PC via USB
- * 
+ *
  */
 class UsbPcInterface
 {
@@ -25,33 +24,26 @@ public:
 
   void start();
   static int send(const char *fmt, ...);
-
   static int sendParameter(const char *fmt, ...);
-  esp_err_t updateTip();
-
-   
   static void printErrorMessageAndRestart(string error_string);
   static void printMessageAndRestart(string msg);
   static esp_err_t sendData();
-
   esp_err_t getCommandsFromPC();
-  inline static bool usbAvailable=false;
   int getWorkingMode();
   vector<string> getParametersFromPc();
 
-
 private:
-  inline static string mUsbReceiveString="";
   static void mUartRcvLoop(void *unused);
-  
-  esp_err_t convertStoFloat(string s, float * value);
+  esp_err_t mUpdateTip();
 
+  inline static string mUsbReceiveString = "";
+  inline static bool mUsbAvailable = false;
   TaskHandle_t mTaskHandle;
   bool mStarted;
   vector<string> mParametersVector;
-
   int mWorkingMode;
+  int numberOfValues = 1;
+  
 };
 
 #endif
-

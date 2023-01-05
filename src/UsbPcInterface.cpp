@@ -1,13 +1,5 @@
 #include <UsbPcInterface.h>
-// C:\Users\peter\git-esp-idf\UART\src
-
 // https://github.com/espressif/esp-idf/blob/30e8f19f5ac158fc57e80ff97c62b6cc315aa337/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
-/* UART asynchronous example, that uses separate RX and TX tasks
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -41,7 +33,7 @@ using namespace std;
 
 static const int RX_BUF_SIZE = 200;
 static const char *TAG = "UsbPcInterface";
-int numberOfValues=1;
+//int numberOfValues = 1;
 
 UsbPcInterface::UsbPcInterface()
     : mTaskHandle(NULL), mStarted(false)
@@ -130,15 +122,14 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
 
                 UsbPcInterface::mUsbReceiveString.clear();
                 UsbPcInterface::mUsbReceiveString.append(rcvString);
-                UsbPcInterface::usbAvailable = true;
+                UsbPcInterface::mUsbAvailable = true;
                 rcvString.clear();
                 found_CR = false;
                 ESP_LOGI(TAG, "usbReceive %s\n", mUsbReceiveString.c_str());
-      
             }
         }
     }
-    //free(data);
+    // free(data);
 }
 
 int UsbPcInterface::send(const char *fmt, ...)
@@ -149,7 +140,7 @@ int UsbPcInterface::send(const char *fmt, ...)
 
     char s[100] = {0};
     vsprintf(s, fmt, ap);
-    
+
     const int len = strlen(s);
     int rc = uart_write_bytes(UART_NUM_1, s, len);
 
@@ -157,7 +148,6 @@ int UsbPcInterface::send(const char *fmt, ...)
 
     return rc;
 }
-
 
 int UsbPcInterface::sendParameter(const char *fmt, ...)
 {
@@ -181,7 +171,7 @@ int UsbPcInterface::sendParameter(const char *fmt, ...)
 esp_err_t UsbPcInterface::sendData()
 {
     // replaces hspiLoop
-    //vTaskSuspend(handleControllerLoop);
+    // vTaskSuspend(handleControllerLoop);
     while (!dataQueue.empty())
     {
         dataQueue.front();
@@ -196,49 +186,47 @@ esp_err_t UsbPcInterface::sendData()
     return ESP_OK;
 }
 
+esp_err_t UsbPcInterface::mUpdateTip()
+{
 
-esp_err_t UsbPcInterface::updateTip(){
-    
-    ESP_LOGI(TAG,"TIP detected. Number of variable: %d",numberOfValues);
-        if(mWorkingMode != MODE_ADJUST_TEST_TIP)
-        {
-            ESP_LOGW(TAG, "INVALID command. TIP Needs ADJUST before %s\n", mParametersVector[0].c_str());
-            return ESP_ERR_INVALID_ARG;
-
-        }
-        if(numberOfValues == 2)
-        {
-
-            char * p1 = const_cast<char*> ( this->mParametersVector[1].c_str());
-            // Check if input[1] is a number
-            int i; 
-             
-            char* endPtr;
-            long int il = strtol(p1,&endPtr,10);
-            if(strlen(endPtr) > 0)
-            {
-                ESP_LOGW(TAG, "INVALID command. TIP,1 is no number %s\n", p1);
-                return ESP_ERR_INVALID_ARG;
-
-            }
-            i = (int16_t)il;
-            //ESP_LOGI(TAG,"Nach atoi: %d endPtr:%s len(endPtr):%d",i,endPtr,strlen(endPtr));
-            
-            int newZ=currentZDac+i;
-            if (newZ < 0)
-                newZ = 0;
-            if (newZ > DAC_VALUE_MAX)
-                newZ = DAC_VALUE_MAX;
-
-            UsbPcInterface::send("TIP,%d,%d\n",currentZDac,newZ);
-            ESP_LOGI(TAG,"TIP detected TIP,%d,%d\n",currentZDac,newZ);
-            currentZDac = (uint16_t)newZ;       
-            vTaskResume(handleVspiLoop); // realize newZ. Will suspend itself
-            return ESP_OK;
-        }
-        this->mWorkingMode = MODE_INVALID;
-        ESP_LOGW(TAG, "INVALID command %s\n", mParametersVector[0].c_str());
+    ESP_LOGI(TAG, "TIP detected. Number of variable: %d", numberOfValues);
+    if (mWorkingMode != MODE_ADJUST_TEST_TIP)
+    {
+        ESP_LOGW(TAG, "INVALID command. TIP Needs ADJUST before %s\n", mParametersVector[0].c_str());
         return ESP_ERR_INVALID_ARG;
+    }
+    if (numberOfValues == 2)
+    {
+
+        char *p1 = const_cast<char *>(this->mParametersVector[1].c_str());
+        // Check if input[1] is a number
+        int i;
+
+        char *endPtr;
+        long int il = strtol(p1, &endPtr, 10);
+        if (strlen(endPtr) > 0)
+        {
+            ESP_LOGW(TAG, "INVALID command. TIP,1 is no number %s\n", p1);
+            return ESP_ERR_INVALID_ARG;
+        }
+        i = (int16_t)il;
+        // ESP_LOGI(TAG,"Nach atoi: %d endPtr:%s len(endPtr):%d",i,endPtr,strlen(endPtr));
+
+        int newZ = currentZDac + i;
+        if (newZ < 0)
+            newZ = 0;
+        if (newZ > DAC_VALUE_MAX)
+            newZ = DAC_VALUE_MAX;
+
+        UsbPcInterface::send("TIP,%d,%d\n", currentZDac, newZ);
+        ESP_LOGI(TAG, "TIP detected TIP,%d,%d\n", currentZDac, newZ);
+        currentZDac = (uint16_t)newZ;
+        vTaskResume(handleVspiLoop); // realize newZ. Will suspend itself
+        return ESP_OK;
+    }
+    this->mWorkingMode = MODE_INVALID;
+    ESP_LOGW(TAG, "INVALID command %s\n", mParametersVector[0].c_str());
+    return ESP_ERR_INVALID_ARG;
     return ESP_OK;
 }
 
@@ -249,17 +237,17 @@ esp_err_t UsbPcInterface::updateTip(){
  */
 extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 {
-   
+
     esp_log_level_set("*", ESP_LOG_INFO);
 
     uint32_t i = 0;
     int ledLevel = 0;
     // Request PC. Wait for PC response
-    while (UsbPcInterface::usbAvailable == false)
+    while (UsbPcInterface::mUsbAvailable == false)
     {
-        if (((i % 50) == 0) and (this ->getWorkingMode()==MODE_IDLE))
+        if (((i % 50) == 0) and (this->getWorkingMode() == MODE_IDLE))
         {
-            
+
             // Invert Blue LED
             ledLevel++;
             gpio_set_level(BLUE_LED, ledLevel % 2);
@@ -302,18 +290,17 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 
     ESP_LOGI(TAG, "ParametersVector[0]: %s", this->mParametersVector[0].c_str());
 
-
     if (strcmp(this->mParametersVector[0].c_str(), "ADJUST") == 0)
-    {   ESP_LOGI(TAG,"ADJUST detected");
+    {
+        ESP_LOGI(TAG, "ADJUST detected");
         this->mWorkingMode = MODE_ADJUST_TEST_TIP;
         ESP_LOGI(TAG, "ADJUST detected\n");
         return ESP_OK;
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "TIP") == 0)
     {
-        
-        updateTip();
-        
+
+        mUpdateTip();
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "MEASURE") == 0)
     {
