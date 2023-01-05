@@ -1,3 +1,5 @@
+// NvsStorageClass.h
+
 // Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,14 +15,15 @@
 
 #ifndef _NVS_STORAGE_CLASS_
 #define _NVS_STORAGE_CLASS_
+
 #include <stdio.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include <cstring>
-#include <string>
 #include <vector>
+#include <esp_log.h>
+
 #include "nvs_flash.h"
 #include "nvs.h"
+#include "UsbPcInterface.h"
 
 using namespace std;
 // Copy from
@@ -93,7 +96,6 @@ private:
 
     size_t putBytes(const char *key, const void *value, size_t len);
 
-   
     PreferenceType getType(const char *key);
     int8_t getChar(const char *key, int8_t defaultValue = 0);
     uint8_t getUChar(const char *key, uint8_t defaultValue = 0);

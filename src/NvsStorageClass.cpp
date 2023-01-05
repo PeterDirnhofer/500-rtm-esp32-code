@@ -1,3 +1,5 @@
+// NvsStorageClass.cpp
+
 // Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,19 +17,11 @@
 
 #include "NvsStorageClass.h"
 
-#include "nvs.h"
-#include "nvs_flash.h"
-#include <esp_log.h>
-
-#include "UsbPcInterface.h"
-
 static const char *TAG = "preferences";
 const char *nvs_errors[] = {"OTHER", "NOT_INITIALIZED", "NOT_FOUND", "TYPE_MISMATCH", "READ_ONLY", "NOT_ENOUGH_SPACE", "INVALID_NAME", "INVALID_HANDLE", "REMOVE_FAILED", "KEY_TOO_LONG", "PAGE_FULL", "INVALID_STATE", "INVALID_LENGTH"};
 
 #define nvs_error(e) (((e) > ESP_ERR_NVS_BASE) ? nvs_errors[(e) & ~(ESP_ERR_NVS_BASE)] : nvs_errors[0])
 #define STORAGE_NAMESPACE "nvsparam"
-
-using namespace std;
 
 NvsStorageClass::NvsStorageClass()
     : mHandle(0), mStarted(false), mReadOnly(false)

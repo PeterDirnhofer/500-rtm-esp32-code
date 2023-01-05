@@ -1,19 +1,6 @@
-#include <stdint.h>
-
-#include "driver/timer.h"
-
-#include "globalVariables.h"
+// controller.cpp
 #include "controller.h"
-#include "adc.h"
-#include "spi.h"
-#include "dataStoring.h"
-#include "timer.h"
-#include "esp_log.h"
-#include <stdarg.h>
-#include "UsbPcInterface.h"
-
 using namespace std;
-
 static const char *TAG = "controller";
 
 int runtime_ms()
@@ -78,17 +65,16 @@ extern "C" void measurementLoop(void *unused)
     printf("+++ controllerLoopStart\n");
     static double e, w, r, y, eOld, yOld = 0;
     uint16_t ySaturate = 0;
-    w = destinationTunnelCurrentnA; 
+    w = destinationTunnelCurrentnA;
     uint16_t unsentDatasets = 0;
 
-    
     while (true)
     {
-       
+
         vTaskSuspend(NULL); // Sleep. Will be restarted by timer
 
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
-        
+
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM); // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
         r = currentTunnelCurrentnA;                                                                           // conversion from voltage to equivalent current
 
@@ -101,8 +87,8 @@ extern "C" void measurementLoop(void *unused)
         {
             // save to queue  Grid(x)  Grid(y)  Z_DAC
             dataQueue.emplace(dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
-            
-            // Paket with 100 results complete -> Interrupt mesuring and send data vis USB 
+
+            // Paket with 100 results complete -> Interrupt mesuring and send data vis USB
             if (++unsentDatasets >= sendDataAfterXDatasets)
             {
                 unsentDatasets = sendPaketWithData();
@@ -120,16 +106,14 @@ extern "C" void measurementLoop(void *unused)
                 // All X Y positions complete
                 ESP_LOGW(TAG, "All X Y positions complete\n");
                 timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer, will be resumed at next new scan
-                sendPaketWithData(1); // 1: Send rest of data and 'DONE'
+                sendPaketWithData(1);                // 1: Send rest of data and 'DONE'
                 esp_restart();
-            
             }
         }
-
         // Abweichung soll/ist zu gross --> Z muss nachgeregelt werden
-        else 
+        else
         {
-                                           //               1000                10
+            //               1000                10
             y = kP * e + kI * eOld + yOld; // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt
             eOld = e;
             ySaturate = saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
@@ -191,13 +175,13 @@ extern "C" int sendPaketWithData(bool terminate)
  */
 extern "C" void displayTunnelCurrentLoop(UsbPcInterface usb)
 {
-    
+
     esp_err_t errTemp = i2cInit(); // Init I2C for XYZ DACs
     if (errTemp != 0)
     {
         ESP_LOGE(TAG, "ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
     }
-    vspiDacStart();              // Init and loop for DACs
+    vspiDacStart(); // Init and loop for DACs
     esp_log_level_set("*", ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++ Display Tunnel Current\n");
     const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
@@ -206,12 +190,12 @@ extern "C" void displayTunnelCurrentLoop(UsbPcInterface usb)
     while (1)
     {
         usb.getCommandsFromPC();
-        ESP_LOGI(TAG,"getWorkingMode %d",usb.getWorkingMode());    
+        ESP_LOGI(TAG, "getWorkingMode %d", usb.getWorkingMode());
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
         // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
         UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
-      
+
         // Invert Blue LED
         gpio_set_level(BLUE_LED, ledLevel % 2);
         ledLevel++;
@@ -219,5 +203,3 @@ extern "C" void displayTunnelCurrentLoop(UsbPcInterface usb)
         vTaskDelay(xDelay);
     }
 }
-
-
