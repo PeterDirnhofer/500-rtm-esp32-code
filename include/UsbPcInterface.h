@@ -37,13 +37,11 @@ public:
   esp_err_t getCommandsFromPC();
   int getWorkingMode();
   vector<string> getParametersFromPc();
-
   static const int RX_BUF_SIZE = 200;
-  
 
 private:
   static void mUartRcvLoop(void *unused);
-  esp_err_t mUpdateTip(string);
+  static esp_err_t mUpdateTip(string);
   inline static string mUsbReceiveString = "";
   inline static bool mUsbAvailable = false;
   TaskHandle_t mTaskHandle;
