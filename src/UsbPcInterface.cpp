@@ -96,28 +96,9 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
 
                 if (strcmp(part3.c_str(), "TIP") == 0)
                 {
-                    int l = strlen(rcvString.c_str());
-                    ESP_LOGI(TAG, "length TIP command: %d", l);
-                    if((l < 5) || rcvString[3] != ','){
-                        ESP_LOGW(TAG, "No valid parameter for TIP. Needs 'TIP,integer'. Got %s\n", rcvString.c_str());
-                        UsbPcInterface::send("No valid parameter for TIP. Needs 'TIP,integer'\n");
-                        rcvString.clear();
-                        found_CR = false;
-                    }
-                    else{
-                        ESP_LOGI(TAG, "TIP detected found.  \n");
-                        string v = rcvString.substr(4, strlen(rcvString.c_str()) - 4);
-                        UsbPcInterface::mUpdateTip(v);
-                    
-                        ESP_LOGI(TAG, "value %s  \n", v.c_str());
-
-                        rcvString.clear();
-                        found_CR = false;
-
-                    }
-
-
-                   
+                    UsbPcInterface::mUpdateTip(rcvString);
+                    rcvString.clear();
+                    found_CR = false;
                 }
                 else
                 {
@@ -131,8 +112,8 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
             }
         }
     }
-    // free(data);
 }
+// free(data);
 
 int UsbPcInterface::send(const char *fmt, ...)
 {
@@ -191,17 +172,30 @@ esp_err_t UsbPcInterface::sendData()
 esp_err_t UsbPcInterface::mUpdateTip(string s)
 {
 
-    if (s[3] != ','){
-        ESP_LOGW(TAG, "INVALID command. TIP needs format 'TIP,integer'. Received %s\n", s.c_str());
-
+    int l = strlen(s.c_str());
+    ESP_LOGI(TAG, "length TIP command: %d", l);
+    if ((l < 5) || s[3] != ',')
+    {
+        ESP_LOGW("mUpdateTip", "No valid parameter for TIP. Needs 'TIP,integer'. Got %s\n", s.c_str());
+        UsbPcInterface::send("No valid parameter for TIP. Needs 'TIP,integer'\n");
+        return ESP_ERR_INVALID_ARG;
     }
+
+    if (s[3] != ',')
+    {
+        ESP_LOGW("mUpdateTip", "INVALID command. TIP needs format 'TIP,integer'. Received %s\n", s.c_str());
+    }
+    ESP_LOGI("mUpdateTip", "TIP detected found.  \n");
+    string v = s.substr(4, strlen(s.c_str()) - 4);
+
     int i;
-    ESP_LOGI("staticUpdateTip", "TIP detected value:,%s\n", s.c_str());
+    ESP_LOGI("mUpdateTip", "TIP detected value:%s\n", v.c_str());
+
     char *endPtr;
-    long int il = strtol(s.c_str(), &endPtr, 10);
+    long int il = strtol(v.c_str(), &endPtr, 10);
     if (strlen(endPtr) > 0)
     {
-        ESP_LOGW(TAG, "INVALID command. TIP,1 is no number %s\n", s.c_str());
+        ESP_LOGW("mUpdateTip", "INVALID command. TIP,1 is no number %s\n", s.c_str());
 
         return ESP_ERR_INVALID_ARG;
     }
@@ -214,12 +208,11 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
         newZ = DAC_VALUE_MAX;
 
     UsbPcInterface::send("TIP,%d,%d\n", currentZDac, newZ);
-    ESP_LOGI("staticUpdateTip", "TIP detected TIP,%d,%d\n", currentZDac, newZ);
+    ESP_LOGI("mUpdateTip", "TIP detected TIP,%d,%d\n", currentZDac, newZ);
     currentZDac = (uint16_t)newZ;
     vTaskResume(handleVspiLoop); // realize newZ. Will suspend itself
     return ESP_OK;
 }
-
 
 /**
  * @brief Read USB input from Computer.
