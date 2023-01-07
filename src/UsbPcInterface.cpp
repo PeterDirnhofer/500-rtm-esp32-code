@@ -1,4 +1,5 @@
 #include <UsbPcInterface.h>
+
 // https://github.com/espressif/esp-idf/blob/30e8f19f5ac158fc57e80ff97c62b6cc315aa337/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 
 static const char *TAG = "UsbPcInterface";
@@ -89,12 +90,35 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
             {
                 ESP_LOGI(TAG, "#### 0A found.  \n");
 
-                UsbPcInterface::mUsbReceiveString.clear();
-                UsbPcInterface::mUsbReceiveString.append(rcvString);
-                UsbPcInterface::mUsbAvailable = true;
-                rcvString.clear();
-                found_CR = false;
-                ESP_LOGI(TAG, "usbReceive %s\n", mUsbReceiveString.c_str());
+
+                string part3 = rcvString.substr(0,3);
+                for (int x=0; x<strlen(part3.c_str()); x++)
+                    part3[x] = toupper(part3[x]);
+                ESP_LOGI(TAG,"NACHHER2  %s",part3.c_str());
+                
+
+                if(strcmp(part3.c_str(),"TIP") ==0)
+        
+                {
+                    ESP_LOGI(TAG, "TIP detected found.  \n");
+                    string v = rcvString.substr(4,strlen(rcvString.c_str())-4);
+                    // mUpdateTip(v);
+                    ESP_LOGI(TAG, "value %s  \n",v.c_str());
+
+
+                    rcvString.clear();
+                    found_CR = false;
+
+                }
+                else{
+                    UsbPcInterface::mUsbReceiveString.clear();
+                    UsbPcInterface::mUsbReceiveString.append(rcvString);
+                    UsbPcInterface::mUsbAvailable = true;
+                    rcvString.clear();
+                    found_CR = false;
+                    ESP_LOGI(TAG, "usbReceive %s\n", mUsbReceiveString.c_str());
+
+                }             
             }
         }
     }
@@ -155,7 +179,7 @@ esp_err_t UsbPcInterface::sendData()
     return ESP_OK;
 }
 
-esp_err_t UsbPcInterface::mUpdateTip()
+esp_err_t UsbPcInterface::mUpdateTip(string value)
 {
 
     ESP_LOGI(TAG, "TIP detected. Number of variable: %d", numberOfValues);
@@ -164,6 +188,8 @@ esp_err_t UsbPcInterface::mUpdateTip()
         ESP_LOGW(TAG, "INVALID command. TIP Needs ADJUST before %s\n", mParametersVector[0].c_str());
         return ESP_ERR_INVALID_ARG;
     }
+    return ESP_OK;
+
     if (numberOfValues == 2)
     {
         char *p1 = const_cast<char *>(this->mParametersVector[1].c_str());
@@ -213,12 +239,13 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     // Request PC. Wait for PC response
     while (UsbPcInterface::mUsbAvailable == false)
     {
-        if (((i % 50) == 0) and (this->getWorkingMode() == MODE_IDLE))
+        if ((i % 50) == 0) 
         {
             // Invert Blue LED
             ledLevel++;
             gpio_set_level(BLUE_LED, ledLevel % 2);
-            this->send("IDLE\n");
+            if (this->getWorkingMode() != MODE_IDLE)
+                this->send("IDLE\n");
         }
 
         vTaskDelay(100 / portTICK_RATE_MS);
@@ -263,16 +290,6 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
         this->mWorkingMode = MODE_ADJUST_TEST_TIP;
         ESP_LOGI(TAG, "ADJUST detected\n");
         return ESP_OK;
-    }
-    else if (strcmp(this->mParametersVector[0].c_str(), "TIP") == 0)
-    {
-
-        mUpdateTip();
-        
-        UsbPcInterface::mUsbAvailable = false;
-        this->mWorkingMode = MODE_ADJUST_TEST_TIP;
-        return ESP_OK;
-
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "MEASURE") == 0)
     {

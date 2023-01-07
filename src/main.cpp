@@ -61,7 +61,6 @@ extern "C" void app_main(void)
 
     // ##############################################################
     // SELECT Run Mode
-
     // Wait for command from PC via USB
     if (usb.getCommandsFromPC() != ESP_OK)
     {

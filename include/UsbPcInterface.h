@@ -43,7 +43,7 @@ public:
 
 private:
   static void mUartRcvLoop(void *unused);
-  esp_err_t mUpdateTip();
+  esp_err_t mUpdateTip(string);
   inline static string mUsbReceiveString = "";
   inline static bool mUsbAvailable = false;
   TaskHandle_t mTaskHandle;
@@ -51,6 +51,7 @@ private:
   vector<string> mParametersVector;
   int mWorkingMode;
   int numberOfValues = 1;
+  int adjustIsActive = false;
   
 };
 
