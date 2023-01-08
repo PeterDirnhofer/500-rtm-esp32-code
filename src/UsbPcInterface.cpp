@@ -39,11 +39,6 @@ void UsbPcInterface::start()
     this->mStarted = true;
 }
 
-/**
- * @brief Read CR terminated string from PC-usb into usbReceiveString. Set usbAvailable.
- *
- *
- */
 extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
 {
     // https://github.com/espressif/esp-idf/blob/af28c1fa21fc0abf9cb3ac8568db9cbd99a7f4b5/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
@@ -90,11 +85,11 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
                 for (int x = 0; x < strlen(part3.c_str()); x++)
                     part3[x] = toupper(part3[x]);
 
-                if (strcmp(part3.c_str(), "TIP") == 0)
+                if (strcmp(part3.c_str(), "TIP") == 0) // TIP command
                 {
                     UsbPcInterface::mUpdateTip(rcvString);
                 }
-                else
+                else // other commands
                 {
                     UsbPcInterface::mUsbReceiveString.clear();
                     UsbPcInterface::mUsbReceiveString.append(rcvString);
@@ -166,12 +161,12 @@ esp_err_t UsbPcInterface::sendData()
 esp_err_t UsbPcInterface::mUpdateTip(string s)
 {
 
-    if (UsbPcInterface::adjustIsActive == false){
+    if (UsbPcInterface::adjustIsActive == false)
+    {
         ESP_LOGW("mUpdateTip", "No valid parameter for TIP. Only valid in ADJUST mode\n");
         UsbPcInterface::send("No valid parameter for TIP. Only valid in ADJUST mode\n");
         return ESP_ERR_INVALID_ARG;
     }
-
 
     int l = strlen(s.c_str());
     ESP_LOGI(TAG, "length TIP command: %d", l);
@@ -314,16 +309,6 @@ void UsbPcInterface::printErrorMessageAndRestart(string error_string)
 {
 
     send("ERROR %s\n", error_string.c_str());
-    send("Press Ctrl-C to restart\n");
-    while (1)
-    {
-        vTaskDelete(NULL);
-    }
-}
-
-void UsbPcInterface::printMessageAndRestart(string msg)
-{
-    send("%s\n", msg.c_str());
     send("Press Ctrl-C to restart\n");
     while (1)
     {
