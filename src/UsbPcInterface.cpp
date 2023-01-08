@@ -49,30 +49,27 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
     // https://github.com/espressif/esp-idf/blob/af28c1fa21fc0abf9cb3ac8568db9cbd99a7f4b5/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 
     string rcvString = "";
-    bool found_CR;
+    bool found_LF;
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
 
     ESP_LOGI(TAG, "*** STARTED \n");
-    found_CR = false;
+    found_LF = false;
     while (1)
     {
 
-        // uart_flush()
         const int rxCount = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 100 / portTICK_PERIOD_MS);
-
-        if (rxCount > 0) // && (found_CR == false))
+        if (rxCount > 0)
         {
             data[rxCount] = 0;
             int i = 0;
 
-            // Input ends with CR LF = 13 10
-            while ((i < rxCount) && (found_CR == false))
+            while ((i < rxCount) && (found_LF == false))
             {
 
                 if (data[i] == 0xA) // Linefeed
                 {
-                    found_CR = true;
+                    found_LF = true;
                 }
                 else if (data[i] == 0x3) // CTRL C
                 {
@@ -85,30 +82,27 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
                 i++;
             }
 
-            if (found_CR)
+            if (found_LF)
             {
                 ESP_LOGI(TAG, "#### 0A found.  \n");
 
                 string part3 = rcvString.substr(0, 3);
                 for (int x = 0; x < strlen(part3.c_str()); x++)
                     part3[x] = toupper(part3[x]);
-                ESP_LOGI(TAG, "NACHHER2  %s", part3.c_str());
 
                 if (strcmp(part3.c_str(), "TIP") == 0)
                 {
                     UsbPcInterface::mUpdateTip(rcvString);
-                    rcvString.clear();
-                    found_CR = false;
                 }
                 else
                 {
                     UsbPcInterface::mUsbReceiveString.clear();
                     UsbPcInterface::mUsbReceiveString.append(rcvString);
                     UsbPcInterface::mUsbAvailable = true;
-                    rcvString.clear();
-                    found_CR = false;
                     ESP_LOGI(TAG, "usbReceive %s\n", mUsbReceiveString.c_str());
                 }
+                rcvString.clear();
+                found_LF = false;
             }
         }
     }
@@ -276,7 +270,6 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 
     if (strcmp(this->mParametersVector[0].c_str(), "ADJUST") == 0)
     {
-        ESP_LOGI(TAG, "ADJUST detected");
         this->mWorkingMode = MODE_ADJUST_TEST_TIP;
         ESP_LOGI(TAG, "ADJUST detected\n");
         return ESP_OK;
