@@ -166,6 +166,13 @@ esp_err_t UsbPcInterface::sendData()
 esp_err_t UsbPcInterface::mUpdateTip(string s)
 {
 
+    if (UsbPcInterface::adjustIsActive == false){
+        ESP_LOGW("mUpdateTip", "No valid parameter for TIP. Only valid in ADJUST mode\n");
+        UsbPcInterface::send("No valid parameter for TIP. Only valid in ADJUST mode\n");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+
     int l = strlen(s.c_str());
     ESP_LOGI(TAG, "length TIP command: %d", l);
     if ((l < 5) || s[3] != ',')
@@ -271,6 +278,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     if (strcmp(this->mParametersVector[0].c_str(), "ADJUST") == 0)
     {
         this->mWorkingMode = MODE_ADJUST_TEST_TIP;
+        UsbPcInterface::adjustIsActive = true;
         ESP_LOGI(TAG, "ADJUST detected\n");
         return ESP_OK;
     }

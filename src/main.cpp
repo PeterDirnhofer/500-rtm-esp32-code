@@ -52,6 +52,7 @@ extern "C" void app_main(void)
 
     UsbPcInterface::send("IDLE\n");
     ParameterSetting parameterSetter;
+    UsbPcInterface::adjustIsActive=false;
 
     // If no parameters in Flash Set Default Parameters
     if (parameterSetter.parametersAreValid() != ESP_OK)
