@@ -107,7 +107,7 @@ extern "C" void measurementLoop(void *unused)
             //               1000                10
             y = kP * e + kI * eOld + yOld; // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt
             eOld = e;
-            ySaturate = saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
+            ySaturate = m_saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
             currentZDac = ySaturate;                                  // set new z height
             printf("new ZDac: %i. resume vspiDacLoop\n", currentZDac);
             ESP_LOGI(TAG, "new ZDac: %i. resume vspiDacLoop\n", currentZDac);
@@ -120,7 +120,43 @@ extern "C" void measurementLoop(void *unused)
     }
 }
 
-uint16_t saturate16bit(uint32_t input, uint16_t min, uint16_t max)
+/**@brief Loop diplaying tunnelcurrent to help adjusting measure tip
+ *
+ */
+extern "C" void displayTunnelCurrentLoop(UsbPcInterface usb)
+{
+
+    esp_err_t errTemp = i2cAdcInit(); // Init I2C for ADC
+    if (errTemp != 0)
+    {
+        ESP_LOGE(TAG, "ERROR. Cannot init I2 for ADC. Returncode != 0. Returncode is : %d\n", errTemp);
+    }
+
+
+    vspiDacStart(); // Init and loop for DACs
+    esp_log_level_set("*", ESP_LOG_INFO);
+    ESP_LOGI(TAG, "+++ Display Tunnel Current\n");
+    const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
+    int ledLevel = 1;
+
+    while (1)
+    {
+        //usb.getCommandsFromPC();
+        //ESP_LOGI(TAG, "getWorkingMode %d", usb.getWorkingMode());
+        uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
+        currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
+        // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
+        UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
+
+        // Invert Blue LED
+        gpio_set_level(BLUE_LED, ledLevel % 2);
+        ledLevel++;
+
+        vTaskDelay(xDelay);
+    }
+}
+
+uint16_t m_saturate16bit(uint32_t input, uint16_t min, uint16_t max)
 {
     if (input < min)
     {
@@ -159,40 +195,4 @@ extern "C" int sendPaketWithData(bool terminate)
 
     timer_start(TIMER_GROUP_0, TIMER_0); // resume timer
     return 0;
-}
-
-/**@brief Loop diplaying tunnelcurrent to help adjusting measure tip
- *
- */
-extern "C" void displayTunnelCurrentLoop(UsbPcInterface usb)
-{
-
-    esp_err_t errTemp = i2cAdcInit(); // Init I2C for ADC
-    if (errTemp != 0)
-    {
-        ESP_LOGE(TAG, "ERROR. Cannot init I2 for ADC. Returncode != 0. Returncode is : %d\n", errTemp);
-    }
-
-
-    vspiDacStart(); // Init and loop for DACs
-    esp_log_level_set("*", ESP_LOG_INFO);
-    ESP_LOGI(TAG, "+++ Display Tunnel Current\n");
-    const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
-    int ledLevel = 1;
-
-    while (1)
-    {
-        //usb.getCommandsFromPC();
-        //ESP_LOGI(TAG, "getWorkingMode %d", usb.getWorkingMode());
-        uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
-        currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
-        // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
-        UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
-
-        // Invert Blue LED
-        gpio_set_level(BLUE_LED, ledLevel % 2);
-        ledLevel++;
-
-        vTaskDelay(xDelay);
-    }
 }

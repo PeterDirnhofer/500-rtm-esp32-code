@@ -15,7 +15,7 @@
 
 extern "C" void measurementStart();
 extern "C" void measurementLoop(void* unused);
-extern "C" uint16_t saturate16bit(uint32_t input, uint16_t min, uint16_t max);
+extern "C" uint16_t m_saturate16bit(uint32_t input, uint16_t min, uint16_t max);
 extern "C" int sendPaketWithData(bool terminate = false);
 extern "C" void displayTunnelCurrentLoop(UsbPcInterface);
 

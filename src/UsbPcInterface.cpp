@@ -272,32 +272,37 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 
     if (strcmp(this->mParametersVector[0].c_str(), "ADJUST") == 0)
     {
-        this->mWorkingMode = MODE_ADJUST_TEST_TIP;
+     
+        UsbPcInterface::m_workingmode=MODE_ADJUST_TEST_TIP;
         UsbPcInterface::adjustIsActive = true;
         ESP_LOGI(TAG, "ADJUST detected\n");
         return ESP_OK;
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "MEASURE") == 0)
     {
-        this->mWorkingMode = MODE_MEASURE;
+      
+        UsbPcInterface::m_workingmode = MODE_MEASURE;
         ESP_LOGI(TAG, "MEASURE detected\n");
         return ESP_OK;
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "PARAMETER") == 0)
     {
-        this->mWorkingMode = MODE_PARAMETER;
+    
+        UsbPcInterface::m_workingmode = MODE_PARAMETER;
         ESP_LOGI(TAG, "PARAMETER detected\n");
         return ESP_OK;
     }
 
-    this->mWorkingMode = MODE_INVALID;
+
+    UsbPcInterface::m_workingmode = MODE_INVALID;
     ESP_LOGW(TAG, "INVALID command %s\n", mParametersVector[0].c_str());
     return ESP_ERR_INVALID_ARG;
 }
 
 int UsbPcInterface::getWorkingMode()
 {
-    return this->mWorkingMode;
+    //return this->mWorkingMode;
+    return UsbPcInterface::m_workingmode;
 }
 
 vector<string> UsbPcInterface::getParametersFromPc()

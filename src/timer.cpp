@@ -9,6 +9,8 @@
 #include "globalVariables.h"
 #include "timer.h"
 
+#include "UsbPcInterface.h"
+
 // https://esp32developer.com/programming-in-c-c/timing/hardware-timers
 
 void null_task(void *pvParam)
@@ -32,6 +34,7 @@ void timer_tg0_isr(void *arg)
     // Reset irq and set for next time
     TIMERG0.int_clr_timers.t0 = 1;
     TIMERG0.hw_timer[0].config.alarm_en = 1;
+       
 
     vTaskResume(handleControllerLoop);
 }
