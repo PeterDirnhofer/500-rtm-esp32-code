@@ -50,7 +50,7 @@ uint8_t lastConfigByte = 100;
 // bool rtmDataReady = false;
 uint16_t configExisting = 0;
 uint16_t lastConfigExisting = 1000;
-int64_t controller_start_time = 0;
+
 
 uint16_t maxNumberAttemptsSPI = 10;
 

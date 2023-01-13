@@ -24,7 +24,7 @@ uint16_t readAdc(){
     return temp;
 }
 
-esp_err_t i2cInit(){
+esp_err_t i2cAdcInit(){
     i2c_port_t i2c_master_port = I2C_MASTER_NUM;
 
     i2cConf.mode = I2C_MODE_MASTER;

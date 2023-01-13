@@ -3,13 +3,7 @@
 using namespace std;
 static const char *TAG = "controller";
 
-int runtime_ms()
-{
 
-    int64_t rt = esp_timer_get_time() - controller_start_time;
-    int rtInt = (int)(rt / 1000);
-    return rtInt;
-}
 
 /**@brief Initialialze vspi and i2c. Start single controllerLoop. Initialize 1 ms Timer for restarting controllerLoop
  * @details
@@ -20,12 +14,9 @@ int runtime_ms()
  */
 extern "C" void measurementStart()
 {
-    controller_start_time = esp_timer_get_time();
+   
 
-    ESP_LOGI(TAG, "+++ controllerStart\n");
-    printf("+++++++++++++++++++++ controllerStart\n");
-
-    esp_err_t errTemp = i2cInit(); // Init ADC
+    esp_err_t errTemp = i2cAdcInit(); // Init I2C for ADC
     if (errTemp != 0)
     {
         ESP_LOGE(TAG, "ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
@@ -176,11 +167,13 @@ extern "C" int sendPaketWithData(bool terminate)
 extern "C" void displayTunnelCurrentLoop(UsbPcInterface usb)
 {
 
-    esp_err_t errTemp = i2cInit(); // Init I2C for XYZ DACs
+    esp_err_t errTemp = i2cAdcInit(); // Init I2C for ADC
     if (errTemp != 0)
     {
-        ESP_LOGE(TAG, "ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
+        ESP_LOGE(TAG, "ERROR. Cannot init I2 for ADC. Returncode != 0. Returncode is : %d\n", errTemp);
     }
+
+
     vspiDacStart(); // Init and loop for DACs
     esp_log_level_set("*", ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++ Display Tunnel Current\n");
@@ -189,8 +182,8 @@ extern "C" void displayTunnelCurrentLoop(UsbPcInterface usb)
 
     while (1)
     {
-        usb.getCommandsFromPC();
-        ESP_LOGI(TAG, "getWorkingMode %d", usb.getWorkingMode());
+        //usb.getCommandsFromPC();
+        //ESP_LOGI(TAG, "getWorkingMode %d", usb.getWorkingMode());
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
         // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
