@@ -17,11 +17,11 @@ void toggleLed()
 {
     if (ledIsOn)
     {
-        gpio_set_level(BLUE_LED, 0);
+        gpio_set_level(IO_02, 0);
     }
     else
     {
-        gpio_set_level(BLUE_LED, 1);
+        gpio_set_level(IO_02, 1);
     }
     ledIsOn = !ledIsOn;
 }

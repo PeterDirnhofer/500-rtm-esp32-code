@@ -114,7 +114,14 @@ extern uint8_t lastConfigByte;
 #define MODE_MOVE_TIP 4
 
 
-#define BLUE_LED GPIO_NUM_2
+#define IO_02 GPIO_NUM_2
+#define IO_04 GPIO_NUM_4
+#define IO_17 GPIO_NUM_17
+#define IO_25 GPIO_NUM_25
+#define IO_27 GPIO_NUM_27
+#define IO_35 GPIO_NUM_35
+
+
 
 
 

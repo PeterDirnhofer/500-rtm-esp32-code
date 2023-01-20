@@ -44,8 +44,15 @@ extern "C" void app_main(void)
     esp_log_level_set("*", ESP_LOG_WARN);
     static const char *TAG = "main";
 
-    gpio_set_direction(BLUE_LED, GPIO_MODE_OUTPUT); // Blue LED as Output
-    gpio_set_level(BLUE_LED, 1);
+    gpio_set_direction(IO_02, GPIO_MODE_OUTPUT); // Blue LED as Output
+    gpio_set_direction(IO_04, GPIO_MODE_OUTPUT);
+    gpio_set_direction(IO_17, GPIO_MODE_OUTPUT);
+    gpio_set_direction(IO_25, GPIO_MODE_OUTPUT);
+    gpio_set_direction(IO_27, GPIO_MODE_OUTPUT);
+ 
+
+
+    gpio_set_level(IO_02, 1);
 
     UsbPcInterface usb;
     usb.start();

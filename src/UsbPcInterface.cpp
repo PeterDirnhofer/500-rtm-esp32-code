@@ -229,9 +229,11 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
         {
             // Invert Blue LED
             ledLevel++;
-            gpio_set_level(BLUE_LED, ledLevel % 2);
-            if (this->getWorkingMode() != MODE_IDLE)
+            gpio_set_level(IO_02, ledLevel % 2);
+            if (this->getWorkingMode() == MODE_IDLE)
+            {
                 this->send("IDLE\n");
+            }
         }
 
         vTaskDelay(100 / portTICK_RATE_MS);
@@ -239,7 +241,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     }
 
     // Command received from PC
-    gpio_set_level(BLUE_LED, 1);
+    gpio_set_level(IO_02, 1);
     // Split usbReceive csv to parameters[]
     // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
 
@@ -272,27 +274,26 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 
     if (strcmp(this->mParametersVector[0].c_str(), "ADJUST") == 0)
     {
-     
-        UsbPcInterface::m_workingmode=MODE_ADJUST_TEST_TIP;
+
+        UsbPcInterface::m_workingmode = MODE_ADJUST_TEST_TIP;
         UsbPcInterface::adjustIsActive = true;
         ESP_LOGI(TAG, "ADJUST detected\n");
         return ESP_OK;
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "MEASURE") == 0)
     {
-      
+
         UsbPcInterface::m_workingmode = MODE_MEASURE;
         ESP_LOGI(TAG, "MEASURE detected\n");
         return ESP_OK;
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "PARAMETER") == 0)
     {
-    
+
         UsbPcInterface::m_workingmode = MODE_PARAMETER;
         ESP_LOGI(TAG, "PARAMETER detected\n");
         return ESP_OK;
     }
-
 
     UsbPcInterface::m_workingmode = MODE_INVALID;
     ESP_LOGW(TAG, "INVALID command %s\n", mParametersVector[0].c_str());
@@ -301,7 +302,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 
 int UsbPcInterface::getWorkingMode()
 {
-    //return this->mWorkingMode;
+    // return this->mWorkingMode;
     return UsbPcInterface::m_workingmode;
 }
 

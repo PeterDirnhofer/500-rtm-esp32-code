@@ -149,7 +149,7 @@ extern "C" void displayTunnelCurrentLoop(UsbPcInterface usb)
         UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
 
         // Invert Blue LED
-        gpio_set_level(BLUE_LED, ledLevel % 2);
+        gpio_set_level(IO_02, ledLevel % 2);
         ledLevel++;
 
         vTaskDelay(xDelay);
