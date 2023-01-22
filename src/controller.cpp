@@ -3,7 +3,56 @@
 using namespace std;
 static const char *TAG = "controller";
 
+void testio(gpio_num_t io, int cycles)
+{
 
+    for (int i = 0; i < cycles; i++)
+    {
+        gpio_set_level(io, 1);
+        gpio_set_level(io, 0);
+    }
+}
+
+extern "C" void adjustStart()
+{
+    esp_err_t errTemp = i2cAdcInit(); // Init I2C for ADC
+    if (errTemp != 0)
+    {
+        ESP_LOGE(TAG, "ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
+        UsbPcInterface::send("ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
+        esp_restart();
+    }
+
+    vspiDacStart(); // Init and loop for DACs
+
+    // Init DACs
+    //vspiDacStart();              // Init and loop for DACs
+    //vTaskResume(handleVspiLoop); // Start for one run. Will suspend itself
+    
+    
+    xTaskCreatePinnedToCore(adjustLoop, "adjustLoop", 10000, NULL, 2, &handleAdjustLoop, 1);
+    UsbPcInterface::send("ADJUST,start timer");
+    timer_tg0_initialise(1000,8000,MODE_ADJUST_TEST_TIP);  // 10000, 8000  Start 1 Second
+}
+
+extern "C" void adjustLoop(void* unused)
+{
+    
+    while (true)
+    {
+        
+        vTaskSuspend(NULL); // Sleep. Will be restarted by timer
+        
+        
+        uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
+        currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
+        // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
+        
+        UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
+
+        
+    }
+}
 
 /**@brief Initialialze vspi and i2c. Start single controllerLoop. Initialize 1 ms Timer for restarting controllerLoop
  * @details
@@ -15,7 +64,6 @@ static const char *TAG = "controller";
 extern "C" void measurementStart()
 {
    
-
     esp_err_t errTemp = i2cAdcInit(); // Init I2C for ADC
     if (errTemp != 0)
     {
@@ -28,8 +76,7 @@ extern "C" void measurementStart()
 
     xTaskCreatePinnedToCore(measurementLoop, "controllerLoop", 10000, NULL, 2, &handleControllerLoop, 1);
     printf("Timer Period set to 1200*1000\n");
-    // timer_tg0_initialise(1200*5000); // us -> 10^6us/860SPS = 1162 -> 1200
-    timer_tg0_initialise(1200 * 1);
+    timer_tg0_initialise(1200*1,80,MODE_MEASURE);
     // controllerLoop(NULL);
 }
 
@@ -120,41 +167,7 @@ extern "C" void measurementLoop(void *unused)
     }
 }
 
-/**@brief Loop diplaying tunnelcurrent to help adjusting measure tip
- *
- */
-extern "C" void displayTunnelCurrentLoop(UsbPcInterface usb)
-{
 
-    esp_err_t errTemp = i2cAdcInit(); // Init I2C for ADC
-    if (errTemp != 0)
-    {
-        ESP_LOGE(TAG, "ERROR. Cannot init I2 for ADC. Returncode != 0. Returncode is : %d\n", errTemp);
-    }
-
-
-    vspiDacStart(); // Init and loop for DACs
-    esp_log_level_set("*", ESP_LOG_INFO);
-    ESP_LOGI(TAG, "+++ Display Tunnel Current\n");
-    const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
-    int ledLevel = 1;
-
-    while (1)
-    {
-        //usb.getCommandsFromPC();
-        //ESP_LOGI(TAG, "getWorkingMode %d", usb.getWorkingMode());
-        uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
-        currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
-        // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
-        UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
-
-        // Invert Blue LED
-        gpio_set_level(IO_02, ledLevel % 2);
-        ledLevel++;
-
-        vTaskDelay(xDelay);
-    }
-}
 
 uint16_t m_saturate16bit(uint32_t input, uint16_t min, uint16_t max)
 {

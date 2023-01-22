@@ -38,6 +38,8 @@
 
 using namespace std;
 
+
+
 extern "C" void app_main(void)
 {
 
@@ -49,17 +51,15 @@ extern "C" void app_main(void)
     gpio_set_direction(IO_17, GPIO_MODE_OUTPUT);
     gpio_set_direction(IO_25, GPIO_MODE_OUTPUT);
     gpio_set_direction(IO_27, GPIO_MODE_OUTPUT);
- 
-
-
-    gpio_set_level(IO_02, 1);
 
     UsbPcInterface usb;
     usb.start();
 
     UsbPcInterface::send("IDLE\n");
+
+
     ParameterSetting parameterSetter;
-    UsbPcInterface::adjustIsActive=false;
+    UsbPcInterface::adjustIsActive = false;
 
     // If no parameters in Flash Set Default Parameters
     if (parameterSetter.parametersAreValid() != ESP_OK)
@@ -86,7 +86,8 @@ extern "C" void app_main(void)
     if (usb.getWorkingMode() == MODE_ADJUST_TEST_TIP)
     {
 
-        displayTunnelCurrentLoop(usb);
+        adjustStart();
+        //displayTunnelCurrentLoop(usb);
         vTaskDelete(NULL);
     }
 

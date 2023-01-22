@@ -1,7 +1,8 @@
 #ifndef TIMER
 #define TIMER
 
-void timer_tg0_initialise (int timer_period_us);
+void timer_tg0_initialise (int timer_period_us, uint32_t divider, int mode);
+
 
 //void timer_tg0_isr(void* arg);
 void null_task(void *pvParam);

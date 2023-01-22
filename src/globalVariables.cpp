@@ -14,6 +14,7 @@ TaskHandle_t handleUartRcvLoop = NULL;
 TaskHandle_t handleVspiLoop = NULL;
 TaskHandle_t handleSendDatasets = NULL;
 TaskHandle_t handleControllerLoop = NULL;
+TaskHandle_t handleAdjustLoop = NULL;
 TaskHandle_t handleTask = NULL;
 
 spi_device_interface_config_t devcfgDacX;
