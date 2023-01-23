@@ -87,7 +87,6 @@ extern "C" void app_main(void)
     {
 
         adjustStart();
-        //displayTunnelCurrentLoop(usb);
         vTaskDelete(NULL);
     }
 

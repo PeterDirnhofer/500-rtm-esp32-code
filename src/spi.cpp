@@ -188,6 +188,7 @@ void vspiDacLoop(void *unused)
             lastYDac = currentYDac;
             ESP_LOGI(TAG, "new Y=%d\n", currentYDac);
         }
+   
 
         vspiSendDac(currentZDac, buffer.get(), handleDacZ); // Dac Z
         // printf("--- Suspend vspiDacLoop (self)\n");

@@ -23,16 +23,13 @@ extern "C" void adjustStart()
         esp_restart();
     }
 
-    vspiDacStart(); // Init and loop for DACs
-
-    // Init DACs
-    //vspiDacStart();              // Init and loop for DACs
-    //vTaskResume(handleVspiLoop); // Start for one run. Will suspend itself
     
+    // Init DACs
+    vspiDacStart();              // Init and loop for DACs
+    vTaskResume(handleVspiLoop); // Start for one run. Will suspend itself
     
     xTaskCreatePinnedToCore(adjustLoop, "adjustLoop", 10000, NULL, 2, &handleAdjustLoop, 1);
-    UsbPcInterface::send("ADJUST,start timer");
-    timer_tg0_initialise(1000,8000,MODE_ADJUST_TEST_TIP);  // 10000, 8000  Start 1 Second
+    timer_tg0_initialise(10000,8000,MODE_ADJUST_TEST_TIP);  // 10000, 8000  Start 1 Second
 }
 
 extern "C" void adjustLoop(void* unused)

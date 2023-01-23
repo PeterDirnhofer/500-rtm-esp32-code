@@ -204,8 +204,8 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
         newZ = DAC_VALUE_MAX;
 
     UsbPcInterface::send("TIP,%d,%d\n", currentZDac, newZ);
-    ESP_LOGI("mUpdateTip", "TIP detected TIP,%d,%d\n", currentZDac, newZ);
     currentZDac = (uint16_t)newZ;
+
     vTaskResume(handleVspiLoop); // realize newZ. Will suspend itself
     return ESP_OK;
 }
