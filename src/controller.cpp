@@ -45,7 +45,8 @@ extern "C" void adjustLoop(void* unused)
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
         // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
         
-        UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
+        //UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
+        UsbPcInterface::send("ADJUST,%f,%d\n", currentTunnelCurrentnA, adcValue);
 
         
     }

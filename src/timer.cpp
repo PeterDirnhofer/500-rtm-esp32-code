@@ -72,7 +72,7 @@ void timer_tg0_initialise(int timer_period_us, uint32_t divider, int mode)
         timer_isr_register(TIMER_GROUP_0, TIMER_0, &timer_tg0_isr, NULL, 0, &s_timer_handle);
     }
     else{
-        UsbPcInterface::send("timer_isr_register1\n");
+        
         timer_isr_register(TIMER_GROUP_0, TIMER_0, &timer_tg0_isr1, NULL, 0, &s_timer_handle);
 
     }
