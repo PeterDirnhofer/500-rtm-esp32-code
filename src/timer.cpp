@@ -24,12 +24,12 @@ void null_task(void *pvParam)
 }
 
 /**
- * @brief Timerinterrupt retriggert zyklisch die controllerLoop
- *
+ * @brief On Trigger start controllerLoop
  * @param arg
  */
 void timer_tg0_isr(void *arg)
 {
+    
 
     // Reset irq and set for next time
     TIMERG0.int_clr_timers.t0 = 1;
@@ -37,18 +37,16 @@ void timer_tg0_isr(void *arg)
     vTaskResume(handleControllerLoop);
 }
 
-
+/// @brief On trigger start adjustLoop
+/// @param arg
 void timer_tg0_isr1(void *arg)
 {
-
+    
     // Reset irq and set for next time
     TIMERG0.int_clr_timers.t0 = 1;
     TIMERG0.hw_timer[0].config.alarm_en = 1;
     vTaskResume(handleAdjustLoop);
 }
-
-
-
 
 void timer_tg0_initialise(int timer_period_us, uint32_t divider, int mode)
 {
@@ -58,7 +56,7 @@ void timer_tg0_initialise(int timer_period_us, uint32_t divider, int mode)
         .intr_type = TIMER_INTR_LEVEL,      // Is interrupt is triggered on timer’s alarm (timer_intr_mode_t)
         .counter_dir = TIMER_COUNT_UP,      // Does counter increment or decrement (timer_count_dir_t)
         .auto_reload = TIMER_AUTORELOAD_EN, // If counter should auto_reload a specific initial value on the timer’s alarm, or continue incrementing or decrementing.
-        .divider = divider                       // Divisor of the incoming 80 MHz (12.5nS) APB_CLK clock. E.g. 80 = 1uS per timer tick
+        .divider = divider                  // Divisor of the incoming 80 MHz (12.5nS) APB_CLK clock. E.g. 80 = 1uS per timer tick
                                             // divider = 80 --> 1 us
                                             // divider = 8000 --> 100 us = 0.1 ms
                                             // Example 1 Sekunde: divider = 8000 timer_period = 10000
@@ -68,17 +66,17 @@ void timer_tg0_initialise(int timer_period_us, uint32_t divider, int mode)
     timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
     timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, timer_period_us);
     timer_enable_intr(TIMER_GROUP_0, TIMER_0);
-    if (mode == MODE_MEASURE){
+    if (mode == MODE_MEASURE)
+    {
         timer_isr_register(TIMER_GROUP_0, TIMER_0, &timer_tg0_isr, NULL, 0, &s_timer_handle);
     }
-    else{
-        
-        timer_isr_register(TIMER_GROUP_0, TIMER_0, &timer_tg0_isr1, NULL, 0, &s_timer_handle);
+    else
+    {
 
+        timer_isr_register(TIMER_GROUP_0, TIMER_0, &timer_tg0_isr1, NULL, 0, &s_timer_handle);
     }
-        
+
     // printf("done init \n");
     timer_start(TIMER_GROUP_0, TIMER_0);
     printf("*** Start timer\n");
 }
-

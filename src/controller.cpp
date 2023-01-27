@@ -75,7 +75,7 @@ extern "C" void measurementStart()
     xTaskCreatePinnedToCore(measurementLoop, "controllerLoop", 10000, NULL, 2, &handleControllerLoop, 1);
     printf("Timer Period set to 1200*1000\n");
     timer_tg0_initialise(1200*1,80,MODE_MEASURE);
-    // controllerLoop(NULL);
+
 }
 
 /**@brief Run one Measure Cycle. Save data if valid. Control Position of microscopes measure tip.
@@ -103,33 +103,43 @@ extern "C" void measurementLoop(void *unused)
     uint16_t ySaturate = 0;
     w = destinationTunnelCurrentnA;
     uint16_t unsentDatasets = 0;
-
+    gpio_set_level(IO_04,0);
     while (true)
     {
 
+        gpio_set_level(IO_02,0);
         vTaskSuspend(NULL); // Sleep. Will be restarted by timer
-
+        gpio_set_level(IO_02,1);
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
-
+        
+        
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM); // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
         r = currentTunnelCurrentnA;                                                                           // conversion from voltage to equivalent current
 
         // abweichung     = soll (10.0)      - ist
         // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
         e = w - r;
-
+        
         // Abweichung soll/ist im limit --> Messwerte speichern und nächste XY Position anfordern
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
+            
+            gpio_set_level(IO_04,1);
+
             // save to queue  Grid(x)  Grid(y)  Z_DAC
             dataQueue.emplace(dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
-
+            
             // Paket with 100 results complete -> Interrupt mesuring and send data vis USB
             if (++unsentDatasets >= sendDataAfterXDatasets)
             {
+                
+                
+                
                 unsentDatasets = sendPaketWithData();
+                
+                
             }
-
+            
             // New XY calculation. Move tip XY
             if (!rtmGrid.moveOn())
             {
@@ -149,6 +159,7 @@ extern "C" void measurementLoop(void *unused)
         // Abweichung soll/ist zu gross --> Z muss nachgeregelt werden
         else
         {
+            gpio_set_level(IO_04,0);
             //               1000                10
             y = kP * e + kI * eOld + yOld; // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt
             eOld = e;
@@ -182,9 +193,11 @@ uint16_t m_saturate16bit(uint32_t input, uint16_t min, uint16_t max)
 
 extern "C" int sendPaketWithData(bool terminate)
 {
-
+    
     timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer during dataset sending
+    //timer_set_counter_value(TIMER_GROUP_0,TIMER_1,0x00000000ULL);
 
+    
     while (!dataQueue.empty())
     {
         dataQueue.front();
@@ -201,9 +214,10 @@ extern "C" int sendPaketWithData(bool terminate)
     }
     if (terminate == true)
     {
-        UsbPcInterface::send("DATA,DONE,");
+        UsbPcInterface::send("DATA,DONE\n");
     }
-
+    
+    
     timer_start(TIMER_GROUP_0, TIMER_0); // resume timer
     return 0;
 }

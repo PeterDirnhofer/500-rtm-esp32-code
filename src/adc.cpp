@@ -15,8 +15,7 @@ uint16_t readAdc(){
 
     cmd = i2c_cmd_link_create();
     
-    gpio_set_level(IO_02, 1);
-    gpio_set_level(IO_02, 0);
+    
     
     i2c_master_start(cmd);
     

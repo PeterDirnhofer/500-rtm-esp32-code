@@ -155,8 +155,8 @@ void vspiDacInit()
  */
 void vspiDacLoop(void *unused)
 {
-
-    ESP_LOGI(TAG, "+++ vspiDacLoop started\n");
+    
+    //ESP_LOGI(TAG, "+++ vspiDacLoop started\n");
 
     unique_ptr<uint16_t> buffer = make_unique<uint16_t>();
 
@@ -175,24 +175,25 @@ void vspiDacLoop(void *unused)
     while (1)
     {
         // ESP_LOGI(TAG,"X, new: %d, old: %d \n", currentXDac, lastXDac);
-
+        gpio_set_level(IO_17,1);
         if (currentXDac != lastXDac)
         {                                                       // only if new value has been written to currentXDac
             vspiSendDac(currentXDac, buffer.get(), handleDacX); // Dac X
             lastXDac = currentXDac;
-            ESP_LOGI(TAG, "new X=%d\n", currentXDac);
+            //ESP_LOGI(TAG, "new X=%d\n", currentXDac);
         }
         if (currentYDac != lastYDac)
         {                                                       // only if new value has been written to currentYDac
             vspiSendDac(currentYDac, buffer.get(), handleDacY); // Dac Y
             lastYDac = currentYDac;
-            ESP_LOGI(TAG, "new Y=%d\n", currentYDac);
+            //ESP_LOGI(TAG, "new Y=%d\n", currentYDac);
         }
-   
 
         vspiSendDac(currentZDac, buffer.get(), handleDacZ); // Dac Z
         // printf("--- Suspend vspiDacLoop (self)\n");
+        gpio_set_level(IO_17,0);
         vTaskSuspend(NULL); // will be resumed by controller
+        
     }
 }
 
@@ -201,6 +202,10 @@ uint16_t endianSwap(uint16_t toBeConverted)
     return (((toBeConverted) >> 8) | (toBeConverted << 8));
 }
 
+/// @brief Set DAC with dacValue.
+/// @param dacValue Output voltage DAC. Outpt-Voltage im mV = dacValue * 0.0625
+/// @param tx_buffer
+/// @param dacDeviceHandle Handle for DAC X or DAC Y or DAC Z
 void vspiSendDac(uint16_t dacValue, uint16_t *tx_buffer, spi_device_handle_t dacDeviceHandle)
 {
     *tx_buffer = endianSwap(dacValue); // Change byte orientation, ESP is using little endian, dac big endian
