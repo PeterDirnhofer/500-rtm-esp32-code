@@ -13,8 +13,7 @@ void testio(gpio_num_t io, int cycles)
     }
 }
 
-extern "C" void adjustStart()
-{
+extern "C" esp_err_t initHardware(){
     esp_err_t errTemp = i2cAdcInit(); // Init I2C for ADC
     if (errTemp != 0)
     {
@@ -27,7 +26,13 @@ extern "C" void adjustStart()
     // Init DACs
     vspiDacStart();              // Init and loop for DACs
     vTaskResume(handleVspiLoop); // Start for one run. Will suspend itself
-    
+    return ESP_OK;
+
+}
+
+extern "C" void adjustStart()
+{
+   
     xTaskCreatePinnedToCore(adjustLoop, "adjustLoop", 10000, NULL, 2, &handleAdjustLoop, 1);
     timer_tg0_initialise(10000,8000,MODE_ADJUST_TEST_TIP);  // 10000, 8000  Start 1 Second
 }
@@ -62,18 +67,7 @@ extern "C" void adjustLoop(void* unused)
 extern "C" void measurementStart()
 {
    
-    esp_err_t errTemp = i2cAdcInit(); // Init I2C for ADC
-    if (errTemp != 0)
-    {
-        ESP_LOGE(TAG, "ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
-    }
-
-    // Init DACs
-    vspiDacStart();              // Init and loop for DACs
-    vTaskResume(handleVspiLoop); // Start for one run. Will suspend itself
-
-    xTaskCreatePinnedToCore(measurementLoop, "controllerLoop", 10000, NULL, 2, &handleControllerLoop, 1);
-    printf("Timer Period set to 1200*1000\n");
+    xTaskCreatePinnedToCore(measurementLoop, "measurementLoop", 10000, NULL, 2, &handleControllerLoop, 1);
     timer_tg0_initialise(1200*1,80,MODE_MEASURE);
 
 }
@@ -175,8 +169,6 @@ extern "C" void measurementLoop(void *unused)
         yOld = ySaturate;
     }
 }
-
-
 
 uint16_t m_saturate16bit(uint32_t input, uint16_t min, uint16_t max)
 {

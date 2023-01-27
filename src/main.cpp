@@ -68,6 +68,8 @@ extern "C" void app_main(void)
         parameterSetter.putDefaultParametersToFlash();
     }
 
+    initHardware();
+
     // ##############################################################
     // SELECT Run Mode
     // Wait for command from PC via USB

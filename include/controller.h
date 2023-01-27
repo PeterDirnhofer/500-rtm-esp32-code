@@ -15,6 +15,7 @@
 
 extern "C" void measurementStart();
 extern "C" void measurementLoop(void* unused);
+extern "C" esp_err_t initHardware();
 extern "C" void testio(gpio_num_t io, int cycles);
 extern "C" void adjustStart();
 extern "C" void adjustLoop(void* unused);
