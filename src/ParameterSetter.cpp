@@ -153,7 +153,7 @@ esp_err_t ParameterSetting::parametersAreValid()
     {
 
         if (!isKey(keys[i]))
-            return ESP_ERR_FLASH_NOT_INITIALISED;
+            return ESP_ERR_NVS_NOT_FOUND;
     }
 
     return ESP_OK;

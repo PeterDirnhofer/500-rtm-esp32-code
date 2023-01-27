@@ -22,13 +22,13 @@
 #include "esp_spi_flash.h"
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
-#include "driver/timer.h"
+//#include "driver/timer.h"
 
 #include "globalVariables.h"
 #include "spi.h"
 // #include "communication.h"
 #include "controller.h"
-#include "timer.h"
+//#include "timer.h"
 
 static const char *TAG = "spi.cpp";
 using namespace std;
@@ -39,9 +39,8 @@ using namespace std;
 void vspiDacStart()
 {
 
-    ESP_LOGI("TAG", "+++ START vspiDacStart\n");
     vspiDacInit();
-    xTaskCreatePinnedToCore(vspiDacLoop, "vspiloop", 10000, NULL, 3, &handleVspiLoop, 1);
+    xTaskCreatePinnedToCore(vspiDacLoop, "vspiDacLoop", 10000, NULL, 3, &handleVspiLoop, 1);
 }
 
 void vspiDacInit()

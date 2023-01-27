@@ -1,7 +1,7 @@
-#ifndef TIMER
-#define TIMER
+#ifndef PROJECT_TIMER
+#define PROJECT_TIMER
 
-void timer_tg0_initialise (int timer_period_us, uint32_t divider, int mode);
+extern "C" void timer_tg0_initialise(int timer_period_us, uint32_t divider, int mode);
 
 
 //void timer_tg0_isr(void* arg);

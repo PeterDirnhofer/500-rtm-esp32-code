@@ -1,5 +1,6 @@
 #include <UsbPcInterface.h>
 
+
 // https://github.com/espressif/esp-idf/blob/30e8f19f5ac158fc57e80ff97c62b6cc315aa337/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 
 static const char *TAG = "UsbPcInterface";
@@ -236,7 +237,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
             }
         }
 
-        vTaskDelay(100 / portTICK_RATE_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
         i++;
     }
 
@@ -268,7 +269,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
         this->mParametersVector.push_back(buffer);
         p = strtok(NULL, ",");
     }
-    free(cstr);
+    // Pedi !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! free(cstr);
 
     ESP_LOGI(TAG, "ParametersVector[0]: %s", this->mParametersVector[0].c_str());
 
