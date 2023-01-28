@@ -171,7 +171,7 @@ int16_t normToMaxMin(long int invalue)
 }
 
 /// @brief Set X Y Z TIP position or return actual X Y Z
-/// @param s Input String 'TIP,X,Y,Z'  or 'TIP,?'. Strings X Y and Z are normalized to the range of '0' and '32767'  
+/// @param s Input String 'TIP,X,Y,Z'  or 'TIP,?'. Strings X Y and Z are normalized to the range of '0' and '32767'
 /// @return When received 'TIP,?' returns a string with actual X Y Z Position
 esp_err_t UsbPcInterface::mUpdateTip(string s)
 {
@@ -212,12 +212,11 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
     // TIP,?
     if (l == 2) //  && (strcmp(arguments[1].c_str(), "ADJUST") == 0))
     {
-        
+
         if (strcmp(arguments[1].c_str(), "?") == 0)
         {
-            UsbPcInterface::send("TIP,%d,%d,%d\n",currentXDac,currentYDac,currentZDac);
+            UsbPcInterface::send("TIP,%d,%d,%d\n", currentXDac, currentYDac, currentZDac);
             return ESP_OK;
-
         }
         else
         {
@@ -244,7 +243,7 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
 
         if (strlen(endPtr) > 0)
         {
-            UsbPcInterface::send("%sDetail: X value is not an integer\n",TIP_ERROR_MESSAGE);
+            UsbPcInterface::send("%sDetail: X value is not an integer\n", TIP_ERROR_MESSAGE);
             return ESP_ERR_INVALID_ARG;
         }
         x = normToMaxMin(xl);
@@ -252,7 +251,7 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
         long int yl = strtol(arguments[2].c_str(), &endPtr, 10);
         if (strlen(endPtr) > 0)
         {
-            UsbPcInterface::send("%sDetail: Y value is not an integer\n",TIP_ERROR_MESSAGE);
+            UsbPcInterface::send("%sDetail: Y value is not an integer\n", TIP_ERROR_MESSAGE);
             return ESP_ERR_INVALID_ARG;
         }
         y = normToMaxMin(yl);
@@ -260,7 +259,7 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
         long int zl = strtol(arguments[3].c_str(), &endPtr, 10);
         if (strlen(endPtr) > 0)
         {
-            UsbPcInterface::send("%sDetail: Z value is not an integer\n",TIP_ERROR_MESSAGE);
+            UsbPcInterface::send("%sDetail: Z value is not an integer\n", TIP_ERROR_MESSAGE);
             return ESP_ERR_INVALID_ARG;
         }
         z = normToMaxMin(zl);
@@ -274,8 +273,8 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
         return ESP_OK;
     }
 
-   return ESP_OK;
-
+    UsbPcInterface::send("TIP_ERROR_MESSAGE");
+    return ESP_ERR_INVALID_ARG;
 }
 
 /**
