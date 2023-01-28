@@ -1,14 +1,6 @@
 #ifndef PROJECT_TIMER
 #define PROJECT_TIMER
 
-extern "C" void timer_tg0_initialise(int timer_period_us, uint32_t divider, int mode);
-
-
-//void timer_tg0_isr(void* arg);
-void null_task(void *pvParam);
-
-//void timer_group0_isr(void *para);
-
-//void example_tg0_timer_init(int timer_idx, bool auto_reload, double timer_interval_sec);
+extern "C" void timer_initialize(int mode);
 
 #endif
