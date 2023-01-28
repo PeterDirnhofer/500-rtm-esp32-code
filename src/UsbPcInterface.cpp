@@ -274,40 +274,8 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
         return ESP_OK;
     }
 
-    UsbPcInterface::send("No valid command. 'TIP' is only valid in ADJUST mode\n");
-    return ESP_ERR_INVALID_ARG;
+   return ESP_OK;
 
-    if (s[3] != ',')
-    {
-        ESP_LOGW("mUpdateTip", "INVALID command. TIP needs format 'TIP,integer'. Received %s\n", s.c_str());
-    }
-    ESP_LOGI("mUpdateTip", "TIP detected found.  \n");
-    string v = s.substr(4, strlen(s.c_str()) - 4);
-
-    int i;
-    ESP_LOGI("mUpdateTip", "TIP detected value:%s\n", v.c_str());
-
-    char *endPtr;
-    long int il = strtol(v.c_str(), &endPtr, 10);
-    if (strlen(endPtr) > 0)
-    {
-        ESP_LOGW("mUpdateTip", "INVALID command. TIP,1 is no number %s\n", s.c_str());
-
-        return ESP_ERR_INVALID_ARG;
-    }
-    i = (int16_t)il;
-
-    int newZ = currentZDac + i;
-    if (newZ < 0)
-        newZ = 0;
-    if (newZ > DAC_VALUE_MAX)
-        newZ = DAC_VALUE_MAX;
-
-    UsbPcInterface::send("TIP,%d,%d\n", currentZDac, newZ);
-    currentZDac = (uint16_t)newZ;
-
-    vTaskResume(handleVspiLoop); // realize newZ. Will suspend itself
-    return ESP_OK;
 }
 
 /**
