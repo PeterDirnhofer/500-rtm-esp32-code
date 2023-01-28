@@ -28,23 +28,21 @@ extern "C" void adjustStart()
 {
 
     xTaskCreatePinnedToCore(adjustLoop, "adjustLoop", 10000, NULL, 2, &handleAdjustLoop, 1);
-    timer_tg0_initialise(10000, 8000, MODE_ADJUST_TEST_TIP); // 10000, 8000  Start 1 Second
+    timer_initialize(MODE_ADJUST_TEST_TIP); 
 }
 
+/// @brief read ADC, convert to Volt and send via USB. Triggered by gptimer tick 
 extern "C" void adjustLoop(void *unused)
 {
 
     while (true)
     {
-
-        vTaskSuspend(NULL); // Sleep. Will be restarted by timer
-
+        vTaskSuspend(NULL); // Sleep. Will be retriggered by gptimer
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
         // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
-
-        // UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
-        UsbPcInterface::send("ADJUST,%f,%d\n", currentTunnelCurrentnA, adcValue);
+        double adcInVolt = (adcValue * ADC_VOLTAGE_MAX * 1e2) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
+        UsbPcInterface::send("ADJUST,%f,%d\n", adcInVolt, adcValue);
     }
 }
 
@@ -54,7 +52,7 @@ extern "C" void measurementStart()
 {
 
     xTaskCreatePinnedToCore(measurementLoop, "measurementLoop", 10000, NULL, 2, &handleControllerLoop, 1);
-    timer_tg0_initialise(1200 * 1, 80, MODE_MEASURE);
+    timer_initialize(MODE_MEASURE);
 }
 
 /**@brief Run one Measure Cycle. Save data if valid. Control Position of microscopes measure tip.
