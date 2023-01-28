@@ -3,6 +3,7 @@
 // https://github.com/espressif/esp-idf/blob/30e8f19f5ac158fc57e80ff97c62b6cc315aa337/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 
 static const char *TAG = "UsbPcInterface";
+static const char *TIP_ERROR_MESSAGE = "Invalid format 'TIP' command. \nSend 'TIP,10000,20000,30000' to set X,Y,Z\n'TIP,?' to see actual X Y Z values\n";
 
 UsbPcInterface::UsbPcInterface()
     : mTaskHandle(NULL), mStarted(false)
@@ -169,6 +170,9 @@ int16_t normToMaxMin(long int invalue)
     return (int16_t)invalue;
 }
 
+/// @brief Set X Y Z TIP position or return actual X Y Z
+/// @param s Input String 'TIP,X,Y,Z'  or 'TIP,?'. Strings X Y and Z are normalized to the range of '0' and '32767'  
+/// @return When received 'TIP,?' returns a string with actual X Y Z Position
 esp_err_t UsbPcInterface::mUpdateTip(string s)
 {
 
@@ -199,8 +203,7 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
 
     if (UsbPcInterface::adjustIsActive == false)
     {
-        ESP_LOGW("mUpdateTip", "No valid parameter for TIP. Only valid in ADJUST mode\n");
-        UsbPcInterface::send("No valid parameter for TIP. Only valid in ADJUST mode\n");
+        UsbPcInterface::send("No valid command. 'TIP' is only valid in ADJUST mode\n");
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -209,22 +212,23 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
     // TIP,?
     if (l == 2) //  && (strcmp(arguments[1].c_str(), "ADJUST") == 0))
     {
-        UsbPcInterface::send("TIP,? detected %s %s\n", arguments[0].c_str(), arguments[1].c_str());
+        
         if (strcmp(arguments[1].c_str(), "?") == 0)
         {
+            UsbPcInterface::send("TIP,%d,%d,%d\n",currentXDac,currentYDac,currentZDac);
+            return ESP_OK;
 
-            UsbPcInterface::send("Send X Y Z\n");
         }
         else
         {
-            UsbPcInterface::send("No valid parameter for TIP. Only valid in ADJUST mode\n");
+            UsbPcInterface::send(TIP_ERROR_MESSAGE);
             return ESP_ERR_INVALID_ARG;
         }
     }
 
     if (l != 4)
     {
-        UsbPcInterface::send("No valid parameter for 'TIP,X,Y,Z'. X is no integer \n");
+        UsbPcInterface::send(TIP_ERROR_MESSAGE);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -240,7 +244,7 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
 
         if (strlen(endPtr) > 0)
         {
-            UsbPcInterface::send("No valid parameter for 'TIP,X,Y,Z'. X is no integer \n");
+            UsbPcInterface::send("%sDetail: X value is not an integer\n",TIP_ERROR_MESSAGE);
             return ESP_ERR_INVALID_ARG;
         }
         x = normToMaxMin(xl);
@@ -248,7 +252,7 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
         long int yl = strtol(arguments[2].c_str(), &endPtr, 10);
         if (strlen(endPtr) > 0)
         {
-            UsbPcInterface::send("No valid parameter for 'TIP,X,Y,Z'. X is no integer \n");
+            UsbPcInterface::send("%sDetail: Y value is not an integer\n",TIP_ERROR_MESSAGE);
             return ESP_ERR_INVALID_ARG;
         }
         y = normToMaxMin(yl);
@@ -256,22 +260,21 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
         long int zl = strtol(arguments[3].c_str(), &endPtr, 10);
         if (strlen(endPtr) > 0)
         {
-            UsbPcInterface::send("No valid parameter for 'TIP,X,Y,Z'. X is no integer \n");
+            UsbPcInterface::send("%sDetail: Z value is not an integer\n",TIP_ERROR_MESSAGE);
             return ESP_ERR_INVALID_ARG;
         }
         z = normToMaxMin(zl);
 
-        UsbPcInterface::send("detected x y z %d %d %d\n", x, y, z);
+        // Set X Y Z Tip Values
         currentXDac = x;
         currentYDac = y;
         currentZDac = z;
-
-        vTaskResume(handleVspiLoop); // realize newZ. Will suspend itself
+        vTaskResume(handleVspiLoop); // realize X Y Z. Will suspend itself
 
         return ESP_OK;
     }
 
-    UsbPcInterface::send("No valid parameter for TIP. Only valid in ADJUST mode\n");
+    UsbPcInterface::send("No valid command. 'TIP' is only valid in ADJUST mode\n");
     return ESP_ERR_INVALID_ARG;
 
     if (s[3] != ',')
