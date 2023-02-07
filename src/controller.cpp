@@ -28,16 +28,16 @@ extern "C" void adjustStart()
 {
 
     xTaskCreatePinnedToCore(adjustLoop, "adjustLoop", 10000, NULL, 2, &handleAdjustLoop, 1);
-    timer_initialize(MODE_ADJUST_TEST_TIP); 
+    timer_initialize(MODE_ADJUST_TEST_TIP);
 }
 
-/// @brief read ADC, convert to Volt and send via USB. Triggered by gptimer tick 
+/// @brief read ADC, convert to Volt and send via USB. Triggered by gptimer tick
 extern "C" void adjustLoop(void *unused)
 {
 
     while (true)
     {
-        vTaskSuspend(NULL); // Sleep. Will be retriggered by gptimer
+        vTaskSuspend(NULL);            // Sleep. Will be retriggered by gptimer
         uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
         // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
@@ -80,7 +80,8 @@ extern "C" void measurementLoop(void *unused)
     uint16_t ySaturate = 0;
     w = destinationTunnelCurrentnA;
     uint16_t unsentDatasets = 0;
-    gpio_set_level(IO_04, 0);
+
+    
     while (true)
     {
 
@@ -95,6 +96,9 @@ extern "C" void measurementLoop(void *unused)
         // abweichung     = soll (10.0)      - ist
         // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
         e = w - r;
+        //UsbPcInterface::send("abwweichung: %f soll: %f ist:%f\n", e,w,r);
+
+        
 
         // Abweichung soll/ist im limit --> Messwerte speichern und nächste XY Position anfordern
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
@@ -108,25 +112,20 @@ extern "C" void measurementLoop(void *unused)
             // Paket with 100 results complete -> Interrupt mesuring and send data vis USB
             if (++unsentDatasets >= sendDataAfterXDatasets)
             {
-
                 unsentDatasets = m_sendDataPaket();
             }
 
-            // New XY calculation. Move tip XY
+            // New XY calculation.
             if (!rtmGrid.moveOn())
             {
                 // Last XY position not yet reached
-                // PEDI: hab ich eingeführt
-                vTaskResume(handleVspiLoop); // will suspend itself
+                vTaskResume(handleVspiLoop); // process new XY position
             }
             else
             {
                 // All X Y positions complete
-                ESP_LOGW(TAG, "All X Y positions complete\n");
-                
-                // TIMER!
-                //timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer, will be resumed at next new scan
-                m_sendDataPaket(1);                  // 1: Send rest of data and 'DONE'
+                timer_stop();
+                m_sendDataPaket(1); // 1: Send rest of data and 'DONE'
                 esp_restart();
             }
         }
@@ -139,8 +138,8 @@ extern "C" void measurementLoop(void *unused)
             eOld = e;
             ySaturate = m_saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
             currentZDac = ySaturate;                                    // set new z height
-            printf("new ZDac: %i. resume vspiDacLoop\n", currentZDac);
-            ESP_LOGI(TAG, "new ZDac: %i. resume vspiDacLoop\n", currentZDac);
+            // printf("new ZDac: %i. resume vspiDacLoop\n", currentZDac);
+            // ESP_LOGI(TAG, "new ZDac: %i. resume vspiDacLoop\n", currentZDac);
 
             // handleVspiLoop stellt neue Z Position auf currentZDac
             vTaskResume(handleVspiLoop); // will suspend itself
@@ -165,29 +164,24 @@ uint16_t m_saturate16bit(uint32_t input, uint16_t min, uint16_t max)
 
 extern "C" int m_sendDataPaket(bool terminate)
 {
-    // TIMER!!
-    //timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer during dataset sending
-    // timer_set_counter_value(TIMER_GROUP_0,TIMER_1,0x00000000ULL);
-
+    // Stop timer. No triggering of measure loop during data are send via USB
+    timer_stop();
     while (!dataQueue.empty())
     {
         dataQueue.front();
         uint16_t X = dataQueue.front().getDataX();
         uint16_t Y = dataQueue.front().getDataY();
         uint16_t Z = dataQueue.front().getDataZ();
-        // if (X == 0)
-        //     printf("DATA,%d,%d,%d\n", X, Y, Z);
 
         UsbPcInterface::send("DATA,%d,%d,%d\n", X, Y, Z);
-        // printf("queue Size vor pop %i\n", dataQueue.size());
         dataQueue.pop(); // remove from queue
-        // printf("queue Size nach pop %i\n", dataQueue.size());
     }
     if (terminate == true)
     {
         UsbPcInterface::send("DATA,DONE\n");
     }
-    //TIMER!
-    //timer_start(TIMER_GROUP_0, TIMER_0); // resume timer
+
+    // Restart timer to trigger measurement
+    timer_start();
     return 0;
 }

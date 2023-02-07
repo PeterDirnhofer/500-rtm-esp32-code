@@ -49,6 +49,7 @@ extern "C" void app_main(void)
     // GPIO ports for Monitoring on Jumper J3 GPIO_RESERVE
     gpio_set_direction(IO_02, GPIO_MODE_OUTPUT); // Blue LED as Output
     gpio_set_direction(IO_04, GPIO_MODE_OUTPUT);
+    gpio_set_level(IO_04, 0);
     gpio_set_direction(IO_17, GPIO_MODE_OUTPUT);
     gpio_set_direction(IO_25, GPIO_MODE_OUTPUT);
     gpio_set_direction(IO_27, GPIO_MODE_OUTPUT);

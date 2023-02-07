@@ -296,7 +296,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
         {
             // Invert Blue LED
             ledLevel++;
-            gpio_set_level(IO_02, ledLevel % 2);
+            
             if (this->getWorkingMode() == MODE_IDLE)
             {
                 this->send("IDLE\n");
@@ -308,7 +308,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     }
 
     // Command received from PC
-    gpio_set_level(IO_02, 1);
+   
     // Split usbReceive csv to parameters[]
     // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
 
