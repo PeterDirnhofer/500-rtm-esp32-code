@@ -174,7 +174,7 @@ void vspiDacLoop(void *unused)
     while (1)
     {
         // ESP_LOGI(TAG,"X, new: %d, old: %d \n", currentXDac, lastXDac);
-        gpio_set_level(IO_17,1);
+   
         if (currentXDac != lastXDac)
         {                                                       // only if new value has been written to currentXDac
             vspiSendDac(currentXDac, buffer.get(), handleDacX); // Dac X
