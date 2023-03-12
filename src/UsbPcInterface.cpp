@@ -164,8 +164,8 @@ int16_t normToMaxMin(long int invalue)
     if (invalue < 0)
         return 0;
 
-    if (invalue > ADC_VALUE_MAX)
-        return ADC_VALUE_MAX;
+    if (invalue > DAC_VALUE_MAX)
+        return DAC_VALUE_MAX;
 
     return (int16_t)invalue;
 }

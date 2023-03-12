@@ -14,8 +14,6 @@ public:
     uint16_t getDataZ(){ return z; };
 };
 
-void saveConfigParam(double param, uint8_t configDescriptionByte);
 
-void sendDatasets(void* unused);
 
 #endif 

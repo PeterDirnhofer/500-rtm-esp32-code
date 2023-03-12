@@ -12,9 +12,6 @@ scanGrid::scanGrid(uint16_t maxX, uint16_t maxY, uint16_t startX, uint16_t start
 {
 }
 
-
-
-
 /**
  * @brief Berechnung der Piezo-DAC Werte 'currentXDac' und 'currentYDac' für die nächste anzusteuernde Position.
  * Es werden lediglich die DAC Werte berechnet. Die eigentliche Ansteuerung des Piezo erfolgt später in der vspiDacLoop.
@@ -37,6 +34,42 @@ scanGrid::scanGrid(uint16_t maxX, uint16_t maxY, uint16_t startX, uint16_t start
  */
 bool scanGrid::moveOn()
 {
+    // get global parameter direction 
+    bool bidirectional;
+
+    if (direction==0)
+        bidirectional=false;
+    else
+        bidirectional=true;
+
+    if (bidirectional == false)
+    {
+        if (currentX < maxX)
+        {
+            currentX++; // rightwise
+            currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
+        }
+        else
+        {
+            currentX=0;
+            currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
+
+
+            if (currentY != maxY)
+            {
+
+                currentY++; // next row
+                currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
+            }
+            else
+            {
+                return true; // all points scanned
+            }
+        }
+        return false;
+    }
+
+
     // printf("moveOn %d\n",(int)currentDirection);
     switch ((int)currentDirection)
     {
@@ -54,7 +87,7 @@ bool scanGrid::moveOn()
 
             if (currentY != maxY)
             {
-               
+
                 currentY++; // next row
                 currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
                 currentDirection = true; // direction change
@@ -77,7 +110,7 @@ bool scanGrid::moveOn()
         {
             if (currentY != maxY)
             {
-               
+
                 currentY++; // next row
                 currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
                 currentDirection = false; // direction change
