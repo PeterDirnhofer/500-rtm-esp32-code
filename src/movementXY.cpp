@@ -51,7 +51,9 @@ bool scanGrid::moveOn()
         }
         else
         {
-            currentX=0;
+            // TODO currentX = startX. before currentX = 0
+   
+            currentX=startX;
             currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
 
 
