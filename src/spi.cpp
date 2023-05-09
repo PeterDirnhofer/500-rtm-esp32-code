@@ -154,7 +154,7 @@ void vspiDacInit()
 void vspiDacLoop(void *unused)
 {
     
-    //ESP_LOGI(TAG, "+++ vspiDacLoop started\n");
+    ESP_LOGD(TAG, "+++ vspiDacLoop started\n");
 
     unique_ptr<uint16_t> buffer = make_unique<uint16_t>();
 
@@ -171,19 +171,19 @@ void vspiDacLoop(void *unused)
     // Resumed by Controller
     while (1)
     {
-        // ESP_LOGI(TAG,"X, new: %d, old: %d \n", currentXDac, lastXDac);
+       
    
         if (currentXDac != lastXDac)
         {                                                       // only if new value has been written to currentXDac
             vspiSendDac(currentXDac, buffer.get(), handleDacX); // Dac X
             lastXDac = currentXDac;
-            //ESP_LOGI(TAG, "new X=%d\n", currentXDac);
+           
         }
         if (currentYDac != lastYDac)
         {                                                       // only if new value has been written to currentYDac
             vspiSendDac(currentYDac, buffer.get(), handleDacY); // Dac Y
             lastYDac = currentYDac;
-            //ESP_LOGI(TAG, "new Y=%d\n", currentYDac);
+          
         }
 
         vspiSendDac(currentZDac, buffer.get(), handleDacZ); // Dac Z
