@@ -66,7 +66,7 @@ bool NvsStorageClass::begin()
         ESP_LOGE(TAG, "%s", esp_err_to_name(err));
         return false;
     }
-    ESP_LOGI(TAG, "+++ nvs_flash opened\n");
+    ESP_LOGD(TAG, "+++ nvs_flash opened\n");
 
     mStarted = true;
     return true;

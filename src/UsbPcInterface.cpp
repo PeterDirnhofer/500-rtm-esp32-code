@@ -51,7 +51,7 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
 
-    ESP_LOGI(TAG, "*** STARTED \n");
+    ESP_LOGD(TAG, "*** STARTED \n");
     found_LF = false;
     while (1)
     {
@@ -82,7 +82,7 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
 
             if (found_LF)
             {
-                ESP_LOGI(TAG, "#### 0A found.  \n");
+                ESP_LOGD(TAG, "#### 0A found.  \n");
 
                 string part3 = rcvString.substr(0, 3);
                 for (int x = 0; x < strlen(part3.c_str()); x++)
@@ -97,7 +97,7 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
                     UsbPcInterface::mUsbReceiveString.clear();
                     UsbPcInterface::mUsbReceiveString.append(rcvString);
                     UsbPcInterface::mUsbAvailable = true;
-                    ESP_LOGI(TAG, "usbReceive %s\n", mUsbReceiveString.c_str());
+                    ESP_LOGD(TAG, "usbReceive %s\n", mUsbReceiveString.c_str());
                 }
                 rcvString.clear();
                 found_LF = false;
@@ -132,7 +132,7 @@ int UsbPcInterface::sendParameter(const char *fmt, ...)
     char s[100] = {0};
     vsprintf(s, fmt, ap);
 
-    ESP_LOGI(TAG, "uartsend %s\n", s);
+    ESP_LOGD(TAG, "uartsend %s\n", s);
     string s1 = "PARAMETER,";
 
     int len = strlen(s);
@@ -318,7 +318,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
         if (cstr[i] == ',')
             numberOfValues++;
 
-    ESP_LOGI(TAG, "numberOfValues %d", numberOfValues);
+    ESP_LOGD(TAG, "numberOfValues %d", numberOfValues);
 
     char *p = strtok(cstr, ",");
 
@@ -332,7 +332,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
         p = strtok(NULL, ",");
     }
 
-    ESP_LOGI(TAG, "ParametersVector[0]: %s", this->mParametersVector[0].c_str());
+    ESP_LOGD(TAG, "ParametersVector[0]: %s", this->mParametersVector[0].c_str());
 
     if (strcmp(this->mParametersVector[0].c_str(), "ADJUST") == 0)
     {
