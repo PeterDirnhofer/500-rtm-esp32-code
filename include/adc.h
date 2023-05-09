@@ -6,6 +6,6 @@
 #include "driver/i2c.h"
 
 uint16_t readAdc();
-esp_err_t i2cInit();
+esp_err_t i2cAdcInit();
 
 #endif

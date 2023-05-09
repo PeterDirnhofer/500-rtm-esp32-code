@@ -16,17 +16,29 @@ using namespace std;
 #define MODUS_RUN 0
 #define MODUS_MONITOR_TUNNEL_CURRENT 1
 
-
+// Additional USB Interface
 #define TXD_PIN (GPIO_NUM_33)
 #define RXD_PIN (GPIO_NUM_32)
 
 
+// SPI for DAC X Y Z
 #define GPIO_MOSI_VSPI 23
 #define GPIO_MISO_VSPI 19
 #define GPIO_SCLK_VSPI 18
 #define GPIO_CS_VSPI_DACX 26 //17
 #define GPIO_CS_VSPI_DACY 16
 #define GPIO_CS_VSPI_DACZ 5
+
+
+// Additional ports for monitoring/debugging
+#define IO_02 GPIO_NUM_2
+#define IO_04 GPIO_NUM_4
+#define IO_17 GPIO_NUM_17
+#define IO_25 GPIO_NUM_25
+#define IO_27 GPIO_NUM_27
+#define IO_35 GPIO_NUM_35
+
+
 
 #define DMA_CHAN_VSPI 2
 
@@ -43,6 +55,7 @@ extern TaskHandle_t handleUartRcvLoop;
 extern TaskHandle_t handleVspiLoop;
 extern TaskHandle_t handleSendDatasets;
 extern TaskHandle_t handleControllerLoop;
+extern TaskHandle_t handleAdjustLoop;
 extern TaskHandle_t handleTask;
 
 extern spi_device_interface_config_t devcfgDacX;
@@ -63,10 +76,11 @@ extern uint16_t currentZDac;
 #define _I2C_NUMBER(num) I2C_NUM_##num
 #define I2C_NUMBER(num) _I2C_NUMBER(num)
 
+
+// I2C for ADC 
 #define I2C_MASTER_SCL_IO GPIO_NUM_22               /*!< gpio number for I2C master clock */
-//#define I2C_MASTER_SCL_IO CONFIG_I2C_MASTER_SCL
 #define I2C_MASTER_SDA_IO GPIO_NUM_21               /*!< gpio number for I2C master data  */
-//#define I2C_MASTER_SDA_IO CONFIG_I2C_MASTER_SDA
+
 #define I2C_MASTER_NUM I2C_NUMBER(1)                /*!< I2C port number for master dev */
 #define I2C_MASTER_FREQ_HZ 1000000                             /*!< I2C master clock frequency */
 #define I2C_MASTER_TX_BUF_DISABLE 0                           /*!< I2C master doesn't need buffer */
@@ -114,7 +128,8 @@ extern uint8_t lastConfigByte;
 #define MODE_MOVE_TIP 4
 
 
-#define BLUE_LED GPIO_NUM_2
+
+
 
 
 

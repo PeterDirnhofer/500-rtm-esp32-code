@@ -3,6 +3,7 @@
 // https://github.com/espressif/esp-idf/blob/30e8f19f5ac158fc57e80ff97c62b6cc315aa337/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 
 static const char *TAG = "UsbPcInterface";
+static const char *TIP_ERROR_MESSAGE = "Invalid format 'TIP' command. \nSend 'TIP,10000,20000,30000' to set X,Y,Z\n'TIP,?' to see actual X Y Z values\n";
 
 UsbPcInterface::UsbPcInterface()
     : mTaskHandle(NULL), mStarted(false)
@@ -158,56 +159,122 @@ esp_err_t UsbPcInterface::sendData()
     return ESP_OK;
 }
 
+int16_t normToMaxMin(long int invalue)
+{
+    if (invalue < 0)
+        return 0;
+
+    if (invalue > DAC_VALUE_MAX)
+        return DAC_VALUE_MAX;
+
+    return (int16_t)invalue;
+}
+
+/// @brief Set X Y Z TIP position or return actual X Y Z
+/// @param s Input String 'TIP,X,Y,Z'  or 'TIP,?'. Strings X Y and Z are normalized to the range of '0' and '32767'
+/// @return When received 'TIP,?' returns a string with actual X Y Z Position
 esp_err_t UsbPcInterface::mUpdateTip(string s)
 {
 
+    char *cstr = new char[s.length() + 1];
+    strcpy(cstr, s.c_str());
+    vector<string> arguments;
+
+    // how many comma are in string
+    int numberOfValues = 1;
+    for (int i = 0; i < UsbPcInterface::mUsbReceiveString.length(); i++)
+        if (cstr[i] == ',')
+            numberOfValues++;
+
+    char *p = strtok(cstr, ",");
+
+    arguments.clear();
+    while (p != 0)
+    {
+        // printf("%s\n", p);
+        char buffer[20];
+        sprintf(buffer, "%s", p);
+        arguments.push_back(buffer);
+        // UsbPcInterface::send("Add %s\n", buffer);
+        p = strtok(NULL, ",");
+    }
+
+    // UsbPcInterface::send("size of arguments %d\n", arguments.size());
+
     if (UsbPcInterface::adjustIsActive == false)
     {
-        ESP_LOGW("mUpdateTip", "No valid parameter for TIP. Only valid in ADJUST mode\n");
-        UsbPcInterface::send("No valid parameter for TIP. Only valid in ADJUST mode\n");
+        UsbPcInterface::send("No valid command. 'TIP' is only valid in ADJUST mode\n");
         return ESP_ERR_INVALID_ARG;
     }
 
-    int l = strlen(s.c_str());
-    ESP_LOGI(TAG, "length TIP command: %d", l);
-    if ((l < 5) || s[3] != ',')
+    int l = arguments.size();
+
+    // TIP,?
+    if (l == 2) //  && (strcmp(arguments[1].c_str(), "ADJUST") == 0))
     {
-        ESP_LOGW("mUpdateTip", "No valid parameter for TIP. Needs 'TIP,integer'. Got %s\n", s.c_str());
-        UsbPcInterface::send("No valid parameter for TIP. Needs 'TIP,integer'\n");
+
+        if (strcmp(arguments[1].c_str(), "?") == 0)
+        {
+            UsbPcInterface::send("TIP,%d,%d,%d\n", currentXDac, currentYDac, currentZDac);
+            return ESP_OK;
+        }
+        else
+        {
+            UsbPcInterface::send(TIP_ERROR_MESSAGE);
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    if (l != 4)
+    {
+        UsbPcInterface::send(TIP_ERROR_MESSAGE);
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (s[3] != ',')
+    // TIP,X,Y,Z
+    if (l == 4)
     {
-        ESP_LOGW("mUpdateTip", "INVALID command. TIP needs format 'TIP,integer'. Received %s\n", s.c_str());
+        int16_t x = 0;
+        int16_t y = 0;
+        int16_t z = 0;
+
+        char *endPtr;
+        long int xl = strtol(arguments[1].c_str(), &endPtr, 10);
+
+        if (strlen(endPtr) > 0)
+        {
+            UsbPcInterface::send("%sDetail: X value is not an integer\n", TIP_ERROR_MESSAGE);
+            return ESP_ERR_INVALID_ARG;
+        }
+        x = normToMaxMin(xl);
+
+        long int yl = strtol(arguments[2].c_str(), &endPtr, 10);
+        if (strlen(endPtr) > 0)
+        {
+            UsbPcInterface::send("%sDetail: Y value is not an integer\n", TIP_ERROR_MESSAGE);
+            return ESP_ERR_INVALID_ARG;
+        }
+        y = normToMaxMin(yl);
+
+        long int zl = strtol(arguments[3].c_str(), &endPtr, 10);
+        if (strlen(endPtr) > 0)
+        {
+            UsbPcInterface::send("%sDetail: Z value is not an integer\n", TIP_ERROR_MESSAGE);
+            return ESP_ERR_INVALID_ARG;
+        }
+        z = normToMaxMin(zl);
+
+        // Set X Y Z Tip Values
+        currentXDac = x;
+        currentYDac = y;
+        currentZDac = z;
+        vTaskResume(handleVspiLoop); // realize X Y Z. Will suspend itself
+
+        return ESP_OK;
     }
-    ESP_LOGI("mUpdateTip", "TIP detected found.  \n");
-    string v = s.substr(4, strlen(s.c_str()) - 4);
 
-    int i;
-    ESP_LOGI("mUpdateTip", "TIP detected value:%s\n", v.c_str());
-
-    char *endPtr;
-    long int il = strtol(v.c_str(), &endPtr, 10);
-    if (strlen(endPtr) > 0)
-    {
-        ESP_LOGW("mUpdateTip", "INVALID command. TIP,1 is no number %s\n", s.c_str());
-
-        return ESP_ERR_INVALID_ARG;
-    }
-    i = (int16_t)il;
-
-    int newZ = currentZDac + i;
-    if (newZ < 0)
-        newZ = 0;
-    if (newZ > DAC_VALUE_MAX)
-        newZ = DAC_VALUE_MAX;
-
-    UsbPcInterface::send("TIP,%d,%d\n", currentZDac, newZ);
-    ESP_LOGI("mUpdateTip", "TIP detected TIP,%d,%d\n", currentZDac, newZ);
-    currentZDac = (uint16_t)newZ;
-    vTaskResume(handleVspiLoop); // realize newZ. Will suspend itself
-    return ESP_OK;
+    UsbPcInterface::send("TIP_ERROR_MESSAGE");
+    return ESP_ERR_INVALID_ARG;
 }
 
 /**
@@ -229,17 +296,19 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
         {
             // Invert Blue LED
             ledLevel++;
-            gpio_set_level(BLUE_LED, ledLevel % 2);
-            if (this->getWorkingMode() != MODE_IDLE)
+            
+            if (this->getWorkingMode() == MODE_IDLE)
+            {
                 this->send("IDLE\n");
+            }
         }
 
-        vTaskDelay(100 / portTICK_RATE_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
         i++;
     }
 
     // Command received from PC
-    gpio_set_level(BLUE_LED, 1);
+   
     // Split usbReceive csv to parameters[]
     // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
 
@@ -266,43 +335,56 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
         this->mParametersVector.push_back(buffer);
         p = strtok(NULL, ",");
     }
-    free(cstr);
+    // Pedi !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! free(cstr);
 
     ESP_LOGI(TAG, "ParametersVector[0]: %s", this->mParametersVector[0].c_str());
 
     if (strcmp(this->mParametersVector[0].c_str(), "ADJUST") == 0)
     {
-        this->mWorkingMode = MODE_ADJUST_TEST_TIP;
+
+        UsbPcInterface::m_workingmode = MODE_ADJUST_TEST_TIP;
         UsbPcInterface::adjustIsActive = true;
         ESP_LOGI(TAG, "ADJUST detected\n");
         return ESP_OK;
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "MEASURE") == 0)
     {
-        this->mWorkingMode = MODE_MEASURE;
+
+        UsbPcInterface::m_workingmode = MODE_MEASURE;
         ESP_LOGI(TAG, "MEASURE detected\n");
         return ESP_OK;
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "PARAMETER") == 0)
     {
-        this->mWorkingMode = MODE_PARAMETER;
+
+        UsbPcInterface::m_workingmode = MODE_PARAMETER;
         ESP_LOGI(TAG, "PARAMETER detected\n");
         return ESP_OK;
     }
 
-    this->mWorkingMode = MODE_INVALID;
+    UsbPcInterface::m_workingmode = MODE_INVALID;
     ESP_LOGW(TAG, "INVALID command %s\n", mParametersVector[0].c_str());
     return ESP_ERR_INVALID_ARG;
 }
 
 int UsbPcInterface::getWorkingMode()
 {
-    return this->mWorkingMode;
+    // return this->mWorkingMode;
+    return UsbPcInterface::m_workingmode;
 }
 
 vector<string> UsbPcInterface::getParametersFromPc()
 {
     return this->mParametersVector;
+}
+
+vector<string> s_getParametersFromPC()
+{
+    vector<string> hs;
+
+    hs.push_back("EINS");
+
+    return hs;
 }
 
 void UsbPcInterface::printErrorMessageAndRestart(string error_string)

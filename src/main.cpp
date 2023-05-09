@@ -23,7 +23,7 @@
 #include "driver/gpio.h"
 #include "nvs_flash.h"
 #include "nvs.h"
-#include "timer.h"
+//#include "timer.h"
 #include <string>
 #include <cstring>
 
@@ -38,27 +38,45 @@
 
 using namespace std;
 
+
+
 extern "C" void app_main(void)
 {
 
     esp_log_level_set("*", ESP_LOG_WARN);
     static const char *TAG = "main";
 
-    gpio_set_direction(BLUE_LED, GPIO_MODE_OUTPUT); // Blue LED as Output
-    gpio_set_level(BLUE_LED, 1);
+    // GPIO ports for Monitoring on Jumper J3 GPIO_RESERVE
+    gpio_set_direction(IO_17, GPIO_MODE_OUTPUT);
+    gpio_set_direction(IO_04, GPIO_MODE_OUTPUT);
+    gpio_set_direction(IO_25, GPIO_MODE_OUTPUT);
+    gpio_set_direction(IO_27, GPIO_MODE_OUTPUT);   
+    gpio_set_direction(IO_02, GPIO_MODE_OUTPUT);     
+    
+    gpio_set_level(IO_04, 0);
+
+    gpio_set_level(IO_02, 0 );
+    gpio_set_level(IO_27, 0 );
+   
+   
+
 
     UsbPcInterface usb;
     usb.start();
 
     UsbPcInterface::send("IDLE\n");
+
+
     ParameterSetting parameterSetter;
-    UsbPcInterface::adjustIsActive=false;
+    UsbPcInterface::adjustIsActive = false;
 
     // If no parameters in Flash Set Default Parameters
     if (parameterSetter.parametersAreValid() != ESP_OK)
     {
         parameterSetter.putDefaultParametersToFlash();
     }
+
+    initHardware();
 
     // ##############################################################
     // SELECT Run Mode
@@ -79,7 +97,7 @@ extern "C" void app_main(void)
     if (usb.getWorkingMode() == MODE_ADJUST_TEST_TIP)
     {
 
-        displayTunnelCurrentLoop(usb);
+        adjustStart();
         vTaskDelete(NULL);
     }
 

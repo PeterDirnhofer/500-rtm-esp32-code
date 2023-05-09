@@ -1,45 +1,76 @@
 // controller.cpp
 #include "controller.h"
+#include "project_timer.h"
 using namespace std;
 static const char *TAG = "controller";
 
-int runtime_ms()
-{
-
-    int64_t rt = esp_timer_get_time() - controller_start_time;
-    int rtInt = (int)(rt / 1000);
-    return rtInt;
-}
-
-/**@brief Initialialze vspi and i2c. Start single controllerLoop. Initialize 1 ms Timer for restarting controllerLoop
- * @details
- * Init vspi for X,Y,Z DAC Piezo control.
- * Init i2c for ADC reading tunnel-crrent.
- * Start single run controllerLoop.
- * Init 1 ms Timer tG0 to trigger single controllerLoop run.
+/**@brief Initialialze I2C for ADC and spi for DACs.
+ * Initialize ADC.
+ * Initialize DAC by Starting vspiDacLoop once
  */
-extern "C" void measurementStart()
+extern "C" esp_err_t initHardware()
 {
-    controller_start_time = esp_timer_get_time();
 
-    ESP_LOGI(TAG, "+++ controllerStart\n");
-    printf("+++++++++++++++++++++ controllerStart\n");
-
-    esp_err_t errTemp = i2cInit(); // Init ADC
+    esp_err_t errTemp = i2cAdcInit(); // Init I2C for ADC
     if (errTemp != 0)
     {
         ESP_LOGE(TAG, "ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
+        UsbPcInterface::send("ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
+        esp_restart();
     }
 
     // Init DACs
-    vspiDacStart();              // Init and loop for DACs
-    vTaskResume(handleVspiLoop); // Start for one run. Will suspend itself
+    vspiDacStart(); // Init and loop for DACs
+    return ESP_OK;
+}
 
-    xTaskCreatePinnedToCore(measurementLoop, "controllerLoop", 10000, NULL, 2, &handleControllerLoop, 1);
-    printf("Timer Period set to 1200*1000\n");
-    // timer_tg0_initialise(1200*5000); // us -> 10^6us/860SPS = 1162 -> 1200
-    timer_tg0_initialise(1200 * 1);
-    // controllerLoop(NULL);
+extern "C" void adjustStart()
+{
+
+    xTaskCreatePinnedToCore(adjustLoop, "adjustLoop", 10000, NULL, 2, &handleAdjustLoop, 1);
+    timer_initialize(MODE_ADJUST_TEST_TIP);
+}
+
+/// @brief read ADC, convert to Volt and send via USB. Triggered by gptimer tick
+extern "C" void adjustLoop(void *unused)
+{
+
+    static double e, w, r = 0;
+    w = destinationTunnelCurrentnA;
+    while (true)
+    {
+        vTaskSuspend(NULL);            // Sleep. Will be retriggered by gptimer
+        uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
+        currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
+
+        r = currentTunnelCurrentnA; // conversion from voltage to equivalent current
+
+        // abweichung     = soll (10.0)      - ist
+        // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
+        e = w - r;
+        // UsbPcInterface::send("abwweichung: %f soll: %f ist:%f\n", e,w,r);
+
+        // Abweichung soll/ist im limit --> Messwerte speichern und nächste XY Position anfordern
+        if (abs(e) <= remainingTunnelCurrentDifferencenA)
+        {
+            gpio_set_level(IO_02, 1);
+        }
+        else
+            gpio_set_level(IO_02, 0);
+
+        // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
+        double adcInVolt = (adcValue * ADC_VOLTAGE_MAX * 1e2) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
+        UsbPcInterface::send("ADJUST,%f,%d\n", adcInVolt, adcValue);
+    }
+}
+
+/* Init 1 ms Timer tG0 to trigger single controllerLoop run.
+ */
+extern "C" void measurementStart()
+{
+
+    xTaskCreatePinnedToCore(measurementLoop, "measurementLoop", 10000, NULL, 2, &handleControllerLoop, 1);
+    timer_initialize(MODE_MEASURE);
 }
 
 /**@brief Run one Measure Cycle. Save data if valid. Control Position of microscopes measure tip.
@@ -68,6 +99,7 @@ extern "C" void measurementLoop(void *unused)
     w = destinationTunnelCurrentnA;
     uint16_t unsentDatasets = 0;
 
+    gpio_set_level(IO_17, 1);
     while (true)
     {
 
@@ -81,45 +113,48 @@ extern "C" void measurementLoop(void *unused)
         // abweichung     = soll (10.0)      - ist
         // regeldifferenz = fuehrungsgroesse - rueckfuehrgroesse
         e = w - r;
+        // UsbPcInterface::send("abwweichung: %f soll: %f ist:%f\n", e,w,r);
 
         // Abweichung soll/ist im limit --> Messwerte speichern und nächste XY Position anfordern
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
+
+            gpio_set_level(IO_02, 1);
+
             // save to queue  Grid(x)  Grid(y)  Z_DAC
             dataQueue.emplace(dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
 
             // Paket with 100 results complete -> Interrupt mesuring and send data vis USB
             if (++unsentDatasets >= sendDataAfterXDatasets)
             {
-                unsentDatasets = sendPaketWithData();
+                unsentDatasets = m_sendDataPaket();
             }
 
-            // New XY calculation. Move tip XY
+            // New XY calculation.
             if (!rtmGrid.moveOn())
             {
                 // Last XY position not yet reached
-                // PEDI: hab ich eingeführt
-                vTaskResume(handleVspiLoop); // will suspend itself
+                vTaskResume(handleVspiLoop); // process new XY position
             }
             else
             {
                 // All X Y positions complete
-                ESP_LOGW(TAG, "All X Y positions complete\n");
-                timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer, will be resumed at next new scan
-                sendPaketWithData(1);                // 1: Send rest of data and 'DONE'
+                timer_stop();
+                m_sendDataPaket(1); // 1: Send rest of data and 'DONE'
                 esp_restart();
             }
         }
         // Abweichung soll/ist zu gross --> Z muss nachgeregelt werden
         else
         {
+            gpio_set_level(IO_02, 0);
             //               1000                10
             y = kP * e + kI * eOld + yOld; // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt
             eOld = e;
-            ySaturate = saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
-            currentZDac = ySaturate;                                  // set new z height
-            printf("new ZDac: %i. resume vspiDacLoop\n", currentZDac);
-            ESP_LOGI(TAG, "new ZDac: %i. resume vspiDacLoop\n", currentZDac);
+            ySaturate = m_saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
+            currentZDac = ySaturate;                                    // set new z height
+            // printf("new ZDac: %i. resume vspiDacLoop\n", currentZDac);
+            // ESP_LOGI(TAG, "new ZDac: %i. resume vspiDacLoop\n", currentZDac);
 
             // handleVspiLoop stellt neue Z Position auf currentZDac
             vTaskResume(handleVspiLoop); // will suspend itself
@@ -129,7 +164,7 @@ extern "C" void measurementLoop(void *unused)
     }
 }
 
-uint16_t saturate16bit(uint32_t input, uint16_t min, uint16_t max)
+uint16_t m_saturate16bit(uint32_t input, uint16_t min, uint16_t max)
 {
     if (input < min)
     {
@@ -142,64 +177,26 @@ uint16_t saturate16bit(uint32_t input, uint16_t min, uint16_t max)
     return (uint16_t)input;
 }
 
-extern "C" int sendPaketWithData(bool terminate)
+extern "C" int m_sendDataPaket(bool terminate)
 {
-
-    timer_pause(TIMER_GROUP_0, TIMER_0); // pause timer during dataset sending
-
+    // Stop timer. No triggering of measure loop during data are send via USB
+    timer_stop();
     while (!dataQueue.empty())
     {
         dataQueue.front();
         uint16_t X = dataQueue.front().getDataX();
         uint16_t Y = dataQueue.front().getDataY();
         uint16_t Z = dataQueue.front().getDataZ();
-        // if (X == 0)
-        //     printf("DATA,%d,%d,%d\n", X, Y, Z);
 
         UsbPcInterface::send("DATA,%d,%d,%d\n", X, Y, Z);
-        // printf("queue Size vor pop %i\n", dataQueue.size());
         dataQueue.pop(); // remove from queue
-        // printf("queue Size nach pop %i\n", dataQueue.size());
     }
     if (terminate == true)
     {
-        UsbPcInterface::send("DATA,DONE,");
+        UsbPcInterface::send("DATA,DONE\n");
     }
 
-    timer_start(TIMER_GROUP_0, TIMER_0); // resume timer
+    // Restart timer to trigger measurement
+    timer_start();
     return 0;
-}
-
-/**@brief Loop diplaying tunnelcurrent to help adjusting measure tip
- *
- */
-extern "C" void displayTunnelCurrentLoop(UsbPcInterface usb)
-{
-
-    esp_err_t errTemp = i2cInit(); // Init I2C for XYZ DACs
-    if (errTemp != 0)
-    {
-        ESP_LOGE(TAG, "ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
-    }
-    vspiDacStart(); // Init and loop for DACs
-    esp_log_level_set("*", ESP_LOG_INFO);
-    ESP_LOGI(TAG, "+++ Display Tunnel Current\n");
-    const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
-    int ledLevel = 1;
-
-    while (1)
-    {
-        usb.getCommandsFromPC();
-        ESP_LOGI(TAG, "getWorkingMode %d", usb.getWorkingMode());
-        uint16_t adcValue = readAdc(); // read current voltageoutput of preamplifier
-        currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) / (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
-        // max value 20.48 with preAmpResistor = 100MOhm and 2048mV max voltage
-        UsbPcInterface::send("ADJUST,%f\n", currentTunnelCurrentnA);
-
-        // Invert Blue LED
-        gpio_set_level(BLUE_LED, ledLevel % 2);
-        ledLevel++;
-
-        vTaskDelay(xDelay);
-    }
 }

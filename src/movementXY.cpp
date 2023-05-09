@@ -12,20 +12,6 @@ scanGrid::scanGrid(uint16_t maxX, uint16_t maxY, uint16_t startX, uint16_t start
 {
 }
 
-bool ledIsOn = false;
-void toggleLed()
-{
-    if (ledIsOn)
-    {
-        gpio_set_level(BLUE_LED, 0);
-    }
-    else
-    {
-        gpio_set_level(BLUE_LED, 1);
-    }
-    ledIsOn = !ledIsOn;
-}
-
 /**
  * @brief Berechnung der Piezo-DAC Werte 'currentXDac' und 'currentYDac' für die nächste anzusteuernde Position.
  * Es werden lediglich die DAC Werte berechnet. Die eigentliche Ansteuerung des Piezo erfolgt später in der vspiDacLoop.
@@ -48,6 +34,44 @@ void toggleLed()
  */
 bool scanGrid::moveOn()
 {
+    // get global parameter direction 
+    bool bidirectional;
+
+    if (direction==0)
+        bidirectional=false;
+    else
+        bidirectional=true;
+
+    if (bidirectional == false)
+    {
+        if (currentX < maxX)
+        {
+            currentX++; // rightwise
+            currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
+        }
+        else
+        {
+            // TODO currentX = startX. before currentX = 0
+   
+            currentX=startX;
+            currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
+
+
+            if (currentY != maxY)
+            {
+
+                currentY++; // next row
+                currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
+            }
+            else
+            {
+                return true; // all points scanned
+            }
+        }
+        return false;
+    }
+
+
     // printf("moveOn %d\n",(int)currentDirection);
     switch ((int)currentDirection)
     {
@@ -65,7 +89,7 @@ bool scanGrid::moveOn()
 
             if (currentY != maxY)
             {
-                toggleLed();
+
                 currentY++; // next row
                 currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
                 currentDirection = true; // direction change
@@ -88,7 +112,7 @@ bool scanGrid::moveOn()
         {
             if (currentY != maxY)
             {
-                toggleLed();
+
                 currentY++; // next row
                 currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
                 currentDirection = false; // direction change
