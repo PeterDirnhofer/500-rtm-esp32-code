@@ -2,6 +2,7 @@
 #define MOVEMENTXY
 
 #include "stdint.h"
+#include "esp_log.h"
 
 class scanGrid{
     uint16_t maxX; 

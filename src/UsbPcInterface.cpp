@@ -22,6 +22,7 @@ UsbPcInterface::~UsbPcInterface()
 void UsbPcInterface::start()
 {
     const uart_config_t uart_config = {
+        // TODO higher baudrate ? HTERM can e.g. 256000
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
@@ -31,6 +32,7 @@ void UsbPcInterface::start()
         .source_clk = UART_SCLK_APB,
 
     };
+    // TODO ADD TX_BUF_SIZE
     // We won't use a buffer for sending data.
     uart_driver_install(UART_NUM_1, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
     uart_param_config(UART_NUM_1, &uart_config);

@@ -93,11 +93,10 @@ extern "C" void measurementStart()
 extern "C" void measurementLoop(void *unused)
 {
     ESP_LOGI(TAG, "+++ controllerLoopStart\n");
-    printf("+++ controllerLoopStart\n");
+  
     static double e, w, r, y, eOld, yOld = 0;
     uint16_t ySaturate = 0;
     w = destinationTunnelCurrentnA;
-    uint16_t unsentDatasets = 0;
 
     gpio_set_level(IO_17, 1);
     while (true)
@@ -124,11 +123,8 @@ extern "C" void measurementLoop(void *unused)
             // save to queue  Grid(x)  Grid(y)  Z_DAC
             dataQueue.emplace(dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
 
-            // Paket with 100 results complete -> Interrupt mesuring and send data vis USB
-            if (++unsentDatasets >= sendDataAfterXDatasets)
-            {
-                unsentDatasets = m_sendDataPaket();
-            }
+            // TODO Send continuously
+            m_sendDataPaket();
 
             // New XY calculation.
             if (!rtmGrid.moveOn())
@@ -139,7 +135,7 @@ extern "C" void measurementLoop(void *unused)
             else
             {
                 // All X Y positions complete
-                timer_stop();
+                // timer_stop();
                 m_sendDataPaket(1); // 1: Send rest of data and 'DONE'
                 esp_restart();
             }
@@ -149,12 +145,12 @@ extern "C" void measurementLoop(void *unused)
         {
             gpio_set_level(IO_02, 0);
             //               1000                10
-            y = kP * e + kI * eOld + yOld; // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt
+            // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt 
+            y = kP * e + kI * eOld + yOld; 
             eOld = e;
             ySaturate = m_saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
             currentZDac = ySaturate;                                    // set new z height
-            // printf("new ZDac: %i. resume vspiDacLoop\n", currentZDac);
-            // ESP_LOGI(TAG, "new ZDac: %i. resume vspiDacLoop\n", currentZDac);
+            
 
             // handleVspiLoop stellt neue Z Position auf currentZDac
             vTaskResume(handleVspiLoop); // will suspend itself
@@ -177,18 +173,31 @@ uint16_t m_saturate16bit(uint32_t input, uint16_t min, uint16_t max)
     return (uint16_t)input;
 }
 
-extern "C" int m_sendDataPaket(bool terminate)
+extern "C" int  m_sendDataPaket(bool terminate)
 {
-    // Stop timer. No triggering of measure loop during data are send via USB
-    timer_stop();
+    
+    // TODO timer_stop only if dataQueue overflow
+    bool timer_was_stopped = false;
+
+    size_t numElements = dataQueue.size();
+
+    if (numElements > 100) {
+
+        timer_was_stopped = true;
+        ESP_LOGW(TAG,"Stop timer. Size of dataQueue > 100\n");
+        timer_stop();
+    }
+    
     while (!dataQueue.empty())
     {
         dataQueue.front();
         uint16_t X = dataQueue.front().getDataX();
         uint16_t Y = dataQueue.front().getDataY();
         uint16_t Z = dataQueue.front().getDataZ();
-
+  
+        // TODO Check if send unit_16 instead of strings X Y Z
         UsbPcInterface::send("DATA,%d,%d,%d\n", X, Y, Z);
+
         dataQueue.pop(); // remove from queue
     }
     if (terminate == true)
@@ -197,6 +206,7 @@ extern "C" int m_sendDataPaket(bool terminate)
     }
 
     // Restart timer to trigger measurement
-    timer_start();
+    if (timer_was_stopped == true)
+        timer_start();
     return 0;
 }
