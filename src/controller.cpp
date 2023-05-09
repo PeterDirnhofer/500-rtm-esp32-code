@@ -15,7 +15,6 @@ extern "C" esp_err_t initHardware()
     if (errTemp != 0)
     {
         ESP_LOGE(TAG, "ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
-        UsbPcInterface::send("ERROR. Cannot init I2C. Returncode != 0. Returncode is : %d\n", errTemp);
         esp_restart();
     }
 

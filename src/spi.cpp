@@ -113,7 +113,6 @@ void vspiDacInit()
         .pre_cb = 0,   // PeDi added
         .post_cb = 0}; // PeDi added
 
-    // printf("test3 \n");
     // Configuration for the CS lines
     gpio_config_t io_conf = {
         .pin_bit_mask = (1 << GPIO_CS_VSPI_DACX) | (1 << GPIO_CS_VSPI_DACY) | (1 << GPIO_CS_VSPI_DACZ),
@@ -167,7 +166,6 @@ void vspiDacLoop(void *unused)
 
     vspiSendDac(currentXDac, buffer.get(), handleDacX); // Dac X
     vspiSendDac(currentYDac, buffer.get(), handleDacY); // Dac Y
-    // printf("--- Suspend vspiDacLoop (self)\n");
     vTaskSuspend(NULL); // will be resumed by controller
 
     // Resumed by Controller
@@ -189,7 +187,6 @@ void vspiDacLoop(void *unused)
         }
 
         vspiSendDac(currentZDac, buffer.get(), handleDacZ); // Dac Z
-        // printf("--- Suspend vspiDacLoop (self)\n");
         gpio_set_level(IO_17,0);
         vTaskSuspend(NULL); // will be resumed by controller
         
