@@ -22,6 +22,7 @@ UsbPcInterface::~UsbPcInterface()
 void UsbPcInterface::start()
 {
     const uart_config_t uart_config = {
+        // TODO higher baudrate ? HTERM can e.g. 256000
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
@@ -31,6 +32,7 @@ void UsbPcInterface::start()
         .source_clk = UART_SCLK_APB,
 
     };
+    // TODO ADD TX_BUF_SIZE
     // We won't use a buffer for sending data.
     uart_driver_install(UART_NUM_1, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
     uart_param_config(UART_NUM_1, &uart_config);
@@ -191,16 +193,13 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
     arguments.clear();
     while (p != 0)
     {
-        // printf("%s\n", p);
         char buffer[20];
         sprintf(buffer, "%s", p);
         arguments.push_back(buffer);
-        // UsbPcInterface::send("Add %s\n", buffer);
         p = strtok(NULL, ",");
     }
 
-    // UsbPcInterface::send("size of arguments %d\n", arguments.size());
-
+    
     if (UsbPcInterface::adjustIsActive == false)
     {
         UsbPcInterface::send("No valid command. 'TIP' is only valid in ADJUST mode\n");
@@ -285,8 +284,6 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
 extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 {
 
-    esp_log_level_set("*", ESP_LOG_INFO);
-
     uint32_t i = 0;
     int ledLevel = 0;
     // Request PC. Wait for PC response
@@ -296,7 +293,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
         {
             // Invert Blue LED
             ledLevel++;
-            
+
             if (this->getWorkingMode() == MODE_IDLE)
             {
                 this->send("IDLE\n");
@@ -308,7 +305,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     }
 
     // Command received from PC
-   
+
     // Split usbReceive csv to parameters[]
     // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
 
@@ -328,14 +325,12 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     this->mParametersVector.clear();
     while (p != 0)
     {
-        // printf("%s\n", p);
         char buffer[20];
         sprintf(buffer, "%s", p);
         puts(strupr(buffer));
         this->mParametersVector.push_back(buffer);
         p = strtok(NULL, ",");
     }
-    // Pedi !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! free(cstr);
 
     ESP_LOGI(TAG, "ParametersVector[0]: %s", this->mParametersVector[0].c_str());
 

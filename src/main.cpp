@@ -43,7 +43,9 @@ using namespace std;
 extern "C" void app_main(void)
 {
 
-    esp_log_level_set("*", ESP_LOG_WARN);
+    //esp_log_level_set("*", ESP_LOG_WARN);
+    esp_log_level_set("*", ESP_LOG_INFO);
+
     static const char *TAG = "main";
 
     // GPIO ports for Monitoring on Jumper J3 GPIO_RESERVE
@@ -103,7 +105,6 @@ extern "C" void app_main(void)
 
     else if (usb.getWorkingMode() == MODE_MEASURE)
     {
-        // UsbPcInterface::sendStatus("MEASURE\n");
         parameterSetter.getParametersFromFlash(false); // get measure parameter from nvs
         measurementStart();
         vTaskDelete(NULL);

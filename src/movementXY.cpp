@@ -2,6 +2,8 @@
 #include "globalVariables.h"
 #include "stdio.h"
 
+static const char *TAG = "UsbPcInterface";
+
 scanGrid::scanGrid(uint16_t widthX, uint16_t widthY)
     : maxX(widthX - 1), maxY(widthY - 1), currentX(0), currentY(0), currentDirection(0)
 {
@@ -52,10 +54,8 @@ bool scanGrid::moveOn()
         else
         {
             // TODO currentX = startX. before currentX = 0
-   
             currentX=startX;
             currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
-
 
             if (currentY != maxY)
             {
@@ -72,7 +72,6 @@ bool scanGrid::moveOn()
     }
 
 
-    // printf("moveOn %d\n",(int)currentDirection);
     switch ((int)currentDirection)
     {
     case false:
@@ -80,8 +79,6 @@ bool scanGrid::moveOn()
         if (currentX < maxX)
         {
             currentX++; // rightwise
-            // printf("moveOn currentX++ %d\n", currentX);
-
             currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
         }
         else
@@ -125,7 +122,7 @@ bool scanGrid::moveOn()
         return false;
         break;
     default:
-        printf("error move \n");
+        ESP_LOGE(TAG, "error move \n");
         return false;
     }
 }

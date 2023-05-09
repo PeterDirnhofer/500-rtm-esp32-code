@@ -25,9 +25,8 @@ static bool m_tick_adjust(gptimer_handle_t timer, const gptimer_alarm_event_data
 }
 extern "C" void timer_stop()
 {
-   //printf("gptimer_stop");
+   
    ESP_ERROR_CHECK(gptimer_stop(gptimer));
-   //gptimer_stop(gptimer);
 }
 extern "C" void timer_start()
 {
