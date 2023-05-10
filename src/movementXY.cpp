@@ -36,13 +36,13 @@ scanGrid::scanGrid(uint16_t maxX, uint16_t maxY, uint16_t startX, uint16_t start
  */
 bool scanGrid::moveOn()
 {
-    // get global parameter direction 
+    // get global parameter direction
     bool bidirectional;
 
-    if (direction==0)
-        bidirectional=false;
+    if (direction == 0)
+        bidirectional = false;
     else
-        bidirectional=true;
+        bidirectional = true;
 
     if (bidirectional == false)
     {
@@ -54,7 +54,7 @@ bool scanGrid::moveOn()
         else
         {
             // TODO currentX = startX. before currentX = 0
-            currentX=startX;
+            currentX = startX;
             currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
 
             if (currentY != maxY)
@@ -70,7 +70,6 @@ bool scanGrid::moveOn()
         }
         return false;
     }
-
 
     switch ((int)currentDirection)
     {

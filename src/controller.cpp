@@ -63,8 +63,7 @@ extern "C" void adjustLoop(void *unused)
     }
 }
 
-/* Init 1 ms Timer tG0 to trigger single controllerLoop run.
- */
+/**Initialize task measurementLoop*/
 extern "C" void measurementStart()
 {
 
@@ -72,24 +71,21 @@ extern "C" void measurementStart()
     timer_initialize(MODE_MEASURE);
 }
 
-/**@brief Run one Measure Cycle. Save data if valid. Control Position of microscopes measure tip.
- *
- *
- * @Steps:
- * - Controllerloop is started cyclic by timer (timer_tg0_isr)
- * - Measure ADC current
- * - If ADC current is in limit:
- *    - controllerloop saves current ADC value and X,Y,Z Position to queue.
- *    - If 100 values are in queue, pause loop and send data to PC
- *    - Request next XY Position
- *    - resume vspiDacLoop to move tip to new X Y position
- *    - stop ControllerLoop. Wait for next timer
- * - If ADC current is out off limit. Correction of Z distance
- *    - calculate new Z value and request new Z position
- *    - resume vspiDacLoop to move tip to new Z position
- *    - stop ControllerLoop. Wait for next timer
- */
+/**@brief method runs one ADC Current Measure cycle and positions measure tip*/ 
 extern "C" void measurementLoop(void *unused)
+/* Steps:
+ * - method is started cyclic by timer (timer_tg0_isr)
+ * - Measuring ADC tunnel current
+ * - If ADC current is within limit:
+ *    - send ADC measue value with  X,Y  Position to PC
+ *    - request next XY Position
+ *    - go to sleep and wait for next timer tick
+ * - If ADC current is out off limit
+ *    - calculate better value for Z position 
+ *    - request new calculated Z position by starting vspiDacLoop
+ *    - go to sleep and Wait for next timer tick
+ */
+
 {
     ESP_LOGI(TAG, "+++ controllerLoopStart\n");
   
@@ -172,6 +168,9 @@ uint16_t m_saturate16bit(uint32_t input, uint16_t min, uint16_t max)
     return (uint16_t)input;
 }
 
+/**
+ * method sends measuredata in dataQueueE to PC. Pause measurement if too many values in dataQueue 
+*/
 extern "C" int  m_sendDataPaket(bool terminate)
 {
     
