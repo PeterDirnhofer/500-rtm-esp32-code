@@ -40,7 +40,10 @@ uint16_t nvs_maxX, nvs_maxY = 0;
 bool direction = 0;
 uint16_t sendDataAfterXDatasets = 100;
 
-queue<dataElement> dataQueue;
+
+queue<DataElement> dataQueue;
+queue<DataElement> dataQueue_new;
+
 scanGrid rtmGrid(200, 200); // default grid
 bool configNeeded = true;
 uint8_t lastConfigByte = 100;

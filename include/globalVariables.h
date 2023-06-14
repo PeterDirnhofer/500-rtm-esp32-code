@@ -93,7 +93,9 @@ extern uint16_t nvs_maxX, nvs_maxY;
 extern bool direction;
 extern uint16_t sendDataAfterXDatasets;
 
-extern queue<dataElement> dataQueue;
+extern queue<DataElement> dataQueue;
+extern queue<DataElement> dataQueue_new;
+
 extern scanGrid rtmGrid;
 
 extern bool configNeeded;

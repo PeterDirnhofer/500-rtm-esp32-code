@@ -50,6 +50,7 @@ extern "C" void adjustLoop(void *unused)
         // UsbPcInterface::send("abwweichung: %f soll: %f ist:%f\n", e,w,r);
 
         // Abweichung soll/ist im limit --> Messwerte speichern und nächste XY Position anfordern
+        // Set LED
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
             gpio_set_level(IO_02, 1);
@@ -113,12 +114,13 @@ extern "C" void measurementLoop(void *unused)
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
 
+            // Set LED 
             gpio_set_level(IO_02, 1);
 
             // save to queue  Grid(x)  Grid(y)  Z_DAC
-            dataQueue.emplace(dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
+            dataQueue.emplace(DataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
 
-            // TODO Send continuously
+            // Send to PC continuously
             m_sendDataPaket();
 
             // New XY calculation.

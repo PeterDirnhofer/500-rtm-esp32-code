@@ -5,7 +5,7 @@
 
 // TODO define dataElement in controller.cpp
 // constructor of dataElement for queue
-dataElement::dataElement(uint16_t x, uint16_t y, uint16_t z)
+DataElement::DataElement(uint16_t x, uint16_t y, uint16_t z)
     : x(x), y(y), z(z)
 {
 }
