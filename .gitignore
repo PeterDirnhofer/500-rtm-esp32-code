@@ -6,3 +6,4 @@
 .vscode/ipch
 doxygen
 .pio/build/project.checksum
+.pio/build/
