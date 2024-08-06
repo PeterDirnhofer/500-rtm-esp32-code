@@ -22,13 +22,10 @@
 #include "esp_spi_flash.h"
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
-//#include "driver/timer.h"
 
 #include "globalVariables.h"
 #include "spi.h"
-// #include "communication.h"
 #include "controller.h"
-//#include "timer.h"
 
 static const char *TAG = "spi.cpp";
 using namespace std;

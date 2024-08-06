@@ -72,7 +72,7 @@ extern "C" void measurementStart()
     timer_initialize(MODE_MEASURE);
 }
 
-/**@brief method runs one ADC Current Measure cycle and positions measure tip*/ 
+/**@brief method runs one ADC Current Measure cycle and positions measure tip*/
 extern "C" void measurementLoop(void *unused)
 /* Steps:
  * - method is started cyclic by timer (timer_tg0_isr)
@@ -82,14 +82,14 @@ extern "C" void measurementLoop(void *unused)
  *    - request next XY Position
  *    - go to sleep and wait for next timer tick
  * - If ADC current is out off limit
- *    - calculate better value for Z position 
+ *    - calculate better value for Z position
  *    - request new calculated Z position by starting vspiDacLoop
  *    - go to sleep and Wait for next timer tick
  */
 
 {
     ESP_LOGI(TAG, "+++ controllerLoopStart\n");
-  
+
     static double e, w, r, y, eOld, yOld = 0;
     uint16_t ySaturate = 0;
     w = destinationTunnelCurrentnA;
@@ -114,7 +114,7 @@ extern "C" void measurementLoop(void *unused)
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
 
-            // Set LED 
+            // Set LED
             gpio_set_level(IO_02, 1);
 
             // save to queue  Grid(x)  Grid(y)  Z_DAC
@@ -142,12 +142,11 @@ extern "C" void measurementLoop(void *unused)
         {
             gpio_set_level(IO_02, 0);
             //               1000                10
-            // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt 
-            y = kP * e + kI * eOld + yOld; 
+            // stellgroesse = kP*regeldifferenz + kI* regeldifferenz_alt + stellgroesse_alt
+            y = kP * e + kI * eOld + yOld;
             eOld = e;
             ySaturate = m_saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX); // set to boundaries of DAC
             currentZDac = ySaturate;                                    // set new z height
-            
 
             // handleVspiLoop stellt neue Z Position auf currentZDac
             vTaskResume(handleVspiLoop); // will suspend itself
@@ -171,30 +170,31 @@ uint16_t m_saturate16bit(uint32_t input, uint16_t min, uint16_t max)
 }
 
 /**
- * method sends measuredata in dataQueueE to PC. Pause measurement if too many values in dataQueue 
-*/
-extern "C" int  m_sendDataPaket(bool terminate)
+ * method sends measuredata in dataQueueE to PC. Pause measurement if too many values in dataQueue
+ */
+extern "C" int m_sendDataPaket(bool terminate)
 {
-    
+
     // TODO timer_stop only if dataQueue overflow
     bool timer_was_stopped = false;
 
     size_t numElements = dataQueue.size();
 
-    if (numElements > 100) {
+    if (numElements > 100)
+    {
 
         timer_was_stopped = true;
-        ESP_LOGW(TAG,"Stop timer. Size of dataQueue > 100\n");
+        ESP_LOGW(TAG, "Stop timer. Size of dataQueue > 100\n");
         timer_stop();
     }
-    
+
     while (!dataQueue.empty())
     {
         dataQueue.front();
         uint16_t X = dataQueue.front().getDataX();
         uint16_t Y = dataQueue.front().getDataY();
         uint16_t Z = dataQueue.front().getDataZ();
-  
+
         // TODO Check if send unit_16 instead of strings X Y Z
         UsbPcInterface::send("DATA,%d,%d,%d\n", X, Y, Z);
 

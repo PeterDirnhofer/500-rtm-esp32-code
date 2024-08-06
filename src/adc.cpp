@@ -3,11 +3,13 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include "driver/i2c_master.h"
-#include "driver/i2c_slave.h"
+
 
 #define TAG "ADC"
 i2c_master_dev_handle_t dev_handle;
 
+/// @brief Read ADC on ADC 8 click
+/// @return 16 Bit ADC Value
 uint16_t readAdc()
 {
     uint8_t data_rd[2];
@@ -15,10 +17,13 @@ uint16_t readAdc()
     return (data_rd[0] << 8) | data_rd[1];
 }
 
+/// @brief Initialize ADC 8 click with ADS 1115 on I2C bus
+/// @return ESP_OK / Throw error and abort()
 esp_err_t i2cAdcInit()
 {
+    // Use espressif 5.3 or later
     // INIT ADC
-    //  Config ADS 1115 Single
+    //  Config ADS 1115 Single0
     //  Bits 15 14 13 12  11 10 09 08
     //        0  1  1  1   0  1  0  0
     //       15 Single Conversion

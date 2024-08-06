@@ -25,8 +25,8 @@ static bool m_tick_adjust(gptimer_handle_t timer, const gptimer_alarm_event_data
 }
 extern "C" void timer_stop()
 {
-   
-   ESP_ERROR_CHECK(gptimer_stop(gptimer));
+
+    ESP_ERROR_CHECK(gptimer_stop(gptimer));
 }
 extern "C" void timer_start()
 {
@@ -37,11 +37,16 @@ extern "C" void timer_start()
 /// @param mode MODE_MEASURE or MODE_ADJUST_TEST_TIP
 extern "C" void timer_initialize(int mode)
 {
-    //gptimer_handle_t gptimer = NULL;
+    // gptimer_handle_t gptimer = NULL;
     gptimer_config_t timer_config = {
         .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1 * 1000 * 1000, // 1MHz, 1 tick = 1us
+        .intr_priority = 0,
+        .flags = {
+            .intr_shared = true,
+            .backup_before_sleep = false},
+
     };
 
     ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &gptimer));
