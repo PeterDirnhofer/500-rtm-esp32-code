@@ -41,6 +41,8 @@ esp_err_t i2cAdcInit()
         .scl_io_num = I2C_MASTER_SCL_IO,
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .glitch_ignore_cnt = 7,
+        .intr_priority = 0,
+        .trans_queue_depth = 0,
         .flags = {
             .enable_internal_pullup = true},
     };
@@ -53,7 +55,9 @@ esp_err_t i2cAdcInit()
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address = I2C_DEVICE_ADDRESS,
         .scl_speed_hz = I2C_MASTER_FREQ_HZ,
-    };
+        .scl_wait_us = 0,
+        .flags = {
+            .disable_ack_check = false}};
     // Add device to I2C master bus
     ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
