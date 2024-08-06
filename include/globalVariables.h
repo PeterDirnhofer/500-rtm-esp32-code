@@ -67,6 +67,9 @@ extern uint16_t currentZDac;
 #define I2C_NUMBER(num) _I2C_NUMBER(num)
 
 // I2C for ADC
+#define I2C_PORT_NUM_0 0
+#define I2C_DEVICE_ADDRESS 0x48
+
 #define I2C_MASTER_SCL_IO GPIO_NUM_22 /*!< gpio number for I2C master clock */
 #define I2C_MASTER_SDA_IO GPIO_NUM_21 /*!< gpio number for I2C master data  */
 
@@ -75,8 +78,13 @@ extern uint16_t currentZDac;
 #define I2C_MASTER_TX_BUF_DISABLE 0  /*!< I2C master doesn't need buffer */
 #define I2C_MASTER_RX_BUF_DISABLE 0  /*!< I2C master doesn't need buffer */
 
-#define ADS_1115_ADDRESS_WRITE 0x90
-#define ADS_1115_ADDRESS_READ 0x91
+#define CONFIG_REGISTER 0x01
+#define THRESHOLD_LO_REGISTER 0x02
+#define THRESHOLD_HI_REGISTER 0x03
+#define CONVERSION_REGISTER 0x00
+
+// #define ADS_1115_ADDRESS_WRITE 0x90
+// #define ADS_1115_ADDRESS_READ 0x91
 
 #define ADC_VALUE_MAX 32767   // 2^15-1
 #define ADC_VOLTAGE_MAX 2.048 // Voltage from 0 to 2.048V mapped to 0 to 32767
