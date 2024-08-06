@@ -1,7 +1,6 @@
 #include <queue>
 #include "globalVariables.h"
 #include "driver/spi_master.h"
-#include "driver/i2c.h"
 
 esp_err_t retVspi;
 spi_transaction_t tVspi;
@@ -32,14 +31,12 @@ uint16_t currentXDac;
 uint16_t currentYDac;
 uint16_t currentZDac;
 
-i2c_config_t i2cConf;
 
 double kI, kP, destinationTunnelCurrentnA, currentTunnelCurrentnA, remainingTunnelCurrentDifferencenA = 0;
 uint16_t startX, startY = 0;
 uint16_t nvs_maxX, nvs_maxY = 0;
 bool direction = 0;
 uint16_t sendDataAfterXDatasets = 100;
-
 
 queue<DataElement> dataQueue;
 queue<DataElement> dataQueue_new;
@@ -54,7 +51,6 @@ uint8_t lastConfigByte = 100;
 // bool rtmDataReady = false;
 uint16_t configExisting = 0;
 uint16_t lastConfigExisting = 1000;
-
 
 uint16_t maxNumberAttemptsSPI = 10;
 

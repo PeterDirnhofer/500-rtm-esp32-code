@@ -6,7 +6,6 @@ using namespace std;
 #include "esp_err.h"
 #include "driver/spi_slave.h"
 #include "driver/spi_master.h"
-#include "driver/i2c.h"
 #include "freertos/task.h"
 
 #include "dataStoring.h"
@@ -85,7 +84,6 @@ extern uint16_t currentZDac;
 #define RESISTOR_PREAMP_MOHM 100 // 100 MOhm Preamp resistor
 
 #define DAC_VALUE_MAX 65535 // 2^16-1
-extern i2c_config_t i2cConf;
 
 extern double kI, kP, destinationTunnelCurrentnA, currentTunnelCurrentnA, remainingTunnelCurrentDifferencenA;
 extern uint16_t startX, startY;
@@ -113,7 +111,5 @@ extern uint8_t lastConfigByte;
 #define MODE_ADJUST_TEST_TIP 1
 #define MODE_MEASURE 2
 #define MODE_PARAMETER 3
-
-
 
 #endif
