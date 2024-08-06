@@ -19,7 +19,7 @@
 #include "nvs_flash.h"
 #include "soc/rtc_periph.h"
 #include "esp_log.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 
@@ -30,7 +30,7 @@
 static const char *TAG = "spi.cpp";
 using namespace std;
 
-/**@brief Init spi for DACs and run one vspiDacLoop
+/**@brief Start Init spi for DACs and run one vspiDacLoop
  *
  */
 void vspiDacStart()
@@ -40,9 +40,11 @@ void vspiDacStart()
     xTaskCreatePinnedToCore(vspiDacLoop, "vspiDacLoop", 10000, NULL, 3, &handleVspiLoop, 1);
 }
 
+/**@brief Init spi for DACX DACY and DACZ
+ *
+ */
 void vspiDacInit()
 {
-
     // Connection to DACs
     // Configuration for the SPI bus
     spi_bus_config_t buscfg = {
@@ -57,7 +59,8 @@ void vspiDacInit()
         .data7_io_num = 0,    // PeDi Added
         .max_transfer_sz = 0, // PeDi Added
         .flags = 0,           // PeDi Added
-        .intr_flags = 0,      // PeDi Added
+        .isr_cpu_id = ESP_INTR_CPU_AFFINITY_AUTO,
+        .intr_flags = 0, // PeDi Added
 
     };
 
@@ -66,7 +69,8 @@ void vspiDacInit()
         .command_bits = 8,
         .address_bits = 0,
         .dummy_bits = 0,
-        .mode = 0,                 // CPOL = 0, CPHA = 0 -> Mode 0
+        .mode = 0, // CPOL = 0, CPHA = 0 -> Mode 0
+        .clock_source = SPI_CLK_SRC_DEFAULT,
         .duty_cycle_pos = 128,     // 50% duty cycle
         .cs_ena_pretrans = 0,      // PeDi added
         .cs_ena_posttrans = 3,     // Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK
@@ -82,7 +86,8 @@ void vspiDacInit()
         .command_bits = 8,
         .address_bits = 0,
         .dummy_bits = 0,
-        .mode = 0,                 // CPOL = 0, CPHA = 0 -> Mode 0
+        .mode = 0, // CPOL = 0, CPHA = 0 -> Mode 0
+        .clock_source = SPI_CLK_SRC_DEFAULT,
         .duty_cycle_pos = 128,     // 50% duty cycle
         .cs_ena_pretrans = 0,      // PeDi added
         .cs_ena_posttrans = 3,     // Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK
@@ -98,7 +103,8 @@ void vspiDacInit()
         .command_bits = 8,
         .address_bits = 0,
         .dummy_bits = 0,
-        .mode = 0,                 // CPOL = 0, CPHA = 0 -> Mode 0
+        .mode = 0, // CPOL = 0, CPHA = 0 -> Mode 0
+        .clock_source = SPI_CLK_SRC_DEFAULT,
         .duty_cycle_pos = 128,     // 50% duty cycle
         .cs_ena_pretrans = 0,      // PeDi added
         .cs_ena_posttrans = 3,     // Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK
