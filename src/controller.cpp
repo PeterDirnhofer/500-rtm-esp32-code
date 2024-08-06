@@ -190,7 +190,7 @@ extern "C" int m_sendDataPaket(bool terminate)
 
     while (!dataQueue.empty())
     {
-        dataQueue.front();
+        // dataQueue.front();
         uint16_t X = dataQueue.front().getDataX();
         uint16_t Y = dataQueue.front().getDataY();
         uint16_t Z = dataQueue.front().getDataZ();

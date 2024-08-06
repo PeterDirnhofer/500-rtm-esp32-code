@@ -150,7 +150,7 @@ void vspiDacInit()
  */
 void vspiDacLoop(void *unused)
 {
-    
+
     ESP_LOGD(TAG, "+++ vspiDacLoop started\n");
 
     unique_ptr<uint16_t> buffer = make_unique<uint16_t>();
@@ -163,30 +163,26 @@ void vspiDacLoop(void *unused)
 
     vspiSendDac(currentXDac, buffer.get(), handleDacX); // Dac X
     vspiSendDac(currentYDac, buffer.get(), handleDacY); // Dac Y
-    vTaskSuspend(NULL); // will be resumed by controller
+    vTaskSuspend(NULL);                                 // will be resumed by controller
 
     // Resumed by Controller
     while (1)
     {
-       
-   
+
         if (currentXDac != lastXDac)
         {                                                       // only if new value has been written to currentXDac
             vspiSendDac(currentXDac, buffer.get(), handleDacX); // Dac X
             lastXDac = currentXDac;
-           
         }
         if (currentYDac != lastYDac)
         {                                                       // only if new value has been written to currentYDac
             vspiSendDac(currentYDac, buffer.get(), handleDacY); // Dac Y
             lastYDac = currentYDac;
-          
         }
 
         vspiSendDac(currentZDac, buffer.get(), handleDacZ); // Dac Z
-        gpio_set_level(IO_17,0);
+        gpio_set_level(IO_17, 0);
         vTaskSuspend(NULL); // will be resumed by controller
-        
     }
 }
 

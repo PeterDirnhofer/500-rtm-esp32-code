@@ -8,3 +8,4 @@ doxygen
 .pio/build/project.checksum
 .pio/build/
 .pio/build/esp32dev/firmware.bin
+.pio/build/esp32dev/firmware.bin
