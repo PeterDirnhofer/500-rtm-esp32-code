@@ -11,9 +11,14 @@ i2c_master_dev_handle_t dev_handle;
 uint16_t readAdc()
 {
 
-    uint8_t dataH = 0, dataL = 0;
+    uint8_t data_rd[2];
 
-    uint16_t temp = dataH << 8 | dataL;
+    ESP_ERROR_CHECK(i2c_master_receive(dev_handle, data_rd, 2, -1));
+    uint16_t temp = data_rd[1] << 8 | data_rd[0];
+
+    // uint8_t dataH = 0, dataL = 0;
+
+    // uint16_t temp = dataH << 8 | dataL;
 
     return temp;
 }
@@ -36,8 +41,6 @@ esp_err_t i2cAdcInit()
     //                    0 Alert/Rdy Active low
     //                        0  No latch comparator
     //                           1  1  Disable coparator
-
-    esp_err_t err;
 
     // Define I2C master bus configuration
     i2c_master_bus_config_t i2c_mst_config = {
@@ -68,48 +71,25 @@ esp_err_t i2cAdcInit()
     data_wr[1] = 0x74;
     data_wr[2] = 0xE3;
 
-    err = i2c_master_transmit(dev_handle, data_wr, 3, -1);
-    if (err != ESP_OK)
-    {
-        ESP_LOGE(TAG, "i2c_master_transmit failed: %s", esp_err_to_name(err));
-        return NULL;
-    }
+    ESP_ERROR_CHECK(i2c_master_transmit(dev_handle, data_wr, 3, -1));
 
     // Set lo threshold Register of ADS1115
     data_wr[0] = THRESHOLD_LO_REGISTER;
     data_wr[1] = 0x00; // bits 15 to 8
     data_wr[2] = 0x00; // bits 7 to 0
 
-    err = i2c_master_transmit(dev_handle, data_wr, 3, -1);
-    if (err != ESP_OK)
-    {
-        ESP_LOGE(TAG, "i2c_master_transmit failed: %s", esp_err_to_name(err));
-        return NULL;
-    }
+    ESP_ERROR_CHECK(i2c_master_transmit(dev_handle, data_wr, 3, -1));
 
     // Set hi threshold Register of ADS1115
     data_wr[0] = THRESHOLD_HI_REGISTER;
     data_wr[1] = 0x8F; // bits 15 to 8
     data_wr[2] = 0xFF; // bits 7 to 0
 
-    err = i2c_master_transmit(dev_handle, data_wr, 3, -1);
-    if (err != ESP_OK)
-    {
-        ESP_LOGE(TAG, "i2c_master_transmit failed: %s", esp_err_to_name(err));
-        return NULL;
-    }
+    ESP_ERROR_CHECK(i2c_master_transmit(dev_handle, data_wr, 3, -1));
 
     // Set CONVERSION_REGISTER of ADS1115
     data_wr[0] = CONVERSION_REGISTER;
-    err = i2c_master_transmit(dev_handle, data_wr, 1, -1);
-    if (err != ESP_OK)
-    {
-        ESP_LOGE(TAG, "i2c_master_transmit failed: %s", esp_err_to_name(err));
-        return NULL;
-    }
+    ESP_ERROR_CHECK(i2c_master_transmit(dev_handle, data_wr, 1, -1));
 
-    err = ESP_OK;
-    ESP_LOGW(TAG, "HURRAAA");
-
-    return err;
+    return ESP_OK;
 }
