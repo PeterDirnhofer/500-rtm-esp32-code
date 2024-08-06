@@ -10,17 +10,9 @@ i2c_master_dev_handle_t dev_handle;
 
 uint16_t readAdc()
 {
-
     uint8_t data_rd[2];
-
     ESP_ERROR_CHECK(i2c_master_receive(dev_handle, data_rd, 2, -1));
-    uint16_t temp = data_rd[1] << 8 | data_rd[0];
-
-    // uint8_t dataH = 0, dataL = 0;
-
-    // uint16_t temp = dataH << 8 | dataL;
-
-    return temp;
+    return (data_rd[0] << 8) | data_rd[1];
 }
 
 esp_err_t i2cAdcInit()
