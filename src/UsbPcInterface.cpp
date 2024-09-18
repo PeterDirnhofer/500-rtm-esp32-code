@@ -149,10 +149,13 @@ esp_err_t UsbPcInterface::sendData()
     // vTaskSuspend(handleControllerLoop);
     while (!dataQueue.empty())
     {
-        dataQueue.front();
-        uint16_t X = dataQueue.front().getDataX();
-        uint16_t Y = dataQueue.front().getDataY();
-        uint16_t Z = dataQueue.front().getDataZ();
+        // Store the front element in a variable
+        DataElement &element = dataQueue.front();
+
+        // Now use this element to access data
+        uint16_t X = element.getDataX();
+        uint16_t Y = element.getDataY();
+        uint16_t Z = element.getDataZ();
         send("DATA,%d,%d,%d\r", X, Y, Z);
         dataQueue.pop();
     }
@@ -199,7 +202,6 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
         p = strtok(NULL, ",");
     }
 
-    
     if (UsbPcInterface::adjustIsActive == false)
     {
         UsbPcInterface::send("No valid command. 'TIP' is only valid in ADJUST mode\n");
