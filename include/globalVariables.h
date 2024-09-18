@@ -48,6 +48,7 @@ extern TaskHandle_t handleUartRcvLoop;
 extern TaskHandle_t handleVspiLoop;
 extern TaskHandle_t handleSendDatasets;
 extern TaskHandle_t handleControllerLoop;
+extern TaskHandle_t handleTunnelLoop;
 extern TaskHandle_t handleAdjustLoop;
 extern TaskHandle_t handleTask;
 
@@ -119,5 +120,6 @@ extern uint8_t lastConfigByte;
 #define MODE_ADJUST_TEST_TIP 1
 #define MODE_MEASURE 2
 #define MODE_PARAMETER 3
+#define MODE_TUNNEL_FIND 4
 
 #endif

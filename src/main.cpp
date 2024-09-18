@@ -19,11 +19,10 @@
 #include "soc/rtc_periph.h"
 #include "driver/spi_slave.h"
 #include "esp_log.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "driver/gpio.h"
 #include "nvs_flash.h"
 #include "nvs.h"
-//#include "timer.h"
 #include <string>
 #include <cstring>
 
@@ -38,12 +37,10 @@
 
 using namespace std;
 
-
-
 extern "C" void app_main(void)
 {
 
-    //esp_log_level_set("*", ESP_LOG_WARN);
+    // esp_log_level_set("*", ESP_LOG_WARN);
     esp_log_level_set("*", ESP_LOG_INFO);
 
     static const char *TAG = "main";
@@ -52,22 +49,18 @@ extern "C" void app_main(void)
     gpio_set_direction(IO_17, GPIO_MODE_OUTPUT);
     gpio_set_direction(IO_04, GPIO_MODE_OUTPUT);
     gpio_set_direction(IO_25, GPIO_MODE_OUTPUT);
-    gpio_set_direction(IO_27, GPIO_MODE_OUTPUT);   
-    gpio_set_direction(IO_02, GPIO_MODE_OUTPUT);     
-    
+    gpio_set_direction(IO_27, GPIO_MODE_OUTPUT);
+    gpio_set_direction(IO_02, GPIO_MODE_OUTPUT);
+
     gpio_set_level(IO_04, 0);
 
-    gpio_set_level(IO_02, 0 );
-    gpio_set_level(IO_27, 0 );
-   
-   
-
+    gpio_set_level(IO_02, 0);
+    gpio_set_level(IO_27, 0);
 
     UsbPcInterface usb;
     usb.start();
 
     UsbPcInterface::send("IDLE\n");
-
 
     ParameterSetting parameterSetter;
     UsbPcInterface::adjustIsActive = false;
@@ -96,12 +89,23 @@ extern "C" void app_main(void)
     if (parameterCount == 2)
         p1 = usb.getParametersFromPc()[1];
 
+    
+    
+    
     if (usb.getWorkingMode() == MODE_ADJUST_TEST_TIP)
     {
 
         adjustStart();
         vTaskDelete(NULL);
     }
+
+    else if (usb.getWorkingMode() == MODE_TUNNEL_FIND)
+    {
+        // parameterSetter.getParametersFromFlash(false); // get measure parameter from nvs
+        
+        findTunnelStart();
+        vTaskDelete(NULL);
+        }
 
     else if (usb.getWorkingMode() == MODE_MEASURE)
     {

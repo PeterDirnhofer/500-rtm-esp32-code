@@ -359,6 +359,14 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
         return ESP_OK;
     }
 
+    else if (strcmp(this->mParametersVector[0].c_str(), "TUNNEL") == 0)
+    {
+
+        UsbPcInterface::m_workingmode = MODE_TUNNEL_FIND;
+        ESP_LOGI(TAG, "TUNNEL_FIND detected\n");
+        return ESP_OK;
+    }
+
     UsbPcInterface::m_workingmode = MODE_INVALID;
     ESP_LOGW(TAG, "INVALID command %s\n", mParametersVector[0].c_str());
     return ESP_ERR_INVALID_ARG;

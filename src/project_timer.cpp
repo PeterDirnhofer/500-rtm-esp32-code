@@ -18,6 +18,12 @@ static bool m_tick_measure(gptimer_handle_t timer, const gptimer_alarm_event_dat
     return true;
 }
 
+static bool m_tick_tunnelfind(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
+{
+    vTaskResume(handleTunnelLoop);
+    return true;
+}
+
 static bool m_tick_adjust(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
     vTaskResume(handleAdjustLoop);
@@ -59,6 +65,10 @@ extern "C" void timer_initialize(int mode)
     {
         alarm_config.alarm_count = 1260; // 1260 us
     }
+    else if (mode == MODE_TUNNEL_FIND)
+    {
+        alarm_config.alarm_count = 1000 * 1000; // 1000 * 1000 us = 1 Sekunde
+    }
     else // mode == MODE_ADJUST_TEST_TIP
     {
         alarm_config.alarm_count = 1000 * 1000; // 1000 * 1000 us = 1 Sekunde
@@ -70,6 +80,11 @@ extern "C" void timer_initialize(int mode)
     if (mode == MODE_MEASURE)
     {
         cbs.on_alarm = m_tick_measure;
+    }
+    else if (mode == MODE_TUNNEL_FIND)
+    {
+
+        cbs.on_alarm = m_tick_tunnelfind;
     }
     else // mode == MODE_ADJUST_TEST_TIP
     {
