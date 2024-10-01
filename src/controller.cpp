@@ -38,24 +38,19 @@ extern "C" void adjustStart()
 
 /**
  * @brief The adjust loop reads ADC values, converts them to voltages,
- *        and adjusts the current accordingly. Triggered by GPTimer tick.
+ *        and sends the current. Triggered by GPTimer tick.
  */
 extern "C" void adjustLoop(void *unused)
 {
-    static double e, w, r = 0;
-    w = destinationTunnelCurrentnA;
 
     while (true)
     {
         vTaskSuspend(NULL); // Sleep, will be retriggered by gptimer
 
-        int16_t adcValue = readAdc(false); // Read voltage from preamplifier
+        int16_t adcValue = readAdc(); // Read voltage from preamplifier
 
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
                                  (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
-
-        r = currentTunnelCurrentnA; // Convert voltage to current
-        e = w - r;                  // Error: desired - actual
 
         double adcInVolt = (adcValue * ADC_VOLTAGE_MAX * 1e2) /
                            (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
@@ -78,31 +73,28 @@ extern "C" void measurementStart()
  */
 extern "C" void measurementLoop(void *unused)
 {
-
-    static double e, w, r, z, eOld, zOld = 0;
+    static double e = 0, w = 0, r = 0, z = 0, eOld = 0, zOld = 0;
     uint16_t zSaturate = 0;
-    w = destinationTunnelCurrentnA;
+    w = destinationTunnelCurrentnA; // Desired tunnel current
 
     while (true)
     {
-        vTaskSuspend(NULL); // Sleep, will be restarted by timer
+        vTaskSuspend(NULL); // Sleep, will be restarted by the timer
 
-        uint16_t adcValue = readAdc(); // Read current voltage from preamplifier
+        int16_t adcValue = readAdc(); // Read voltage from preamplifier
+        adcValue = abs(adcValue);
 
+        // Convert ADC value to tunnel current (nA)
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
                                  (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
-        r = currentTunnelCurrentnA; // Convert voltage to current
+        r = currentTunnelCurrentnA; // Actual tunnel current
         e = w - r;                  // Error: desired - actual
-
-        // ESP_LOGW("tic", "dadada - w: %.2f nA, currentTunnelCurrentnA: %.2f nA, e: %.2f nA", w, currentTunnelCurrentnA, e);
 
         // If the error is within the allowed limit, process the result
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
-
             // Store the result in the data queue
             dataQueue.emplace(DataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
-            ESP_LOGW("tic", "Values - X: %u, Y: %u, ZDAC: %u", rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac);
 
             // Send data to PC
             m_sendDataPaket();
@@ -121,7 +113,6 @@ extern "C" void measurementLoop(void *unused)
         // If the error is too large, adjust the Z position
         else
         {
-
             // Calculate new control value
             z = kP * e + kI * eOld + zOld;
             eOld = e;
@@ -134,7 +125,7 @@ extern "C" void measurementLoop(void *unused)
             vTaskResume(handleVspiLoop);
         }
 
-        zOld = zSaturate; // Store previous control z-value
+        zOld = zSaturate; // Store previous control Z-value
     }
 }
 

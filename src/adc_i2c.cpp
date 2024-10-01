@@ -7,38 +7,18 @@
 #define TAG "ADC"
 i2c_master_dev_handle_t dev_handle;
 
-/// @brief Read ADC on ADC 8 click with option for signed or unsigned return
-/// @param return_unsigned If true, return an unsigned 16-bit value, otherwise return signed
-/// @return ADC value (signed or unsigned based on the parameter)
-uint16_t readAdc(bool return_unsigned)
+/// @brief Read ADC on ADC 8 click with unsigned as default return type
+/// @return 16-bit unsigned ADC value
+uint16_t readAdc()
 {
+
     uint8_t data_rd[2];
     ESP_ERROR_CHECK(i2c_master_receive(dev_handle, data_rd, 2, 1000 / portTICK_PERIOD_MS));
 
     uint16_t temp = (data_rd[0] << 8) | data_rd[1]; // Unsigned interpretation
     int16_t signed_adc = (int16_t)temp;             // Signed interpretation
 
-    if (return_unsigned)
-    {
-        if (temp > 32767)
-        {
-            temp = 0;
-        }
-        ESP_LOGI(TAG, "ADC Value (unsigned): %u", temp);
-        return temp;
-    }
-    else
-    {
-        ESP_LOGI(TAG, "ADC Value (signed): %d", signed_adc);
-        return signed_adc;
-    }
-}
-
-/// @brief Read ADC on ADC 8 click with unsigned as default return type
-/// @return 16-bit unsigned ADC value
-uint16_t readAdc()
-{
-    return readAdc(true); // Call with default value (unsigned)
+    return signed_adc;
 }
 
 /// @brief Initialize ADC 8 click with ADS 1115 on I2C bus
