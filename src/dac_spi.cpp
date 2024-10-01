@@ -24,7 +24,7 @@
 #include "driver/spi_master.h"
 
 #include "globalVariables.h"
-#include "spi.h"
+#include "dac_spi.h"
 #include "controller.h"
 
 static const char *TAG = "spi.cpp";

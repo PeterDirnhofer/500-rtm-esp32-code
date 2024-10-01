@@ -8,8 +8,8 @@
 
 #include "globalVariables.h"
 #include "UsbPcInterface.h"
-#include "adc.h"
-#include "spi.h"
+#include "adc_i2c.h"
+#include "dac_spi.h"
 #include "dataStoring.h"
 // #include "timer.h"
 

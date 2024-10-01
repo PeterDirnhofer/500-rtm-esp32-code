@@ -2,6 +2,7 @@
 #include "controller.h"
 #include "project_timer.h"
 using namespace std;
+
 static const char *TAG = "controller";
 
 /**
@@ -30,6 +31,7 @@ extern "C" esp_err_t initHardware()
  */
 extern "C" void adjustStart()
 {
+
     xTaskCreatePinnedToCore(adjustLoop, "adjustLoop", 10000, NULL, 2, &handleAdjustLoop, 1);
     timer_initialize(MODE_ADJUST_TEST_TIP);
 }
@@ -47,22 +49,13 @@ extern "C" void adjustLoop(void *unused)
     {
         vTaskSuspend(NULL); // Sleep, will be retriggered by gptimer
 
-        uint16_t adcValue = readAdc(); // Read voltage from preamplifier
+        int16_t adcValue = readAdc(false); // Read voltage from preamplifier
+
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
                                  (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
 
         r = currentTunnelCurrentnA; // Convert voltage to current
         e = w - r;                  // Error: desired - actual
-
-        // Check if the error is within the allowed limit
-        if (abs(e) <= remainingTunnelCurrentDifferencenA)
-        {
-            gpio_set_level(IO_02, 1); // Set LED
-        }
-        else
-        {
-            gpio_set_level(IO_02, 0); // Reset LED
-        }
 
         double adcInVolt = (adcValue * ADC_VOLTAGE_MAX * 1e2) /
                            (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
@@ -85,31 +78,31 @@ extern "C" void measurementStart()
  */
 extern "C" void measurementLoop(void *unused)
 {
-    ESP_LOGI(TAG, "+++ controllerLoopStart\n");
 
-    static double e, w, r, y, eOld, yOld = 0;
-    uint16_t ySaturate = 0;
+    static double e, w, r, z, eOld, zOld = 0;
+    uint16_t zSaturate = 0;
     w = destinationTunnelCurrentnA;
-
-    gpio_set_level(IO_17, 1); // Set indicator pin
 
     while (true)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by timer
 
         uint16_t adcValue = readAdc(); // Read current voltage from preamplifier
+
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
                                  (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
         r = currentTunnelCurrentnA; // Convert voltage to current
         e = w - r;                  // Error: desired - actual
 
+        // ESP_LOGW("tic", "dadada - w: %.2f nA, currentTunnelCurrentnA: %.2f nA, e: %.2f nA", w, currentTunnelCurrentnA, e);
+
         // If the error is within the allowed limit, process the result
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
-            gpio_set_level(IO_02, 1); // Set LED
 
             // Store the result in the data queue
             dataQueue.emplace(DataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
+            ESP_LOGW("tic", "Values - X: %u, Y: %u, ZDAC: %u", rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac);
 
             // Send data to PC
             m_sendDataPaket();
@@ -128,25 +121,26 @@ extern "C" void measurementLoop(void *unused)
         // If the error is too large, adjust the Z position
         else
         {
-            gpio_set_level(IO_02, 0); // Reset LED
 
             // Calculate new control value
-            y = kP * e + kI * eOld + yOld;
+            z = kP * e + kI * eOld + zOld;
             eOld = e;
 
             // Saturate the control value to fit within DAC boundaries
-            ySaturate = m_saturate16bit((uint32_t)y, 0, DAC_VALUE_MAX);
-            currentZDac = ySaturate; // Set new Z height
+            zSaturate = m_saturate16bit((uint32_t)z, 0, DAC_VALUE_MAX);
+            currentZDac = zSaturate; // Set new Z height
 
             // Resume DAC loop to set the new Z position
             vTaskResume(handleVspiLoop);
         }
 
-        yOld = ySaturate; // Store previous control value
+        zOld = zSaturate; // Store previous control z-value
     }
 }
 
-// Define the start function for the tunnel finding loop
+/**
+ * @brief Start the tunnel finding loop task.
+ */
 extern "C" void findTunnelStart()
 {
     // Create the tunnel finding loop task pinned to core 1 with 10 KB stack
@@ -156,17 +150,22 @@ extern "C" void findTunnelStart()
     timer_initialize(MODE_TUNNEL_FIND);
 }
 
-// Define the tunnel finding loop function
+/**
+ * @brief The tunnel finding loop function.
+ */
 extern "C" void findTunnelLoop(void *unused)
 {
-
     UsbPcInterface::send("+++ tunnelLoopStart\n");
-    ESP_LOGI(TAG, "+++ tunnelLoopStart\n");
 
     while (true)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by timer
         UsbPcInterface::send("Tunnel tick\n");
+
+        uint16_t adcValue = readAdc(); // Read current voltage from preamplifier
+        double adcInVolt = (adcValue * ADC_VOLTAGE_MAX * 1e2) /
+                           (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
+        UsbPcInterface::send("Tunnelcurrent,%f,%d\n", adcInVolt, adcValue);
     }
 }
 

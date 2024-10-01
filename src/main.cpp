@@ -27,8 +27,8 @@
 #include <cstring>
 
 #include "globalVariables.h"
-#include "spi.h"
-#include "adc.h"
+#include "dac_spi.h"
+#include "adc_i2c.h"
 #include "controller.h"
 #include "dataStoring.h"
 
@@ -44,6 +44,7 @@ extern "C" void app_main(void)
     esp_log_level_set("*", ESP_LOG_INFO);
 
     static const char *TAG = "main";
+    ESP_LOGE(TAG, "STARTED");
 
     // GPIO ports for Monitoring on Jumper J3 GPIO_RESERVE
     gpio_set_direction(IO_17, GPIO_MODE_OUTPUT);
@@ -89,9 +90,6 @@ extern "C" void app_main(void)
     if (parameterCount == 2)
         p1 = usb.getParametersFromPc()[1];
 
-    
-    
-    
     if (usb.getWorkingMode() == MODE_ADJUST_TEST_TIP)
     {
 
@@ -102,10 +100,10 @@ extern "C" void app_main(void)
     else if (usb.getWorkingMode() == MODE_TUNNEL_FIND)
     {
         // parameterSetter.getParametersFromFlash(false); // get measure parameter from nvs
-        
+
         findTunnelStart();
         vTaskDelete(NULL);
-        }
+    }
 
     else if (usb.getWorkingMode() == MODE_MEASURE)
     {
