@@ -88,11 +88,13 @@ extern "C" void measurementLoop(void *unused)
         currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
                                  (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
         r = currentTunnelCurrentnA; // Actual tunnel current
-        e = w - r;                  // Error: desired - actual
+        e = w - r;                  // Error = desired - actual
 
         // If the error is within the allowed limit, process the result
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
+
+            gpio_set_level(IO_25, 1);
             // Store the result in the data queue
             dataQueue.emplace(DataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
 
@@ -113,6 +115,7 @@ extern "C" void measurementLoop(void *unused)
         // If the error is too large, adjust the Z position
         else
         {
+            gpio_set_level(IO_25, 0);
             // Calculate new control value
             z = kP * e + kI * eOld + zOld;
             eOld = e;
@@ -140,23 +143,74 @@ extern "C" void findTunnelStart()
     // Initialize the timer for the tunnel finding mode
     timer_initialize(MODE_TUNNEL_FIND);
 }
-
 /**
  * @brief The tunnel finding loop function.
  */
 extern "C" void findTunnelLoop(void *unused)
 {
-    UsbPcInterface::send("+++ tunnelLoopStart\n");
+#define DIRECTION_UP 1
+#define DIRECTION_DOWN 0
+
+    static double e = 0, w = 0, r = 0;
+    w = destinationTunnelCurrentnA; // Desired tunnel current
+    static u_int16_t step = 100;
+
+    int16_t direction = DIRECTION_UP;
+
+    UsbPcInterface::send("START Z UP");
 
     while (true)
     {
-        vTaskSuspend(NULL); // Sleep, will be restarted by timer
-        UsbPcInterface::send("Tunnel tick\n");
+        vTaskSuspend(NULL); // Sleep, will be restarted by the timer
 
-        uint16_t adcValue = readAdc(); // Read current voltage from preamplifier
-        double adcInVolt = (adcValue * ADC_VOLTAGE_MAX * 1e2) /
-                           (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
-        UsbPcInterface::send("Tunnelcurrent,%f,%d\n", adcInVolt, adcValue);
+        int16_t adcValue = readAdc(); // Read voltage from preamplifier
+        adcValue = abs(adcValue);
+
+        // Convert ADC value to tunnel current (nA)
+        currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
+                                 (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
+        r = currentTunnelCurrentnA; // Actual tunnel current
+        e = w - r;                  // Error = desired - actual
+
+        // Tunnel current too low. Search
+        if (abs(e) >= remainingTunnelCurrentDifferencenA)
+        {
+            gpio_set_level(IO_25, 0);
+            // UsbPcInterface::send("%u ", currentZDac);
+            if (direction == DIRECTION_UP)
+            {
+                if (currentZDac < (DAC_VALUE_MAX - step))
+                {
+                    currentZDac += step;
+                    vTaskResume(handleVspiLoop);
+                }
+                else
+                {
+                    UsbPcInterface::send(" DOWN %f %f\n", destinationTunnelCurrentnA, currentTunnelCurrentnA);
+                    direction = DIRECTION_DOWN;
+                }
+            }
+            else
+            {
+
+                if (currentZDac > step)
+                {
+                    currentZDac -= step;
+                    vTaskResume(handleVspiLoop);
+                }
+                else
+                {
+                    UsbPcInterface::send(" UP   %f %f\n", destinationTunnelCurrentnA, currentTunnelCurrentnA);
+                    direction = DIRECTION_UP;
+                }
+            }
+        }
+        // Tunnel current within limit
+        else
+        {
+            gpio_set_level(IO_25, 1);
+            UsbPcInterface::send("SUCCESS TUNNEL CURRENT");
+        }
     }
 }
 

@@ -54,6 +54,7 @@ extern "C" void app_main(void)
     gpio_set_direction(IO_02, GPIO_MODE_OUTPUT);
 
     gpio_set_level(IO_04, 0);
+    gpio_set_level(IO_25, 0);
 
     gpio_set_level(IO_02, 0);
     gpio_set_level(IO_27, 0);
@@ -100,6 +101,7 @@ extern "C" void app_main(void)
     else if (usb.getWorkingMode() == MODE_TUNNEL_FIND)
     {
         // parameterSetter.getParametersFromFlash(false); // get measure parameter from nvs
+        parameterSetter.getParametersFromFlash(false); // get measure parameter from nvs
 
         findTunnelStart();
         vTaskDelete(NULL);
