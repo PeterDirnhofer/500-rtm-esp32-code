@@ -101,7 +101,7 @@ extern bool direction;
 extern uint16_t sendDataAfterXDatasets;
 
 extern queue<DataElement> dataQueue;
-extern queue<DataElement> dataQueue_new;
+extern queue<DataElementTunnel> tunnelQueue;
 
 extern scanGrid rtmGrid;
 

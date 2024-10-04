@@ -39,7 +39,7 @@ bool direction = 0;
 uint16_t sendDataAfterXDatasets = 100;
 
 queue<DataElement> dataQueue;
-queue<DataElement> dataQueue_new;
+queue<DataElementTunnel> tunnelQueue;
 
 scanGrid rtmGrid(200, 200); // default grid
 bool configNeeded = true;

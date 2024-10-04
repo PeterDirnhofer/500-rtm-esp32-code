@@ -148,18 +148,12 @@ extern "C" void findTunnelStart()
  */
 extern "C" void findTunnelLoop(void *unused)
 {
-#define DIRECTION_UP 1
-#define DIRECTION_DOWN 0
-
-    static double e = 0, w = 0, r = 0;
+    static double e = 0, w = 0, r = 0, z = 0, eOld = 0, zOld = 0;
+    uint16_t zSaturate = 0;
     w = destinationTunnelCurrentnA; // Desired tunnel current
-    static u_int16_t step = 100;
+    int loops = 0;
 
-    int16_t direction = DIRECTION_UP;
-
-    UsbPcInterface::send("START Z UP");
-
-    while (true)
+    while (loops < 50000)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
 
@@ -172,45 +166,42 @@ extern "C" void findTunnelLoop(void *unused)
         r = currentTunnelCurrentnA; // Actual tunnel current
         e = w - r;                  // Error = desired - actual
 
-        // Tunnel current too low. Search
-        if (abs(e) >= remainingTunnelCurrentDifferencenA)
+        // If the error is within the allowed limit, process the result
+        if (abs(e) <= remainingTunnelCurrentDifferencenA)
         {
-            gpio_set_level(IO_25, 0);
-            // UsbPcInterface::send("%u ", currentZDac);
-            if (direction == DIRECTION_UP)
-            {
-                if (currentZDac < (DAC_VALUE_MAX - step))
-                {
-                    currentZDac += step;
-                    vTaskResume(handleVspiLoop);
-                }
-                else
-                {
-                    UsbPcInterface::send(" DOWN %f %f\n", destinationTunnelCurrentnA, currentTunnelCurrentnA);
-                    direction = DIRECTION_DOWN;
-                }
-            }
-            else
-            {
 
-                if (currentZDac > step)
-                {
-                    currentZDac -= step;
-                    vTaskResume(handleVspiLoop);
-                }
-                else
-                {
-                    UsbPcInterface::send(" UP   %f %f\n", destinationTunnelCurrentnA, currentTunnelCurrentnA);
-                    direction = DIRECTION_UP;
-                }
-            }
+            gpio_set_level(IO_25, 1);
+            // Store the result in the data queue
+            // DataElementTunnel::DataElementTunnel(uint16_t dacz, float currentNa, bool isTunnel)
+
+            // tunnelQueue.emplace(DataElementTunnel(currentZDac, currentTunnelCurrentnA, true));
+
+            // Send data to PC
+            m_SendTunnelPaket();
         }
-        // Tunnel current within limit
+        // If the error is too large, adjust the Z position
         else
         {
-            gpio_set_level(IO_25, 1);
-            UsbPcInterface::send("SUCCESS TUNNEL CURRENT");
+            gpio_set_level(IO_25, 0);
+            loops++;
+
+            // Calculate new control value
+            z = kP * e + kI * eOld + zOld;
+            eOld = e;
+
+            // Saturate the control value to fit within DAC boundaries
+            zSaturate = m_saturate16bit((uint32_t)z, 0, DAC_VALUE_MAX);
+            currentZDac = zSaturate; // Set new Z height
+
+            // tunnelQueue.emplace(DataElementTunnel(currentZDac, (float)currentTunnelCurrentnA, false));
+            //   Send data to PC
+            m_SendTunnelPaket();
+
+            // Resume DAC loop to set the new Z position
+            vTaskResume(handleVspiLoop);
         }
+
+        zOld = zSaturate; // Store previous control Z-value
     }
 }
 
@@ -233,6 +224,48 @@ uint16_t m_saturate16bit(uint32_t input, uint16_t min, uint16_t max)
         return max;
     }
     return static_cast<uint16_t>(input);
+}
+
+extern "C" int m_SendTunnelPaket(bool terminate)
+{
+
+    bool timer_was_stopped = false;
+    size_t numElements = tunnelQueue.size();
+
+    // Stop the timer if the queue overflows
+    if (numElements > 100)
+    {
+        timer_was_stopped = true;
+        ESP_LOGW(TAG, "Stop timer. Size of tunnelQueue > 100\n");
+        timer_stop();
+    }
+
+    // Process and send each element in the queue
+    while (!tunnelQueue.empty())
+    {
+
+        // Getter methods
+        uint16_t adcz = tunnelQueue.front().getDataZ();
+        float current = tunnelQueue.front().getCurrent();
+        bool istunnel = tunnelQueue.front().getIsTunnel();
+
+        UsbPcInterface::send("TUNNEL,%u,%f,%s\n", adcz, current, istunnel ? "ON" : "OFF");
+        tunnelQueue.pop(); // Remove from queue
+    }
+
+    // Send completion signal if needed
+    if (terminate)
+    {
+        UsbPcInterface::send("TUNNEL,DONE\n");
+    }
+
+    // Restart the timer if it was stopped
+    if (timer_was_stopped)
+    {
+        timer_start();
+    }
+
+    return 0;
 }
 
 /**

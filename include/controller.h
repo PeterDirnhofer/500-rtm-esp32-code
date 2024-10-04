@@ -25,5 +25,6 @@ extern "C" void adjustLoop(void *unused);
 
 extern "C" uint16_t m_saturate16bit(uint32_t input, uint16_t min, uint16_t max);
 extern "C" int m_sendDataPaket(bool terminate = false);
+extern "C" int m_SendTunnelPaket(bool terminate = false);
 
 #endif
