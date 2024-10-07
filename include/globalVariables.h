@@ -94,7 +94,7 @@ extern uint16_t currentZDac;
 
 #define DAC_VALUE_MAX 65535 // 2^16-1
 
-extern double kI, kP, destinationTunnelCurrentnA, currentTunnelCurrentnA, remainingTunnelCurrentDifferencenA;
+extern double kI, kP, destinationTunnelCurrentnA, actualTunnelCurrentnA, remainingTunnelCurrentDifferencenA;
 extern uint16_t startX, startY;
 extern uint16_t nvs_maxX, nvs_maxY;
 extern bool direction;
@@ -121,5 +121,7 @@ extern uint8_t lastConfigByte;
 #define MODE_MEASURE 2
 #define MODE_PARAMETER 3
 #define MODE_TUNNEL_FIND 4
+
+#define TUNNEL_FIMD_MAX_COUNT 200
 
 #endif

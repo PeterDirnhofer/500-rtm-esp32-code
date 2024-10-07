@@ -49,8 +49,8 @@ extern "C" void adjustLoop(void *unused)
 
         int16_t adcValue = readAdc(); // Read voltage from preamplifier
 
-        currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
-                                 (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
+        actualTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
+                                (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
 
         double adcInVolt = (adcValue * ADC_VOLTAGE_MAX * 1e2) /
                            (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
@@ -85,10 +85,10 @@ extern "C" void measurementLoop(void *unused)
         adcValue = abs(adcValue);
 
         // Convert ADC value to tunnel current (nA)
-        currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
-                                 (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
-        r = currentTunnelCurrentnA; // Actual tunnel current
-        e = w - r;                  // Error = desired - actual
+        actualTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
+                                (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
+        r = actualTunnelCurrentnA; // Actual tunnel current
+        e = w - r;                 // Error = desired - actual
 
         // If the error is within the allowed limit, process the result
         if (abs(e) <= remainingTunnelCurrentDifferencenA)
@@ -132,6 +132,14 @@ extern "C" void measurementLoop(void *unused)
     }
 }
 
+// TODO refactor
+/*
+Refactor in parameter:
+destinationTunnelCurrentnA:  targetTunnelCurrentnA
+remainingTunnelCurrentDifferencenA : ToleranceTunnelCurrentnA
+Add kD
+*/
+
 /**
  * @brief Start the tunnel finding loop task.
  */
@@ -143,65 +151,100 @@ extern "C" void findTunnelStart()
     // Initialize the timer for the tunnel finding mode
     timer_initialize(MODE_TUNNEL_FIND);
 }
+
 /**
  * @brief The tunnel finding loop function.
  */
 extern "C" void findTunnelLoop(void *unused)
 {
-    static double e = 0, w = 0, r = 0, z = 0, eOld = 0, zOld = 0;
-    uint16_t zSaturate = 0;
-    w = destinationTunnelCurrentnA; // Desired tunnel current
-    int loops = 0;
+    static double delta = 0, target = 0, z = 0, deltaSum = 0, deltaOld = 0;
 
-    while (loops < 50000)
+    // TODO: Add to parameter
+    double kD = 10.0;
+
+    target = destinationTunnelCurrentnA; // Desired target tunnel current
+    int counter = 0;
+
+    while (true)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
 
         int16_t adcValue = readAdc(); // Read voltage from preamplifier
         adcValue = abs(adcValue);
 
+        // TODO: Voltage divider and supply voltage OP amp is missing
         // Convert ADC value to tunnel current (nA)
-        currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
-                                 (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
-        r = currentTunnelCurrentnA; // Actual tunnel current
-        e = w - r;                  // Error = desired - actual
+        actualTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
+                                (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
+        delta = target - actualTunnelCurrentnA; // Error = target - measured
 
         // If the error is within the allowed limit, process the result
-        if (abs(e) <= remainingTunnelCurrentDifferencenA)
+        if (abs(delta) <= remainingTunnelCurrentDifferencenA)
         {
+            gpio_set_level(IO_25, 1); // Indicate within tolerance
 
-            gpio_set_level(IO_25, 1);
             // Store the result in the data queue
-            // DataElementTunnel::DataElementTunnel(uint16_t dacz, float currentNa, bool isTunnel)
-
-            // tunnelQueue.emplace(DataElementTunnel(currentZDac, currentTunnelCurrentnA, true));
-
-            // Send data to PC
-            m_SendTunnelPaket();
+            tunnelQueue.emplace(DataElementTunnel(currentZDac, actualTunnelCurrentnA, true));
         }
         // If the error is too large, adjust the Z position
         else
         {
-            gpio_set_level(IO_25, 0);
-            loops++;
+            gpio_set_level(IO_25, 0); // Set GPIO to signal out of tolerance
 
-            // Calculate new control value
-            z = kP * e + kI * eOld + zOld;
-            eOld = e;
+            // Calculate PID components
+            double P = kP * delta;              // Proportional term
+            double I = kI * deltaSum;           // Integral term (accumulate previous error)
+            double D = kD * (delta - deltaOld); // Derivative term (error change rate)
 
-            // Saturate the control value to fit within DAC boundaries
-            zSaturate = m_saturate16bit((uint32_t)z, 0, DAC_VALUE_MAX);
-            currentZDac = zSaturate; // Set new Z height
+            deltaOld = delta; // Store current delta for next iteration
 
-            // tunnelQueue.emplace(DataElementTunnel(currentZDac, (float)currentTunnelCurrentnA, false));
-            //   Send data to PC
-            m_SendTunnelPaket();
+            // Combine PID terms to adjust Z position
+            z = P + I + D;
+
+            // Constrain Z value to the allowed DAC limits
+            if (z > DAC_VALUE_MAX)
+            {
+                z = DAC_VALUE_MAX;
+            }
+            else if (z < 0)
+            {
+                z = 0;
+            }
+            else
+            {
+                // Update integral term only when Z is not saturated
+                deltaSum += delta;
+                const double MAX_INTEGRAL = 1000; // Example max value for integral term
+
+                if (deltaSum > MAX_INTEGRAL)
+                {
+                    deltaSum = MAX_INTEGRAL;
+                }
+                else if (deltaSum < -MAX_INTEGRAL)
+                {
+                    deltaSum = -MAX_INTEGRAL;
+                }
+            }
+
+            currentZDac = z; // Update Z height for the tunnel system
+
+            // Add data to the tunnel queue and send data to the PC
+            tunnelQueue.emplace(DataElementTunnel(currentZDac, static_cast<float>(actualTunnelCurrentnA), false));
 
             // Resume DAC loop to set the new Z position
             vTaskResume(handleVspiLoop);
         }
 
-        zOld = zSaturate; // Store previous control Z-value
+        counter++;
+        if (counter >= TUNNEL_FIMD_MAX_COUNT)
+        {
+            counter = 0;
+            currentZDac = 0; // Reset DAC position
+            deltaSum = 0;    // Reset integral term
+
+            // Send data to PC
+            m_SendTunnelPaket();
+        }
     }
 }
 
@@ -225,11 +268,9 @@ uint16_t m_saturate16bit(uint32_t input, uint16_t min, uint16_t max)
     }
     return static_cast<uint16_t>(input);
 }
-
 extern "C" int m_SendTunnelPaket(bool terminate)
 {
-
-    bool timer_was_stopped = false;
+    bool timer_was_stopped = false; // Flag to check if the timer was stopped
     size_t numElements = tunnelQueue.size();
 
     // Stop the timer if the queue overflows
@@ -243,14 +284,14 @@ extern "C" int m_SendTunnelPaket(bool terminate)
     // Process and send each element in the queue
     while (!tunnelQueue.empty())
     {
-
-        // Getter methods
+        // Getter methods for queue elements
         uint16_t adcz = tunnelQueue.front().getDataZ();
         float current = tunnelQueue.front().getCurrent();
         bool istunnel = tunnelQueue.front().getIsTunnel();
 
+        // Send data to PC
         UsbPcInterface::send("TUNNEL,%u,%f,%s\n", adcz, current, istunnel ? "ON" : "OFF");
-        tunnelQueue.pop(); // Remove from queue
+        tunnelQueue.pop(); // Remove processed element from queue
     }
 
     // Send completion signal if needed
@@ -265,7 +306,7 @@ extern "C" int m_SendTunnelPaket(bool terminate)
         timer_start();
     }
 
-    return 0;
+    return 0; // Indicate success
 }
 
 /**

@@ -60,7 +60,6 @@ extern "C" void timer_initialize(int mode)
     gptimer_alarm_config_t alarm_config = {};
     alarm_config.reload_count = 0;
     alarm_config.flags.auto_reload_on_alarm = true;
-    // TODO
     if (mode == MODE_MEASURE)
     {
         alarm_config.alarm_count = 1260; // 1260 us
