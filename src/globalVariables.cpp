@@ -31,8 +31,7 @@ uint16_t currentYPos;
 uint16_t currentXDac;
 uint16_t currentYDac;
 uint16_t currentZDac;
-
-double kI, kP, destinationTunnelCurrentnA, actualTunnelCurrentnA, remainingTunnelCurrentDifferencenA = 0;
+double kI, kP, kD, targetTunnelCurrentnA, currentTunnelCurrentnA, toleranceTunnelCurrentnA;
 uint16_t startX, startY = 0;
 uint16_t nvs_maxX, nvs_maxY = 0;
 bool direction = 0;

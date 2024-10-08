@@ -90,11 +90,12 @@ extern uint16_t currentZDac;
 #define ADC_VALUE_MAX 32767   // 2^15-1
 #define ADC_VOLTAGE_MAX 2.048 // Voltage from 0 to 2.048V mapped to 0 to 32767
 
-#define RESISTOR_PREAMP_MOHM 100 // 100 MOhm Preamp resistor
+#define RESISTOR_PREAMP_MOHM 100    // 100 MOhm Preamp resistor
+#define ADC_VOLTAGE_DIVIDER 0.33333 // Voltage divider at ADC Input
 
 #define DAC_VALUE_MAX 65535 // 2^16-1
 
-extern double kI, kP, destinationTunnelCurrentnA, actualTunnelCurrentnA, remainingTunnelCurrentDifferencenA;
+extern double kI, kP, kD, targetTunnelCurrentnA, currentTunnelCurrentnA, toleranceTunnelCurrentnA;
 extern uint16_t startX, startY;
 extern uint16_t nvs_maxX, nvs_maxY;
 extern bool direction;

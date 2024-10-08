@@ -34,8 +34,8 @@ Strings are terminated with Linefeed \n = LF = 0x0A
   Save default parameter in ESP  
     kI = 10  
     kP = 1000
-    destinationTunnelCurrentnA = 10.0  
-    remainingTunnelCurrentDifferencenA = 0.01  
+    targetTunnelCurrentnA = 10.0  
+    toleranceTunnelCurrentnA = 0.01  
     startX = 0  
     startY = 0  
     direction = 0  

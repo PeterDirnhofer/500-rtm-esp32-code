@@ -110,7 +110,7 @@ extern "C" void app_main(void)
     else if (usb.getWorkingMode() == MODE_MEASURE)
     {
         parameterSetter.getParametersFromFlash(false); // get measure parameter from nvs
-        measurementStart();
+        measureStart();
         vTaskDelete(NULL);
     }
     else if (usb.getWorkingMode() != MODE_PARAMETER)
