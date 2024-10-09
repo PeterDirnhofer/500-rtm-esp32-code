@@ -190,7 +190,7 @@ extern "C" void measureLoop(void *unused)
 extern "C" void findTunnelLoop(void *unused)
 {
     static double delta = 0, z = 0, deltaSum = 0, deltaOld = 0;
-    static const double MAX_INTEGRAL = 1000.0; // Example max value for integral term
+    static const double MAX_INTEGRAL = DAC_VALUE_MAX / 10; // Typical 1/10 
     int counter = 0;
 
     // Current conversion factor from ADC value to tunnel current (nA)

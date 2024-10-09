@@ -6,8 +6,15 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "globalVariables.h"
+#include <array>
 
 using namespace std;
+
+static const char *TAG = "ParameterSetting";
+
+static const std::array<const char *, 11> keys = {
+    "kP", "kI", "kD", "destinatioNa", "remainingNa", "startX",
+    "startY", "direction", "maxX", "maxY", "multiplicator"};
 
 ParameterSetting::ParameterSetting()
 {
@@ -17,9 +24,6 @@ ParameterSetting::ParameterSetting()
 ParameterSetting::~ParameterSetting()
 {
 }
-static const char *TAG = "ParameterSetting";
-const char *keys[] = {"kI", "kP", "kD", "destinatioNa", "remainingNa", "startX", "startY", "direction", "maxX", "maxY", "multiplicator"};
-// typical
 
 esp_err_t ParameterSetting::convertStoFloat(string s, float *value)
 {
@@ -32,29 +36,28 @@ esp_err_t ParameterSetting::convertStoFloat(string s, float *value)
     bool valid = s.find_first_not_of("0123456789.") == std::string::npos;
     if (!valid)
     {
-        UsbPcInterface::send("ESP_ERR_INVALID_ARG (not 0...9.)\n%s\n", s);
+        UsbPcInterface::send("ESP_ERR_INVALID_ARG (not 0...9.)\n%s\n", s.c_str());
         return ESP_ERR_INVALID_ARG;
     }
 
     *value = stof(s);
-
-    // UsbPcInterface::send("*value: %f\n", *value);
     return ESP_OK;
 }
 
 esp_err_t ParameterSetting::putParameterToFlash(string key, string value)
 {
     float vFloat = 0;
-    convertStoFloat(value.c_str(), &vFloat);
-    float resultF = 0;
+    esp_err_t err = convertStoFloat(value.c_str(), &vFloat);
+    if (err != ESP_OK)
+    {
+        return err;
+    }
 
-    // UsbPcInterface::send("%s %f\n", key.c_str(), vFloat);
-    // parameterSetter.putFloat("P1",testFloat);
-    resultF = putFloat(key.c_str(), vFloat);
+    float resultF = putFloat(key.c_str(), vFloat);
     if (resultF != sizeof(float))
     {
         UsbPcInterface::send("ESP_ERR_NVS_INVALID_LENGTH Error putFloat to nvs %s %f\n", key.c_str(), vFloat);
-        return (ESP_ERR_NVS_INVALID_LENGTH);
+        return ESP_ERR_NVS_INVALID_LENGTH;
     }
 
     return ESP_OK;
@@ -62,31 +65,28 @@ esp_err_t ParameterSetting::putParameterToFlash(string key, string value)
 
 esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
 {
-
     // Clear flash
     this->clear();
 
-    // ESP_LOGI(TAG, "params.size %d\n", (int)params.size());
-    if ((int)params.size() != 11)
+    if (params.size() != 11)
     {
         ESP_LOGE(TAG, "setparameter needs 9+1 values. Actual %d\n", (int)params.size());
         UsbPcInterface::send("ESP_ERR_INVALID_ARG\n");
         return ESP_ERR_INVALID_ARG;
     }
-    // Check, if all parameters are Numbers
+
+    // Check if all parameters are numbers
     float f = 0;
     for (size_t i = 1; i < 11; i++)
     {
-
         if (convertStoFloat(params[i].c_str(), &f) != ESP_OK)
         {
             return ESP_ERR_INVALID_ARG;
         }
     }
 
-    for (int i = 1; i < 11; i++)
+    for (int i = 1; i <= 10; i++)
     {
-        // UsbPcInterface::send("putParameter(%s,%s)\n", keys[i], params[i].c_str());
         this->putParameterToFlash(keys[i - 1], params[i].c_str());
     }
 
@@ -95,80 +95,64 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
 
 esp_err_t ParameterSetting::putDefaultParametersToFlash()
 {
+    vector<string> params = {
+        "PARAMETER",
+        "3.0",  // kP
+        "0.3",  // kI
+        "0.03", // kD
+        "10",   // targetTunnelCurrentnA
+        "0.01", // toleranceTunnelCurrentnA
+        "0",    // startX
+        "0",    // startY
+        "0",    // direction
+        "199",  // maxX
+        "199",  // maxY
+        "100"   // multiplicator
+    };
 
-    // UsbPcInterface::send("START putDefaaultParametesrToFlash\n");
-    vector<string> params;
-    params.push_back("PARAMETER");
-    params.push_back("1000"); // kI
-    params.push_back("3");    // kP
-    params.push_back("500");  // kD
-    params.push_back("10.0"); // targetTunnelCurrentnA
-    params.push_back("0.01"); // toleranceTunnelCurrentnA
-    params.push_back("0");    // startX
-    params.push_back("0");    // startY
-    params.push_back("0");    // direction
-    params.push_back("199");  // maxX
-    params.push_back("199");  // maxY
-    params.push_back("100");  // multiplicator
-
-    esp_err_t err;
-    err = this->putParametersToFlash(params);
-
-    return err;
+    return this->putParametersToFlash(params);
 }
 
-/**
- * @brief Check if valid parameters in flash. If not set default parameters
- *
- * @param key
- * @param minimum
- * @param maximum
- * @param value
- * @return esp_err_t
- */
 bool ParameterSetting::parameterIsValid(string key, float minimum, float maximum)
 {
-    float resF = 0;
-
     if (!isKey(key.c_str()))
     {
         UsbPcInterface::send("key: %s not existing.\n", key.c_str());
         return false;
     }
 
-    resF = getFloat(key.c_str(), __FLT_MAX__);
-
-    if ((resF < minimum) or (resF > maximum))
+    float resF = getFloat(key.c_str(), __FLT_MAX__);
+    if ((resF < minimum) || (resF > maximum))
     {
-        UsbPcInterface::send("key: %s = %f out off limit %f .. %f\n", key.c_str(), resF, minimum, maximum);
+        UsbPcInterface::send("key: %s = %f out of limit %f .. %f\n", key.c_str(), resF, minimum, maximum);
         return false;
     }
-    UsbPcInterface::send("key: %s= %f OK\n", key.c_str(), resF);
 
+    UsbPcInterface::send("key: %s= %f OK\n", key.c_str(), resF);
     return true;
 }
 
 esp_err_t ParameterSetting::parametersAreValid()
 {
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 11; i++)
     {
-
         if (!isKey(keys[i]))
+        {
             return ESP_ERR_NVS_NOT_FOUND;
+        }
     }
-
     return ESP_OK;
 }
 
 esp_err_t ParameterSetting::getParametersFromFlash(bool display)
 {
-    kI = (double)getFloat(keys[0], __FLT_MAX__);
-    if (display)
-        UsbPcInterface::sendParameter("kI,%f\n", kI);
-
-    kP = (double)getFloat(keys[1], __FLT_MAX__);
+    kP = (double)getFloat(keys[0], __FLT_MAX__);
     if (display)
         UsbPcInterface::sendParameter("kP,%f\n", kP);
+
+    kI = (double)getFloat(keys[1], __FLT_MAX__);
+    if (display)
+        UsbPcInterface::sendParameter("kI,%f\n", kI);
 
     kD = (double)getFloat(keys[2], __FLT_MAX__);
     if (display)
@@ -199,7 +183,6 @@ esp_err_t ParameterSetting::getParametersFromFlash(bool display)
     uint16_t mMaxX = (uint16_t)getFloat(keys[8], __FLT_MAX__);
     rtmGrid.setMaxX(mMaxX);
     nvs_maxX = mMaxX;
-
     if (display)
         UsbPcInterface::sendParameter("maxX,%d\n", mMaxX);
 
