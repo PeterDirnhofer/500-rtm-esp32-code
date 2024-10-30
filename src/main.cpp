@@ -66,7 +66,7 @@ extern "C" void app_main(void)
     // Check for valid parameters in Flash; set defaults if invalid
     if (parameterSetter.parametersAreValid() != ESP_OK)
     {
-        ESP_LOGW("TAG", "No valid Parameters found. Set to default AAA");
+        ESP_LOGW("TAG", "No valid Parameters found. Set to default ... ");
 
         esp_err_t result = parameterSetter.putDefaultParametersToFlash(); // Capture the result
         if (result != ESP_OK)
@@ -147,7 +147,7 @@ extern "C" void app_main(void)
         }
     }
     // PARAMETER,10,1000,10.0,0.01,0,0,0,199,199,10
-    else if (parameterCount == 11)
+    else if (parameterCount == 12)
     {
         esp_err_t err = parameterSetter.putParametersToFlash(usb.getParametersFromPc());
         if (err == ESP_OK)

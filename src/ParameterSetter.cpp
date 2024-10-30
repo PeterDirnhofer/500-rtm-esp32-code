@@ -48,6 +48,8 @@ esp_err_t ParameterSetting::convertStoFloat(string s, float *value)
 
 esp_err_t ParameterSetting::putParameterToFlash(string key, string value)
 {
+    ESP_LOGW("putParameterToFlash", "%s:  %s  \n", key.c_str(), value.c_str());
+
     float vFloat = 0;
     esp_err_t err = convertStoFloat(value.c_str(), &vFloat);
     if (err != ESP_OK)
@@ -70,26 +72,31 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
     // Clear flash
     this->clear();
 
-    if (params.size() != 12)
+    if (params.size() != size_keys+1)  // params[0]  = "PARAMETER"
     {
-        ESP_LOGE(TAG, "setparameter needs 11+1 values. Actual %d\n", (int)params.size());
+        ESP_LOGE("putParametersToFlash", "setparameter needs 11+1 values. Actual %d\n", (int)params.size());
         UsbPcInterface::send("ESP_ERR_INVALID_ARG\n");
         return ESP_ERR_INVALID_ARG;
     }
 
+    ESP_LOGW("putParametersToFlash", "Start Put parameters to flash with size  %d ... \n", (int)params.size());
+
     // Check if all parameters are numbers
     float f = 0;
-    for (size_t i = 1; i < size_keys; i++)
+    for (size_t i = 1; i <= size_keys; i++)
     {
+
         if (convertStoFloat(params[i].c_str(), &f) != ESP_OK)
         {
+            ESP_LOGE("putParametersToFlash", "Parameter %s is no number", params[i].c_str());
             return ESP_ERR_INVALID_ARG;
         }
     }
 
-    for (int i = 1; i <= 10; i++)
+    for (int i = 0; i < size_keys; i++)
     {
-        this->putParameterToFlash(keys[size_keys - 1], params[i].c_str());
+        // i+1. 
+        this->putParameterToFlash(keys[i], params[i+1].c_str());
     }
 
     return ESP_OK;
@@ -116,6 +123,10 @@ esp_err_t ParameterSetting::putDefaultParametersToFlash()
     if (result != ESP_OK)
     {                                                                                            // Check if the result is not OK
         ESP_LOGE(TAG, "Failed to put default parameters to flash: %s", esp_err_to_name(result)); // Log error with message
+    }
+    else
+    {
+        ESP_LOGI(TAG, "Default parameter set to default");
     }
 
     return result; // Return the result
@@ -144,7 +155,7 @@ esp_err_t ParameterSetting::parametersAreValid()
 {
     for (int i = 0; i < size_keys; i++)
     {
-
+        ESP_LOGI(TAG, "Checking key: %s", keys[i]); // Log each key before validation
         if (!isKey(keys[i]))
         {
             ESP_LOGE(TAG, "is no valid key: %s", keys[i]); // Log the current key
