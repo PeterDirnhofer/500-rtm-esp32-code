@@ -169,7 +169,7 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
     char *cstr = new char[s.length() + 1];
     strcpy(cstr, s.c_str());
 
-       vector<string> arguments;
+    vector<string> arguments;
 
     // how many comma are in string
     int numberOfValues = 1;
@@ -336,6 +336,13 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 
         UsbPcInterface::m_workingmode = MODE_TUNNEL_FIND;
         ESP_LOGI(TAG, "TUNNEL_FIND detected\n");
+        return ESP_OK;
+    }
+    else if (strcmp(this->mParametersVector[0].c_str(), "RESTART") == 0)
+    {
+
+        UsbPcInterface::m_workingmode = MODE_RESTART;
+        ESP_LOGI(TAG, "RESTART detected\n");
         return ESP_OK;
     }
 

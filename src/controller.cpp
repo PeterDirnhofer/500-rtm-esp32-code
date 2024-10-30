@@ -189,6 +189,12 @@ extern "C" void measureLoop(void *unused)
  */
 extern "C" void findTunnelLoop(void *unused)
 {
+
+    static const char *TAG = "findTunnelLoop";
+
+    
+    ESP_LOGI(TAG, "STARTED +++ ");
+
     static double delta = 0, z = 0, deltaSum = 0, deltaOld = 0;
     static const double MAX_INTEGRAL = DAC_VALUE_MAX / 10; // Typical 1/10
     int counter = 0;
@@ -199,6 +205,7 @@ extern "C" void findTunnelLoop(void *unused)
 
     while (true)
     {
+        
         vTaskSuspend(NULL); // Sleep until resumed by a timer
 
         int16_t adcValue = readAdc(); // Read voltage from preamplifier
@@ -206,21 +213,24 @@ extern "C" void findTunnelLoop(void *unused)
         {
             adcValue = -adcValue; // Ensure positive ADC value
         }
-
+        
         // Convert ADC value to tunnel current (nA)
         double measuredTunnelCurrentnA = adcValue * adcFactor;
 
         // Calculate the error between target and measured current
         delta = targetTunnelnA - measuredTunnelCurrentnA;
 
+        ESP_LOGI(TAG, "ADC %d nA %f", adcValue, measuredTunnelCurrentnA);
         // If the error is within the allowed limit, process the result
         if (fabs(delta) <= toleranceTunnelnA)
         {
+            ESP_LOGI(TAG, "++++++++++++++ TUNNELING ++++++++++++++");
             gpio_set_level(IO_25, 1); // Signal within tolerance
             tunnelQueue.emplace(DataElementTunnel(currentZDac, measuredTunnelCurrentnA, true));
         }
         else
         {
+           
             gpio_set_level(IO_25, 0); // Signal out of tolerance
 
             // Calculate PID components
@@ -228,13 +238,17 @@ extern "C" void findTunnelLoop(void *unused)
             double I = kI * deltaSum;           // Integral term
             double D = kD * (delta - deltaOld); // Derivative term
 
+            
             deltaOld = delta; // Store current delta for next iteration
+
+
 
             // Update Z position with PID control
             z += P + I + D;
 
             // Constrain Z value to the allowed DAC limits
             z = constrain(z, 0, DAC_VALUE_MAX);
+           
 
             // Update integral term only when Z is not saturated
             if (z > 0 && z < DAC_VALUE_MAX)
@@ -246,6 +260,7 @@ extern "C" void findTunnelLoop(void *unused)
             }
 
             currentZDac = static_cast<uint16_t>(z); // Update Z height for the tunnel system
+            ESP_LOGI(TAG, "P %f I %f D %f z: %f DACZ %d", P, I, D, z, currentZDac);
 
             // Add data to the tunnel queue and send data to the PC
             tunnelQueue.emplace(DataElementTunnel(currentZDac, static_cast<float>(measuredTunnelCurrentnA), false));
