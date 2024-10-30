@@ -7,13 +7,15 @@
 #include "freertos/task.h"
 #include "globalVariables.h"
 #include <array>
+#include "esp_log.h"
 
 using namespace std;
 
 static const char *TAG = "ParameterSetting";
 
-static const std::array<const char *, 11> keys = {
-    "kP", "kI", "kD", "destinatioNa", "remainingNa", "startX",
+static const int size_keys = 11;
+static const std::array<const char *, size_keys> keys = {
+    "kP", "kI", "kD", "targetNa", "toleranceNa", "startX",
     "startY", "direction", "maxX", "maxY", "multiplicator"};
 
 ParameterSetting::ParameterSetting()
@@ -77,7 +79,7 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
 
     // Check if all parameters are numbers
     float f = 0;
-    for (size_t i = 1; i < 11; i++)
+    for (size_t i = 1; i < size_keys; i++)
     {
         if (convertStoFloat(params[i].c_str(), &f) != ESP_OK)
         {
@@ -87,7 +89,7 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
 
     for (int i = 1; i <= 10; i++)
     {
-        this->putParameterToFlash(keys[i - 1], params[i].c_str());
+        this->putParameterToFlash(keys[size_keys - 1], params[i].c_str());
     }
 
     return ESP_OK;
@@ -110,7 +112,13 @@ esp_err_t ParameterSetting::putDefaultParametersToFlash()
         "100"   // multiplicator
     };
 
-    return this->putParametersToFlash(params);
+    esp_err_t result = this->putParametersToFlash(params); // Capture result of the function call
+    if (result != ESP_OK)
+    {                                                                                            // Check if the result is not OK
+        ESP_LOGE(TAG, "Failed to put default parameters to flash: %s", esp_err_to_name(result)); // Log error with message
+    }
+
+    return result; // Return the result
 }
 
 bool ParameterSetting::parameterIsValid(string key, float minimum, float maximum)
@@ -134,18 +142,22 @@ bool ParameterSetting::parameterIsValid(string key, float minimum, float maximum
 
 esp_err_t ParameterSetting::parametersAreValid()
 {
-    for (int i = 0; i < 11; i++)
+    for (int i = 0; i < size_keys; i++)
     {
+
         if (!isKey(keys[i]))
         {
+            ESP_LOGE(TAG, "is no valid key: %s", keys[i]); // Log the current key
             return ESP_ERR_NVS_NOT_FOUND;
         }
     }
+    ESP_LOGI(TAG, "ALL KEYS OK"); // Log the current key
     return ESP_OK;
 }
 
 esp_err_t ParameterSetting::getParametersFromFlash(bool display)
 {
+
     kP = (double)getFloat(keys[0], __FLT_MAX__);
     if (display)
         UsbPcInterface::sendParameter("kP,%f\n", kP);
@@ -158,13 +170,13 @@ esp_err_t ParameterSetting::getParametersFromFlash(bool display)
     if (display)
         UsbPcInterface::sendParameter("kD,%f\n", kD);
 
-    targetTunnelCurrentnA = (double)getFloat(keys[3], __FLT_MAX__);
+    targetTunnelnA = (double)getFloat(keys[3], __FLT_MAX__);
     if (display)
-        UsbPcInterface::sendParameter("targetTunnelCurrentnA,%f\n", targetTunnelCurrentnA);
+        UsbPcInterface::sendParameter("targetTunnelCurrentnA,%f\n", targetTunnelnA);
 
-    toleranceTunnelCurrentnA = (double)getFloat(keys[4], __FLT_MAX__);
+    toleranceTunnelnA = (double)getFloat(keys[4], __FLT_MAX__);
     if (display)
-        UsbPcInterface::sendParameter("toleranceTunnelCurrentnA,%f\n", toleranceTunnelCurrentnA);
+        UsbPcInterface::sendParameter("toleranceTunnelCurrentnA,%f\n", toleranceTunnelnA);
 
     startX = (uint16_t)getFloat(keys[5], __FLT_MAX__);
     rtmGrid.setStartX(startX);

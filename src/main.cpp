@@ -66,7 +66,13 @@ extern "C" void app_main(void)
     // Check for valid parameters in Flash; set defaults if invalid
     if (parameterSetter.parametersAreValid() != ESP_OK)
     {
-        parameterSetter.putDefaultParametersToFlash();
+        ESP_LOGW("TAG", "No valid Parameters found. Set to default AAA");
+
+        esp_err_t result = parameterSetter.putDefaultParametersToFlash(); // Capture the result
+        if (result != ESP_OK)
+        {                                                                                            // Check if putting defaults was unsuccessful
+            ESP_LOGE(TAG, "Failed to put default parameters to flash: %s", esp_err_to_name(result)); // Log error with message
+        }
     }
 
     initHardware();

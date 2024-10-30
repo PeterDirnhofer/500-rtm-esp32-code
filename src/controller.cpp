@@ -91,8 +91,8 @@ extern "C" void adjustLoop(void *unused)
 
         int16_t adcValue = readAdc(); // Read voltage from preamplifier
 
-        currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
-                                 (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
+        currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
+                          (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
 
         double adcInVolt = (adcValue * ADC_VOLTAGE_MAX * 1e2) /
                            (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
@@ -113,7 +113,7 @@ extern "C" void measureLoop(void *unused)
 {
     static double e = 0, w = 0, r = 0, z = 0, eOld = 0, zOld = 0;
     uint16_t zSaturate = 0;
-    w = targetTunnelCurrentnA; // Desired tunnel current
+    w = targetTunnelnA; // Desired tunnel current
 
     while (true)
     {
@@ -123,13 +123,13 @@ extern "C" void measureLoop(void *unused)
         adcValue = abs(adcValue);
 
         // Convert ADC value to tunnel current (nA)
-        currentTunnelCurrentnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
-                                 (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
-        r = currentTunnelCurrentnA; // Actual tunnel current
-        e = w - r;                  // Error = desired - actual
+        currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
+                          (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
+        r = currentTunnelnA; // Actual tunnel current
+        e = w - r;           // Error = desired - actual
 
         // If the error is within the allowed limit, process the result
-        if (abs(e) <= toleranceTunnelCurrentnA)
+        if (abs(e) <= toleranceTunnelnA)
         {
             gpio_set_level(IO_25, 1);
             // Store the result in the data queue
@@ -190,7 +190,7 @@ extern "C" void measureLoop(void *unused)
 extern "C" void findTunnelLoop(void *unused)
 {
     static double delta = 0, z = 0, deltaSum = 0, deltaOld = 0;
-    static const double MAX_INTEGRAL = DAC_VALUE_MAX / 10; // Typical 1/10 
+    static const double MAX_INTEGRAL = DAC_VALUE_MAX / 10; // Typical 1/10
     int counter = 0;
 
     // Current conversion factor from ADC value to tunnel current (nA)
@@ -211,10 +211,10 @@ extern "C" void findTunnelLoop(void *unused)
         double measuredTunnelCurrentnA = adcValue * adcFactor;
 
         // Calculate the error between target and measured current
-        delta = targetTunnelCurrentnA - measuredTunnelCurrentnA;
+        delta = targetTunnelnA - measuredTunnelCurrentnA;
 
         // If the error is within the allowed limit, process the result
-        if (fabs(delta) <= toleranceTunnelCurrentnA)
+        if (fabs(delta) <= toleranceTunnelnA)
         {
             gpio_set_level(IO_25, 1); // Signal within tolerance
             tunnelQueue.emplace(DataElementTunnel(currentZDac, measuredTunnelCurrentnA, true));
@@ -298,8 +298,6 @@ extern "C" int sendTunnelPaket()
     }
 
     timer_start(); // Resume the timer after sending
-
-    
 
     return 0; // Indicate success
 }

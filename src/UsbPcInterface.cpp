@@ -1,7 +1,5 @@
 #include <UsbPcInterface.h>
 
-// https://github.com/espressif/esp-idf/blob/30e8f19f5ac158fc57e80ff97c62b6cc315aa337/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
-
 static const char *TAG = "UsbPcInterface";
 static const char *TIP_ERROR_MESSAGE = "Invalid format 'TIP' command. \nSend 'TIP,10000,20000,30000' to set X,Y,Z\n'TIP,?' to see actual X Y Z values\n";
 
@@ -14,11 +12,6 @@ UsbPcInterface::~UsbPcInterface()
 {
 }
 
-/**
- * @brief init Uart for communication with Laptop usb
- *
- *
- */
 void UsbPcInterface::start()
 {
     const uart_config_t uart_config = {
@@ -43,7 +36,6 @@ void UsbPcInterface::start()
 
 extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
 {
-    // https://github.com/espressif/esp-idf/blob/af28c1fa21fc0abf9cb3ac8568db9cbd99a7f4b5/examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 
     string rcvString = "";
     bool found_LF;
@@ -100,7 +92,6 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
         }
     }
 }
-// free(data);
 
 int UsbPcInterface::send(const char *fmt, ...)
 {
@@ -140,8 +131,7 @@ int UsbPcInterface::sendParameter(const char *fmt, ...)
 
 esp_err_t UsbPcInterface::sendData()
 {
-    // replaces hspiLoop
-    // vTaskSuspend(handleControllerLoop);
+
     while (!dataQueue.empty())
     {
         // Store the front element in a variable
@@ -178,7 +168,8 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
 
     char *cstr = new char[s.length() + 1];
     strcpy(cstr, s.c_str());
-    vector<string> arguments;
+
+       vector<string> arguments;
 
     // how many comma are in string
     int numberOfValues = 1;
@@ -205,7 +196,6 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
 
     int l = arguments.size();
 
-    // TIP,?
     if (l == 2) //  && (strcmp(arguments[1].c_str(), "ADJUST") == 0))
     {
 
@@ -273,11 +263,6 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
     return ESP_ERR_INVALID_ARG;
 }
 
-/**
- * @brief Read USB input from Computer.
- * Set workingMode to: ADJUST or PARAMETER or MEASURE.
- * getworkingMode() reads workingMode
- */
 extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 {
 
@@ -304,12 +289,9 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
         i++;
     }
 
-    // Command received from PC
-
     char *cstr = new char[UsbPcInterface::mUsbReceiveString.length() + 1];
     strcpy(cstr, UsbPcInterface::mUsbReceiveString.c_str());
 
-    // how many comma are in string
     numberOfValues = 1;
     for (int i = 0; i < UsbPcInterface::mUsbReceiveString.length(); i++)
         if (cstr[i] == ',')
@@ -376,7 +358,6 @@ string UsbPcInterface::toUpper(const char *str)
 
 int UsbPcInterface::getWorkingMode()
 {
-    // return this->mWorkingMode;
     return UsbPcInterface::m_workingmode;
 }
 

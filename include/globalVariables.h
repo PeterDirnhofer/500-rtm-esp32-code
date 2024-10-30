@@ -95,7 +95,7 @@ extern uint16_t currentZDac;
 
 #define DAC_VALUE_MAX 65535 // 2^16-1
 
-extern double kI, kP, kD, targetTunnelCurrentnA, currentTunnelCurrentnA, toleranceTunnelCurrentnA;
+extern double kI, kP, kD, targetTunnelnA, currentTunnelnA, toleranceTunnelnA;
 extern uint16_t startX, startY;
 extern uint16_t nvs_maxX, nvs_maxY;
 extern bool direction;
