@@ -34,6 +34,7 @@ public:
   static void printErrorMessageAndRestart(string error_string);
   static void printMessageAndRestart(string msg);
   static esp_err_t sendData();
+  static string toUpper(const char *str);
   esp_err_t getCommandsFromPC();
   int getWorkingMode();
   vector<string> getParametersFromPc();
@@ -51,7 +52,6 @@ private:
   vector<string> mParametersVector;
   int numberOfValues = 1;
   inline static int m_workingmode = MODE_IDLE;
-
   
 };
 

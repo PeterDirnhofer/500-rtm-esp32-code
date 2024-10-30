@@ -25,6 +25,10 @@ Strings are terminated with Linefeed \n = LF = 0x0A
 
 - Case computer sends **ADJUST**:  
   ESP starts infinite setup loop to send cyclic actual tunnel-current to Computer. Terminate with CTRL-C.
+  
+- Case computer sends **TUNNEL**:  
+  ESP starts infinite tunnel loop. Used for setup and diagnostics to adjust tip near of tunnel contact. 
+  Terminate with CTRL-C.
 
 - Case computer sends **PARAMETER**:  
   ESP receives parameters from Computer and saves parameters to its non volatile memory.  

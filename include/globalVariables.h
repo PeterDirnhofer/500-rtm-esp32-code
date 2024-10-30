@@ -122,6 +122,7 @@ extern uint8_t lastConfigByte;
 #define MODE_MEASURE 2
 #define MODE_PARAMETER 3
 #define MODE_TUNNEL_FIND 4
+#define MODE_RESTART 5 // starts esp_restart();
 
 #define TUNNEL_FIMD_MAX_COUNT 200
 

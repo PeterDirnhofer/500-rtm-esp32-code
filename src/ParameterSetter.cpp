@@ -68,9 +68,9 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
     // Clear flash
     this->clear();
 
-    if (params.size() != 11)
+    if (params.size() != 12)
     {
-        ESP_LOGE(TAG, "setparameter needs 9+1 values. Actual %d\n", (int)params.size());
+        ESP_LOGE(TAG, "setparameter needs 11+1 values. Actual %d\n", (int)params.size());
         UsbPcInterface::send("ESP_ERR_INVALID_ARG\n");
         return ESP_ERR_INVALID_ARG;
     }

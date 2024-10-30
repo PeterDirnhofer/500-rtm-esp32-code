@@ -50,7 +50,6 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
 
-    ESP_LOGD(TAG, "*** STARTED \n");
     found_LF = false;
     while (1)
     {
@@ -81,8 +80,6 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
 
             if (found_LF)
             {
-                ESP_LOGD(TAG, "#### 0A found.  \n");
-
                 string part3 = rcvString.substr(0, 3);
                 for (int x = 0; x < strlen(part3.c_str()); x++)
                     part3[x] = toupper(part3[x]);
@@ -96,7 +93,6 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
                     UsbPcInterface::mUsbReceiveString.clear();
                     UsbPcInterface::mUsbReceiveString.append(rcvString);
                     UsbPcInterface::mUsbAvailable = true;
-                    ESP_LOGD(TAG, "usbReceive %s\n", mUsbReceiveString.c_str());
                 }
                 rcvString.clear();
                 found_LF = false;
@@ -285,9 +281,12 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
 extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 {
 
+    static const char *TAG = "UsbPcInterface::getCommandsFromPC";
+
     uint32_t i = 0;
     int ledLevel = 0;
     // Request PC. Wait for PC response
+
     while (UsbPcInterface::mUsbAvailable == false)
     {
         if ((i % 50) == 0)
@@ -307,9 +306,6 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 
     // Command received from PC
 
-    // Split usbReceive csv to parameters[]
-    // https://www.tutorialspoint.com/cpp_standard_library/cpp_string_c_str.htm
-
     char *cstr = new char[UsbPcInterface::mUsbReceiveString.length() + 1];
     strcpy(cstr, UsbPcInterface::mUsbReceiveString.c_str());
 
@@ -319,21 +315,16 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
         if (cstr[i] == ',')
             numberOfValues++;
 
-    ESP_LOGD(TAG, "numberOfValues %d", numberOfValues);
-
     char *p = strtok(cstr, ",");
 
     this->mParametersVector.clear();
-    while (p != 0)
-    {
-        char buffer[20];
-        sprintf(buffer, "%s", p);
-        puts(strupr(buffer));
-        this->mParametersVector.push_back(buffer);
-        p = strtok(NULL, ",");
-    }
 
-    ESP_LOGD(TAG, "ParametersVector[0]: %s", this->mParametersVector[0].c_str());
+    while (p != nullptr)
+    {
+        // Convert the token to uppercase and store it in the vector
+        this->mParametersVector.push_back(toUpper(p));
+        p = strtok(nullptr, ",");
+    }
 
     if (strcmp(this->mParametersVector[0].c_str(), "ADJUST") == 0)
     {
@@ -369,6 +360,18 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     UsbPcInterface::m_workingmode = MODE_INVALID;
     ESP_LOGW(TAG, "INVALID command %s\n", mParametersVector[0].c_str());
     return ESP_ERR_INVALID_ARG;
+}
+
+// Function to convert a C-string to uppercase
+string UsbPcInterface::toUpper(const char *str)
+{
+    std::string result;
+    while (*str)
+    {
+        result += static_cast<char>(std::toupper(*str));
+        ++str;
+    }
+    return result;
 }
 
 int UsbPcInterface::getWorkingMode()
