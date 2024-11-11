@@ -72,7 +72,7 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
     // Clear flash
     this->clear();
 
-    if (params.size() != size_keys+1)  // params[0]  = "PARAMETER"
+    if (params.size() != size_keys + 1) // params[0]  = "PARAMETER"
     {
         ESP_LOGE("putParametersToFlash", "setparameter needs 11+1 values. Actual %d\n", (int)params.size());
         UsbPcInterface::send("ESP_ERR_INVALID_ARG\n");
@@ -95,8 +95,8 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
 
     for (int i = 0; i < size_keys; i++)
     {
-        // i+1. 
-        this->putParameterToFlash(keys[i], params[i+1].c_str());
+        // i+1.
+        this->putParameterToFlash(keys[i], params[i + 1].c_str());
     }
 
     return ESP_OK;
@@ -106,17 +106,17 @@ esp_err_t ParameterSetting::putDefaultParametersToFlash()
 {
     vector<string> params = {
         "PARAMETER",
-        "3.0",  // kP
-        "0.3",  // kI
-        "0.03", // kD
-        "10",   // targetTunnelCurrentnA
-        "0.01", // toleranceTunnelCurrentnA
-        "0",    // startX
-        "0",    // startY
-        "0",    // direction
-        "199",  // maxX
-        "199",  // maxY
-        "100"   // multiplicator
+        "300.0", // kP
+        "5.0",   // kI
+        "0.0",   // kD
+        "0.2",   // targetTunnelCurrentnA
+        "0.02",  // toleranceTunnelCurrentnA
+        "0",     // startX
+        "0",     // startY
+        "0",     // direction
+        "199",   // maxX
+        "199",   // maxY
+        "100"    // multiplicator
     };
 
     esp_err_t result = this->putParametersToFlash(params); // Capture result of the function call

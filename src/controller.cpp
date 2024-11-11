@@ -192,7 +192,6 @@ extern "C" void findTunnelLoop(void *unused)
 
     static const char *TAG = "findTunnelLoop";
 
-    
     ESP_LOGI(TAG, "STARTED +++ ");
 
     static double delta = 0, z = 0, deltaSum = 0, deltaOld = 0;
@@ -205,7 +204,7 @@ extern "C" void findTunnelLoop(void *unused)
 
     while (true)
     {
-        
+
         vTaskSuspend(NULL); // Sleep until resumed by a timer
 
         int16_t adcValue = readAdc(); // Read voltage from preamplifier
@@ -213,7 +212,7 @@ extern "C" void findTunnelLoop(void *unused)
         {
             adcValue = -adcValue; // Ensure positive ADC value
         }
-        
+
         // Convert ADC value to tunnel current (nA)
         double measuredTunnelCurrentnA = adcValue * adcFactor;
 
@@ -230,7 +229,7 @@ extern "C" void findTunnelLoop(void *unused)
         }
         else
         {
-           
+
             gpio_set_level(IO_25, 0); // Signal out of tolerance
 
             // Calculate PID components
@@ -238,17 +237,13 @@ extern "C" void findTunnelLoop(void *unused)
             double I = kI * deltaSum;           // Integral term
             double D = kD * (delta - deltaOld); // Derivative term
 
-            
             deltaOld = delta; // Store current delta for next iteration
-
-
 
             // Update Z position with PID control
             z += P + I + D;
 
             // Constrain Z value to the allowed DAC limits
             z = constrain(z, 0, DAC_VALUE_MAX);
-           
 
             // Update integral term only when Z is not saturated
             if (z > 0 && z < DAC_VALUE_MAX)
@@ -271,7 +266,7 @@ extern "C" void findTunnelLoop(void *unused)
 
         counter++;
         // Reset conditions after reaching the maximum count
-        if (counter >= TUNNEL_FIMD_MAX_COUNT)
+        if (counter >= TUNNEL_FIND_MAX_COUNT)
         {
             counter = 0;
             currentZDac = 0;   // Reset DAC position
