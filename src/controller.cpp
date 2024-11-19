@@ -2,6 +2,7 @@
 #include "controller.h"
 #include "project_timer.h"
 #include <cmath>
+#include "globalVariables.h"
 
 static const char *TAG = "controller";
 
@@ -132,11 +133,14 @@ extern "C" void measureLoop(void *unused)
         if (abs(e) <= toleranceTunnelnA)
         {
             gpio_set_level(IO_25, 1);
-            // Store the result in the data queue
-            dataQueue.emplace(DataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
 
-            // Send data to PC
-            sendDataPaket();
+            if (OPTION_FIND == 0)
+            {
+                // Store the result in the data queue
+                dataQueue.emplace(DataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
+                // Send data to PC
+                sendDataPaket();
+            }
 
             // Calculate new XY position
             if (!rtmGrid.moveOn())
@@ -165,6 +169,14 @@ extern "C" void measureLoop(void *unused)
             vTaskResume(handleVspiLoop);
         }
 
+        if (OPTION_FIND == 1)
+        {
+            // Store the result in the data queue
+            dataQueue.emplace(DataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
+            // Send data to PC
+            sendDataPaket();
+        }
+
         zOld = zSaturate; // Store previous control Z-value
     }
 }
@@ -191,88 +203,32 @@ extern "C" void findTunnelLoop(void *unused)
 {
 
     static const char *TAG = "findTunnelLoop";
-
+    static double e = 0, w = 0, r = 0, z = 0, eOld = 0, zOld = 0;
+    uint16_t zSaturate = 0;
     ESP_LOGI(TAG, "STARTED +++ ");
 
-    static double delta = 0, z = 0, deltaSum = 0, deltaOld = 0;
-    static const double MAX_INTEGRAL = DAC_VALUE_MAX / 10; // Typical 1/10
-    int counter = 0;
+    w = targetTunnelnA; // Desired tunnel current
 
-    // Current conversion factor from ADC value to tunnel current (nA)
-    double adcFactor = (ADC_VOLTAGE_MAX * 1e3 * ADC_VOLTAGE_DIVIDER) /
-                       (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
 
-    while (true)
+    uint16_t counter = 0;
+    while (counter < 20)
     {
 
         vTaskSuspend(NULL); // Sleep until resumed by a timer
-
         int16_t adcValue = readAdc(); // Read voltage from preamplifier
-        if (adcValue < 0)
-        {
-            adcValue = -adcValue; // Ensure positive ADC value
-        }
 
-        // Convert ADC value to tunnel current (nA)
-        double measuredTunnelCurrentnA = adcValue * adcFactor;
+        UsbPcInterface::send("TTTTTT,%d\n", adcValue);
 
-        // Calculate the error between target and measured current
-        delta = targetTunnelnA - measuredTunnelCurrentnA;
-
-        ESP_LOGI(TAG, "ADC %d nA %f", adcValue, measuredTunnelCurrentnA);
-        // If the error is within the allowed limit, process the result
-        if (fabs(delta) <= toleranceTunnelnA)
-        {
-            ESP_LOGI(TAG, "++++++++++++++ TUNNELING ++++++++++++++");
-            gpio_set_level(IO_25, 1); // Signal within tolerance
-            tunnelQueue.emplace(DataElementTunnel(currentZDac, measuredTunnelCurrentnA, true));
-        }
-        else
-        {
-
-            gpio_set_level(IO_25, 0); // Signal out of tolerance
-
-            // Calculate PID components
-            double P = kP * delta;              // Proportional term
-            double I = kI * deltaSum;           // Integral term
-            double D = kD * (delta - deltaOld); // Derivative term
-
-            deltaOld = delta; // Store current delta for next iteration
-
-            // Update Z position with PID control
-            z += P + I + D;
-
-            // Constrain Z value to the allowed DAC limits
-            z = constrain(z, 0, DAC_VALUE_MAX);
-
-            // Update integral term only when Z is not saturated
-            if (z > 0 && z < DAC_VALUE_MAX)
-            {
-                deltaSum += delta;
-
-                // Bound the integral term to prevent windup
-                deltaSum = constrain(deltaSum, -MAX_INTEGRAL, MAX_INTEGRAL);
-            }
-
-            currentZDac = static_cast<uint16_t>(z); // Update Z height for the tunnel system
-            ESP_LOGI(TAG, "P %f I %f D %f z: %f DACZ %d", P, I, D, z, currentZDac);
-
-            // Add data to the tunnel queue and send data to the PC
-            tunnelQueue.emplace(DataElementTunnel(currentZDac, static_cast<float>(measuredTunnelCurrentnA), false));
-
-            // Resume DAC loop to set the new Z position
-            vTaskResume(handleVspiLoop);
-        }
+        // Store the result in the data queue
+        tunnelQueue.emplace(DataElementTunnel(counter++, adcValue, true));
+        sendTunnelPaket();
 
         counter++;
-        // Reset conditions after reaching the maximum count
-        if (counter >= TUNNEL_FIND_MAX_COUNT)
-        {
-            counter = 0;
-            currentZDac = 0;   // Reset DAC position
-            deltaSum = 0;      // Reset integral term
-            sendTunnelPaket(); // Send data to PC
-        }
+        // Send data to PC
+        // if (counter % 10 == 0)
+        // {
+        //     sendTunnelPaket();
+        // }
     }
 }
 
@@ -295,15 +251,20 @@ extern "C" int sendTunnelPaket()
     }
 
     timer_stop(); // Pause timer to avoid timing issues during send
+    // DataElementTunnel::DataElementTunnel(uint16_t dacz, uint16_t adc, bool isTunnel)
     while (!tunnelQueue.empty())
     {
         // Getter methods for queue elements
-        uint16_t adcz = tunnelQueue.front().getDataZ();
-        float current = tunnelQueue.front().getCurrent();
+        int16_t adcz = tunnelQueue.front().getDataZ();
+        int16_t adc = tunnelQueue.front().getAdc();
         bool istunnel = tunnelQueue.front().getIsTunnel();
+        // Conditional logic to send "tunnel" or "no"
+       
+        const char *tunnelStatus = (istunnel) ? "tunnel" : "no";
 
         // Send data to PC with logging
-        UsbPcInterface::send("TUNNEL,%u,%f,%s\n", adcz, current, istunnel ? "ON" : "OFF");
+        UsbPcInterface::send("TUNNEL;%d,%d,%s\n", adcz, adc, tunnelStatus);
+
         tunnelQueue.pop(); // Remove processed element from queue
     }
 

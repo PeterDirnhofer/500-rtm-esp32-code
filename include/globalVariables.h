@@ -124,7 +124,7 @@ extern uint8_t lastConfigByte;
 #define MODE_TUNNEL_FIND 4
 #define MODE_RESTART 5 // starts esp_restart();
 
-#define TUNNEL_FIND_MAX_COUNT 200
-#define TUNNEL_TIMER_MS 1000
+#define TUNNEL_TIMER_MS 500
+#define OPTION_FIND 1
 
 #endif

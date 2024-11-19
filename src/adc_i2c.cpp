@@ -16,9 +16,12 @@ uint16_t readAdc()
     ESP_ERROR_CHECK(i2c_master_receive(dev_handle, data_rd, 2, 1000 / portTICK_PERIOD_MS));
 
     uint16_t temp = (data_rd[0] << 8) | data_rd[1]; // Unsigned interpretation
-    int16_t signed_adc = (int16_t)temp;             // Signed interpretation
+    return (int16_t)temp;
 
-    return signed_adc;
+    // uint16_t temp = (data_rd[0] << 8) | data_rd[1]; // Unsigned interpretation
+    // int16_t signed_adc = (int16_t)temp;             // Signed interpretation
+
+    // return signed_adc;
 }
 
 /// @brief Initialize ADC 8 click with ADS 1115 on I2C bus

@@ -1,7 +1,7 @@
-#ifndef DATASTORING
-#define DATASTORING
+#ifndef DATASTORING_H
+#define DATASTORING_H
 
-#include "stdint.h"
+#include "stdint.h" // Include for uint16_t, uint8_t, etc.
 
 class DataElement
 {
@@ -10,7 +10,7 @@ class DataElement
     uint16_t z;
 
 public:
-    // Contructor
+    // Constructor for DataElement
     DataElement(uint16_t x, uint16_t y, uint16_t z);
 
     // Getter methods
@@ -22,17 +22,18 @@ public:
 // DataElementTunnel Class Definition with isTunnel
 class DataElementTunnel
 {
-    uint16_t dacz;
-    float currentNa; // New float member
-    bool isTunnel;    // New boolean member to indicate tunnel state (on/off)
+    int16_t dacz;  // DCZ value
+    int16_t adc;   // ADC value
+    bool isTunnel; // Tunnel state (true or false)
+
 public:
-    // Constructor
-    DataElementTunnel(uint16_t dacz, float currentNa, bool isTunnel);
+    // Constructor for DataElementTunnel (Declaration)
+    DataElementTunnel(int16_t dacz, int16_t adc, bool isTunnel);
 
     // Getter methods
-    uint16_t getDataZ() { return dacz; }
-    float getCurrent() { return currentNa; }
-    bool getIsTunnel() { return isTunnel; } // Getter for isTunnel
+    int16_t getDataZ() { return dacz; }
+    int16_t getAdc() { return adc; }
+    bool getIsTunnel() { return isTunnel; }
 };
 
-#endif
+#endif // DATASTORING_H

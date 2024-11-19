@@ -1,6 +1,7 @@
 #include <queue>
 #include "globalVariables.h"
 #include "driver/spi_master.h"
+#include <string>
 
 esp_err_t retVspi;
 spi_transaction_t tVspi;
