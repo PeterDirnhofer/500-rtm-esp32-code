@@ -141,7 +141,7 @@ esp_err_t UsbPcInterface::sendData()
         uint16_t X = element.getDataX();
         uint16_t Y = element.getDataY();
         uint16_t Z = element.getDataZ();
-        send("DATA,%d,%d,%d\r", X, Y, Z);
+        send("DATA,%u,u%,%u\r", X, Y, Z);
         dataQueue.pop();
     }
     send("DATA,COMPLETE\n");

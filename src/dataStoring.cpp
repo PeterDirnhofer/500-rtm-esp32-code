@@ -8,8 +8,8 @@ DataElement::DataElement(uint16_t x, uint16_t y, uint16_t z)
 }
 
 // Constructor for DataElementTunnel (Matching the declaration)
-DataElementTunnel::DataElementTunnel(int16_t dacz, int16_t adc, bool isTunnel)
-    : dacz(dacz), adc(adc), isTunnel(isTunnel)
+DataElementTunnel::DataElementTunnel(uint32_t dacz, int16_t adc, bool isTunnel, float currentNa)
+    : dacz(dacz), adc(adc), isTunnel(isTunnel), currentNa(currentNa)
 {
     // Initialization logic if needed
 }

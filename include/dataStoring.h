@@ -19,21 +19,22 @@ public:
     uint16_t getDataZ() { return z; };
 };
 
-// DataElementTunnel Class Definition with isTunnel
 class DataElementTunnel
 {
-    int16_t dacz;  // DCZ value
-    int16_t adc;   // ADC value
-    bool isTunnel; // Tunnel state (true or false)
+    int16_t dacz;
+    int16_t adc;
+    bool isTunnel;
+    float currentNa; // New member for current
 
 public:
-    // Constructor for DataElementTunnel (Declaration)
-    DataElementTunnel(int16_t dacz, int16_t adc, bool isTunnel);
+    // Constructor
+    DataElementTunnel(uint32_t dacz, int16_t adc, bool isTunnel, float currentNa);
 
     // Getter methods
-    int16_t getDataZ() { return dacz; }
+    uint32_t getDacZ() { return dacz; }
     int16_t getAdc() { return adc; }
     bool getIsTunnel() { return isTunnel; }
+    float getCurrentNa() { return currentNa; } // Getter for currentNa
 };
 
 #endif // DATASTORING_H
