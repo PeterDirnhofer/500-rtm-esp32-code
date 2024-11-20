@@ -7,21 +7,16 @@
 #define TAG "ADC"
 i2c_master_dev_handle_t dev_handle;
 
-/// @brief Read ADC on ADC 8 click with unsigned as default return type
-/// @return 16-bit unsigned ADC value
-uint16_t readAdc()
+/// @brief Read ADC on ADC 8 click with singned integer.  Voltage +- 2.048
+/// @return 16-bit signed ADC value. -32768 .. 0 .. +32767 
+int16_t readAdc()
 {
-
     uint8_t data_rd[2];
     ESP_ERROR_CHECK(i2c_master_receive(dev_handle, data_rd, 2, 1000 / portTICK_PERIOD_MS));
 
-    uint16_t temp = (data_rd[0] << 8) | data_rd[1]; // Unsigned interpretation
-    return (int16_t)temp;
-
-    // uint16_t temp = (data_rd[0] << 8) | data_rd[1]; // Unsigned interpretation
-    // int16_t signed_adc = (int16_t)temp;             // Signed interpretation
-
-    // return signed_adc;
+    // Combine the bytes into a 16-bit signed integer
+    int16_t raw_adc = (data_rd[0] << 8) | data_rd[1];
+    return raw_adc;
 }
 
 /// @brief Initialize ADC 8 click with ADS 1115 on I2C bus
@@ -81,6 +76,8 @@ esp_err_t i2cAdcInit()
     // Set Configuration Register of ADS1115
     uint8_t data_wr[3];
     data_wr[0] = CONFIG_REGISTER;
+    // TODO Set Inputs E3 against GND
+    // data_wr[1] = 0x04;
     data_wr[1] = 0x04;
     data_wr[2] = 0xE3;
 

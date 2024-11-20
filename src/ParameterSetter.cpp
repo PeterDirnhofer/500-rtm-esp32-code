@@ -101,7 +101,7 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
 
     return ESP_OK;
 }
-
+// List of default Paramater
 esp_err_t ParameterSetting::putDefaultParametersToFlash()
 {
     vector<string> params = {
@@ -109,8 +109,8 @@ esp_err_t ParameterSetting::putDefaultParametersToFlash()
         "300.0", // kP
         "5.0",   // kI
         "0.0",   // kD
-        "0.2",   // targetTunnelCurrentnA
-        "0.02",  // toleranceTunnelCurrentnA
+        "10",   // targetTunnelCurrentnA
+        "1.2",  // toleranceTunnelCurrentnA
         "0",     // startX
         "0",     // startY
         "0",     // direction

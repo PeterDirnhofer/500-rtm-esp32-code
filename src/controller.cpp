@@ -116,12 +116,25 @@ extern "C" void measureLoop(void *unused)
     uint16_t zSaturate = 0;
     w = targetTunnelnA; // Desired tunnel current
 
+    static int tries = 0;
+
     while (true)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
 
         int16_t adcValue = readAdc(); // Read voltage from preamplifier
         // adcValue = abs(adcValue);
+        // Error if nefative. Accept small negative values near 0 Volt
+        if (adcValue < -2000)
+        {
+            UsbPcInterface::send("ERROR. Wrong polarity at ADC Input. %d\n", adcValue);
+            continue;
+        }
+
+        if (adcValue < 0)
+        {
+            adcValue = -adcValue;
+        }
 
         // Convert ADC value to tunnel current (nA)
         currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
@@ -129,18 +142,30 @@ extern "C" void measureLoop(void *unused)
         r = currentTunnelnA; // Actual tunnel current
         e = w - r;           // Error = desired - actual
 
+        // if currentTunnelnA > desired LED1, if < desited LED2
+        if (currentTunnelnA > w)
+        {
+            gpio_set_level(IO_27, 1);
+        }
+        else
+        {
+            gpio_set_level(IO_27, 0);
+        }
+
         // If the error is within the allowed limit, process the result
         if (abs(e) <= toleranceTunnelnA)
         {
+            tries = 0;
             gpio_set_level(IO_25, 1);
 
-            if (OPTION_FIND == 0)
-            {
-                // Store the result in the data queue
-                dataQueue.emplace(DataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
-                // Send data to PC
-                sendDataPaket();
-            }
+            // if currentTunnelnA > desired LED1, if < desited LED2
+
+
+        
+            // Store the result in the data queue
+            dataQueue.emplace(DataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
+            // Send data to PC
+            sendDataPaket();
 
             // Calculate new XY position
             if (!rtmGrid.moveOn())
@@ -157,6 +182,7 @@ extern "C" void measureLoop(void *unused)
         else
         {
             gpio_set_level(IO_25, 0);
+
             // Calculate new control value
             z = kP * e + kI * eOld + zOld;
             eOld = e;
@@ -165,20 +191,72 @@ extern "C" void measureLoop(void *unused)
             zSaturate = saturate16bit((uint32_t)z, 0, DAC_VALUE_MAX);
             currentZDac = zSaturate; // Set new Z height
 
+            tries++;
+            if (tries > 1000){
+                timer_stop();
+                tries = 0;
+                UsbPcInterface::send("AD%d Z%u nA%.2f e%.2f  \n", adcValue, zSaturate, currentTunnelnA, e);
+                timer_start();
+            }
+
             // Resume DAC loop to set the new Z position
             vTaskResume(handleVspiLoop);
         }
 
-        if (OPTION_FIND == 1)
-        {
-            // Store the result in the data queue
-            dataQueue.emplace(DataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
-            // Send data to PC
-            sendDataPaket();
-        }
+        
 
         zOld = zSaturate; // Store previous control Z-value
     }
+}
+
+// PI Controller function
+uint16_t computePI(int16_t setpoint, int16_t measurement)
+{
+    static double pi_integral = 0.0; // Integral accumulator
+    double Kp = 0.5;                 // Proportional gain (adjust based on your system)
+    double Ki = 0.05;                // Integral gain (adjust based on your system)
+
+    // Define DAC range (16-bit DAC: 0 to 65535)
+    uint16_t maxOutput = 65535; // Maximum output (DAC range)
+    uint16_t minOutput = 0;     // Minimum output (DAC range)
+
+    // Calculate error
+    int16_t error = setpoint - measurement;
+
+    // Proportional term
+    double proportional = Kp * error;
+
+    //
+    // Integral term (accumulated over function calls)
+    pi_integral += error * Ki; // dt = 0.001 for 1ms period
+
+    // Prevent integral windup
+    if (pi_integral > maxOutput)
+    {
+        pi_integral = maxOutput;
+    }
+    if (pi_integral < minOutput)
+    {
+        pi_integral = minOutput;
+    }
+
+    // Compute total output
+    double output = proportional + pi_integral;
+
+    // Clamp output to DAC range (0 to 65535 for 16-bit DAC)
+    if (output > maxOutput)
+    {
+        output = maxOutput;
+    }
+    if (output < minOutput)
+    {
+        output = minOutput;
+    }
+
+    // UsbPcInterface::send("adc:%d error:%d p:%f \n", measurement,error, proportional);
+
+    // Return the output as a uint16_t (scaled for the 16-bit DAC)
+    return (uint16_t)output; // Ensure it's an unsigned 16-bit value
 }
 
 /**
@@ -201,56 +279,42 @@ extern "C" void measureLoop(void *unused)
  */
 extern "C" void findTunnelLoop(void *unused)
 {
+    const uint16_t setpoint = 10000; // Example desired value in the range 0..65535
 
-    static const char *TAG = "findTunnelLoop";
-    static double e = 0, w = 0, r = 0, z = 0, eOld = 0, zOld = 0;
-    uint16_t zSaturate = 0;
-    ESP_LOGI(TAG, "STARTED +++ ");
+    int counter = 0;
 
-    w = targetTunnelnA; // Desired tunnel current
-    bool is_in_tunnel = false;
-    uint16_t counter = 0;
-    uint16_t currentdac = 0;
-    while (counter < 200)
+    while (counter < 500)
     {
 
         vTaskSuspend(NULL);           // Sleep until resumed by a timer
         int16_t adcValue = readAdc(); // Read voltage from preamplifier
 
-        // Convert ADC value to tunnel current (nA)
-        currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
-                          (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
-        r = currentTunnelnA; // Actual tunnel current
-        e = w - r;           // Error = desired - actual
-
-        if (abs(e) <= toleranceTunnelnA)
+        // Error if nefative. Accept small negative values near 0 Volt
+        if (adcValue < -1000)
         {
-            gpio_set_level(IO_25, 1);
-            is_in_tunnel = true;
+            UsbPcInterface::send("ERROR. Wrong polarity at ADC Input. %d\n", adcValue);
+            continue;
         }
-        else
+
+        if (adcValue < 0)
         {
-            is_in_tunnel = false;
-            gpio_set_level(IO_25, 0);
-            z = kP * e + kI * eOld + zOld;
-            eOld = e;
-
-            // Saturate the control value to fit within DAC boundaries
-            zSaturate = saturate16bit((uint32_t)z, 0, DAC_VALUE_MAX);
-            currentZDac = zSaturate; // Set new Z height
-            currentdac = currentZDac;
-
-            // Resume DAC loop to set the new Z position
-            vTaskResume(handleVspiLoop);
+            adcValue = -adcValue;
         }
-        zOld = zSaturate;
-        tunnelQueue.emplace(DataElementTunnel(currentdac, adcValue, is_in_tunnel, currentTunnelnA));
+        // Values 0 ... 32767
+
+        uint16_t dacOutput = computePI(setpoint, adcValue);
+
+        currentZDac = dacOutput; // Set new Z height
+
+        // Resume DAC loop to set the new Z posi
+
+        // UsbPcInterface::send("adcValue,%d %u\n", adcValue, dacOutput);
+
+        // DataElementTunnel::DataElementTunnel(uint32_t dacz, int16_t adc, bool isTunnel, float currentNa)
+        //     : dacz(dacz), adc(adc), isTunnel(isTunnel), currentNa(currentNa)
+
+        tunnelQueue.emplace(DataElementTunnel(dacOutput, adcValue, true, 0.123));
         counter++;
-        // Send data to PC
-        // if (counter % 100 == 0)
-        // {
-        //     sendTunnelPaket();
-        // }
     }
     sendTunnelPaket();
     currentXDac = 0;
@@ -279,6 +343,10 @@ extern "C" int sendTunnelPaket()
 
     timer_stop(); // Pause timer to avoid timing issues during send
     // DataElementTunnel::DataElementTunnel(uint16_t dacz, uint16_t adc, bool isTunnel)
+
+    // DataElementTunnel::DataElementTunnel(uint32_t dacz, int16_t adc, bool isTunnel, float currentNa)
+    //     : dacz(dacz), adc(adc), isTunnel(isTunnel), currentNa(currentNa)
+
     while (!tunnelQueue.empty())
     {
         // Getter methods for queue elements
@@ -291,9 +359,9 @@ extern "C" int sendTunnelPaket()
         const char *tunnelStatus = (istunnel) ? "tunnel" : "no";
 
         // Send data to PC with logging
-        //UsbPcInterface::send("TUNNEL;%u,%d,%s,%.2f\n", dacz, adc, tunnelStatus, currentNa);
+        // UsbPcInterface::send("TUNNEL;%u,%d,%s,%.2f\n", dacz, adc, tunnelStatus, currentNa);
         // Send data to PC with logging in the desired order
-        UsbPcInterface::send("TUNNEL,%s,%.2f,%u\n", tunnelStatus, currentNa, dacz);
+        UsbPcInterface::send("TUNNEL,%s,%u,%d,%.2f\n", tunnelStatus, dacz, adc, currentNa);
 
         tunnelQueue.pop(); // Remove processed element from queue
     }
