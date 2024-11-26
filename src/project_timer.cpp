@@ -81,7 +81,7 @@ extern "C" void timer_initialize(int mode)
     if (mode == MODE_MEASURE)
     {
         alarm_config.alarm_count = 1260; // 1260 us
-        }
+    }
     else if (mode == MODE_TUNNEL_FIND)
     {
         alarm_config.alarm_count = 1000 * TUNNEL_TIMER_MS; // 1 second

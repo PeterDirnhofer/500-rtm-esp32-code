@@ -268,20 +268,30 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 
     static const char *TAG = "UsbPcInterface::getCommandsFromPC";
 
-    uint32_t i = 0;
+    uint32_t i = 1;
     int ledLevel = 0;
+    bool idle_was_sent = false;
     // Request PC. Wait for PC response
 
     while (UsbPcInterface::mUsbAvailable == false)
     {
         if ((i % 50) == 0)
         {
-            // Invert Blue LED
-            ledLevel++;
+            // Invert IO_27
 
             if (this->getWorkingMode() == MODE_IDLE)
             {
+                ledLevel = !ledLevel;
+                gpio_set_level(IO_27, ledLevel);
+                // if (!idle_was_sent)
+                // {
+                //     this->send("IDLE\n");
+                //     idle_was_sent = true;
+                // }
                 this->send("IDLE\n");
+            }
+            else{
+                idle_was_sent = false;
             }
         }
 

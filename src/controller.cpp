@@ -143,7 +143,7 @@ extern "C" void measureLoop(void *unused)
         e = w - r;           // Error = desired - actual
 
         // if currentTunnelnA > desired LED1, if < desited LED2
-        if (currentTunnelnA > w)
+        if (currentTunnelnA > w + toleranceTunnelnA)
         {
             gpio_set_level(IO_27, 1);
         }
@@ -160,8 +160,6 @@ extern "C" void measureLoop(void *unused)
 
             // if currentTunnelnA > desired LED1, if < desited LED2
 
-
-        
             // Store the result in the data queue
             dataQueue.emplace(DataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
             // Send data to PC
@@ -192,7 +190,8 @@ extern "C" void measureLoop(void *unused)
             currentZDac = zSaturate; // Set new Z height
 
             tries++;
-            if (tries > 1000){
+            if (tries > 1000)
+            {
                 timer_stop();
                 tries = 0;
                 UsbPcInterface::send("AD%d Z%u nA%.2f e%.2f  \n", adcValue, zSaturate, currentTunnelnA, e);
@@ -202,8 +201,6 @@ extern "C" void measureLoop(void *unused)
             // Resume DAC loop to set the new Z position
             vTaskResume(handleVspiLoop);
         }
-
-        
 
         zOld = zSaturate; // Store previous control Z-value
     }
@@ -283,24 +280,25 @@ extern "C" void findTunnelLoop(void *unused)
 
     int counter = 0;
 
-    while (counter < 500)
+    while (counter < 50)
     {
 
         vTaskSuspend(NULL);           // Sleep until resumed by a timer
         int16_t adcValue = readAdc(); // Read voltage from preamplifier
 
-        // Error if nefative. Accept small negative values near 0 Volt
+        // Error if high value negative. Low voltage negative is ok.
         if (adcValue < -1000)
         {
             UsbPcInterface::send("ERROR. Wrong polarity at ADC Input. %d\n", adcValue);
             continue;
         }
 
+        // Low volages may be negative from Opamp
         if (adcValue < 0)
         {
             adcValue = -adcValue;
         }
-        // Values 0 ... 32767
+        // Result: Values 0 ... 32767
 
         uint16_t dacOutput = computePI(setpoint, adcValue);
 
@@ -313,7 +311,7 @@ extern "C" void findTunnelLoop(void *unused)
         // DataElementTunnel::DataElementTunnel(uint32_t dacz, int16_t adc, bool isTunnel, float currentNa)
         //     : dacz(dacz), adc(adc), isTunnel(isTunnel), currentNa(currentNa)
 
-        tunnelQueue.emplace(DataElementTunnel(dacOutput, adcValue, true, 0.123));
+        tunnelQueue.emplace(DataElementTunnel(dacOutput, adcValue, true, 0.99));
         counter++;
     }
     sendTunnelPaket();
