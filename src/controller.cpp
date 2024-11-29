@@ -104,10 +104,6 @@ extern "C" void adjustLoop(void *unused)
 
 extern "C" void measureLoop(void *unused)
 {
-    static double e = 0, w = 0, r = 0, z = 0, eOld = 0, zOld = 0;
-    uint16_t zSaturate = 0;
-    w = targetTunnelnA; // Desired tunnel current
-
     static double errorTunnelNa = 0.0;
     int16_t adcValueRaw, adcValue = 0;
     string dataBuffer;
@@ -122,7 +118,6 @@ extern "C" void measureLoop(void *unused)
         currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX) / ADC_VALUE_MAX;
         currentTunnelnA = currentTunnelnA * 3; // Voltage Divider ADC Input
 
-      
         if (currentTunnelnA > targetTunnelnA + toleranceTunnelnA)
         {
             gpio_set_level(IO_27, 1);
@@ -131,8 +126,7 @@ extern "C" void measureLoop(void *unused)
         {
             gpio_set_level(IO_27, 0);
         }
-        
-        
+
         errorTunnelNa = targetTunnelnA - currentTunnelnA;
 
         // If the error is within the allowed limit, process the result
@@ -159,16 +153,12 @@ extern "C" void measureLoop(void *unused)
         else
         {
             gpio_set_level(IO_25, 0);
-
-            // Calculate new control value
             // Calculate new Z Value with PI controller
             uint16_t dacOutput = computePI(currentTunnelnA, targetTunnelnA);
 
             currentZDac = dacOutput;
             vTaskResume(handleVspiLoop);
-
         }
-
     }
 }
 
@@ -210,7 +200,6 @@ uint16_t computePI(double currentNa, double targetNa)
     return dacz;
 }
 
-
 extern "C" void findTunnelLoop(void *unused)
 {
 
@@ -227,12 +216,12 @@ extern "C" void findTunnelLoop(void *unused)
 
     while (counter < 50)
     {
-        vTaskSuspend(NULL);           // Sleep until resumed by TUNNEL_TIMER
+        vTaskSuspend(NULL); // Sleep until resumed by TUNNEL_TIMER
 
         adcValueRaw = readAdc(); // Read voltage from preamplifier
         adcValue = adcValueDebounced(adcValueRaw);
 
-        currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX) / ADC_VALUE_MAX; 
+        currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX) / ADC_VALUE_MAX;
         currentTunnelnA = currentTunnelnA * 3; // Voltage Divider ADC Input
 
         // Calculate new Z Value with PI controller
