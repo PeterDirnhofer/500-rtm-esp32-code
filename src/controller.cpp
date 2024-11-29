@@ -6,6 +6,7 @@
 #include <string>
 
 static const char *TAG = "controller";
+static PIResult piresult;
 
 // ---- Hardware Initialization ----
 
@@ -180,6 +181,7 @@ double clamp(double value, double minValue, double maxValue)
 // PID function to compute output every millisecond
 uint16_t computePI(double currentNa, double targetNa)
 {
+    
     // Calculate error
     double error = targetNa - currentNa;
 
@@ -195,7 +197,13 @@ uint16_t computePI(double currentNa, double targetNa)
 
     uint16_t dacz = static_cast<uint16_t>(std::round(output));
 
-    UsbPcInterface::send("target,%.2f nA,%.2f error,%.2f dac,%u\n", targetNa, currentNa, error, dacz);
+   
+    piresult.targetNa = targetNa;
+    piresult.currentNa = currentNa;
+    piresult.error = error;
+    piresult.dacz = dacz;
+
+    // UsbPcInterface::send("target,%.2f nA,%.2f error,%.2f dac,%u\n", targetNa, currentNa, error, dacz);
 
     return dacz;
 }
@@ -226,6 +234,8 @@ extern "C" void findTunnelLoop(void *unused)
 
         // Calculate new Z Value with PI controller
         uint16_t dacOutput = computePI(currentTunnelnA, targetTunnelnA);
+
+        UsbPcInterface::send("target,%.2f nA,%.2f error,%.2f dac,%u\n", piresult.targetNa, piresult.currentNa, piresult.error, piresult.dacz);
 
         currentZDac = dacOutput;
         counter++;

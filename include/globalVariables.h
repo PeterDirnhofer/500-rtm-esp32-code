@@ -11,6 +11,14 @@ using namespace std;
 #include "dataStoring.h"
 #include "movementXY.h"
 
+struct PIResult
+{
+    double targetNa;
+    double currentNa;
+    double error;
+    uint16_t dacz;
+};
+
 #define MODUS_RUN 0
 #define MODUS_MONITOR_TUNNEL_CURRENT 1
 
@@ -117,6 +125,8 @@ extern uint16_t maxNumberAttemptsSPI;
 
 extern intr_handle_t s_timer_handle;
 extern uint8_t lastConfigByte;
+
+
 
 #define MODE_IDLE 0
 #define MODE_INVALID -1
