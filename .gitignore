@@ -1,8 +1,60 @@
-.pio/build/esp32dev/*
-.pio/build/esp32dev/firmware.bin
-.vscode/.browse.c_cpp.db*
-.vscode/c_cpp_properties.json
-.vscode/launch.json
-.vscode/ipch
-doxygen
-.pio/build/project.checksum
+# Ignore the build directories
+/.pio
+/.build
+/.vscode
+/build
+/.idf
+
+# Ignore the ESP-IDF SDK-specific build files
+/sdkconfig
+/sdkconfig.old
+
+# Ignore PlatformIO specific files
+*.pioenvs
+*.pio
+*.build
+
+# Ignore PlatformIO project environment directories
+/firmware
+/platformio.ini
+
+# Ignore backup files
+*.bak
+*.swp
+*.sw?
+*~
+*.log
+
+# Ignore IDE-specific files (e.g., VSCode, Eclipse)
+.vscode/
+.idea/
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore Windows system files
+Thumbs.db
+Desktop.ini
+
+# Ignore temporary files
+*.tmp
+*.temp
+
+# Ignore Python bytecode files
+*.pyc
+*.pyo
+__pycache__
+
+# Ignore the ESP32 flash image (if you're not tracking it)
+*.bin
+*.elf
+*.map
+
+# Ignore other IDEs or editors' files
+# IntelliJ/JetBrains-based IDEs
+.idea/
+# Eclipse
+*.project
+*.cproject
+# NetBeans
+nbproject/
