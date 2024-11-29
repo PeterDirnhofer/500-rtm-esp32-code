@@ -144,16 +144,7 @@ void vspiDacInit()
     memset(&tVspi, 0, sizeof(tVspi));
 }
 
-/**@brief update DACs over SPI
- *
- * Suspends after running.
- * Resuming by controller
- *
- * currentXDac, currentYDac is set by movementXY.cpp
- * currentZDac is set by controller
- *
- * @param unused
- */
+
 void vspiDacLoop(void *unused)
 {
 
@@ -187,7 +178,6 @@ void vspiDacLoop(void *unused)
         }
 
         vspiSendDac(currentZDac, buffer.get(), handleDacZ); // Dac Z
-        gpio_set_level(IO_17, 0);
         vTaskSuspend(NULL); // will be resumed by controller
     }
 }

@@ -220,9 +220,9 @@ esp_err_t UsbPcInterface::mUpdateTip(string s)
     // TIP,X,Y,Z
     if (l == 4)
     {
-        int16_t x = 0;
-        int16_t y = 0;
-        int16_t z = 0;
+        uint16_t x = 0;
+        uint16_t y = 0;
+        uint16_t z = 0;
 
         char *endPtr;
         long int xl = strtol(arguments[1].c_str(), &endPtr, 10);
@@ -268,31 +268,29 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 
     static const char *TAG = "UsbPcInterface::getCommandsFromPC";
 
-    uint32_t i = 1;
+    uint32_t i = 0;
     int ledLevel = 0;
     bool idle_was_sent = false;
-    // Request PC. Wait for PC response
 
     while (UsbPcInterface::mUsbAvailable == false)
     {
-        if ((i % 50) == 0)
+        if (this->getWorkingMode() == MODE_IDLE)
         {
-            // Invert IO_27
 
-            if (this->getWorkingMode() == MODE_IDLE)
+            if (!idle_was_sent)
+            {
+                this->send("IDLE\n");
+                idle_was_sent = true;
+            }
+
+            if ((i % 50) == 0)
             {
                 ledLevel = !ledLevel;
                 gpio_set_level(IO_27, ledLevel);
-                // if (!idle_was_sent)
-                // {
-                //     this->send("IDLE\n");
-                //     idle_was_sent = true;
-                // }
-                this->send("IDLE\n");
             }
-            else{
-                idle_was_sent = false;
-            }
+        }
+        else{
+            idle_was_sent = false;
         }
 
         vTaskDelay(100 / portTICK_PERIOD_MS);

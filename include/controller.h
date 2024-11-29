@@ -104,4 +104,8 @@ extern "C" int sendTunnelPaket();
  */
 extern "C" double constrain(double value, double min, double max);
 
+int16_t adcValueDebounced(int16_t adcValue);
+double clamp(double value, double minValue, double maxValue);
+uint16_t computePI(double currentNa, double targetNa);
+
 #endif // CONTROLLER

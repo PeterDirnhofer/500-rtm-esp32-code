@@ -63,6 +63,7 @@ extern spi_device_handle_t handleDacZ;
 extern uint16_t currentXDac;
 extern uint16_t currentYDac;
 extern uint16_t currentZDac;
+// extern uint16_t multimultiplicatorGridAdc;
 
 #define _I2C_NUMBER(num) I2C_NUM_##num
 #define I2C_NUMBER(num) _I2C_NUMBER(num)
@@ -95,8 +96,9 @@ extern uint16_t currentZDac;
 
 #define DAC_VALUE_MAX 65535 // 2^16-1
 
-extern double kI, kP, kD, targetTunnelnA, currentTunnelnA, toleranceTunnelnA;
-extern uint16_t startX, startY;
+    extern double kP,
+    kI, kD, targetTunnelnA, currentTunnelnA, toleranceTunnelnA;
+extern uint16_t startX, startY, multimultiplicatorGridAdc;
 extern uint16_t nvs_maxX, nvs_maxY;
 extern bool direction;
 extern uint16_t sendDataAfterXDatasets;
@@ -124,7 +126,6 @@ extern uint8_t lastConfigByte;
 #define MODE_TUNNEL_FIND 4
 #define MODE_RESTART 5 // starts esp_restart();
 
-#define TUNNEL_TIMER_MS 1
-#define OPTION_FIND 1
+#define TUNNEL_TIMER_MS 1  // Period time in TUNNEL find loop
 
 #endif

@@ -3,6 +3,7 @@
 #include "project_timer.h"
 #include <cmath>
 #include "globalVariables.h"
+#include <string>
 
 static const char *TAG = "controller";
 
@@ -101,49 +102,28 @@ extern "C" void adjustLoop(void *unused)
     }
 }
 
-/**
- * @brief Runs an ADC measure cycle, adjusts the Z position, and sends data to the PC.
- *
- * This loop measures the current tunnel current using the ADC, compares it
- * to the target, adjusts the Z position accordingly, and sends the ADC values
- * along with X, Y positions to the PC.
- *
- * @param unused FreeRTOS task parameter, not used in this implementation.
- */
 extern "C" void measureLoop(void *unused)
 {
     static double e = 0, w = 0, r = 0, z = 0, eOld = 0, zOld = 0;
     uint16_t zSaturate = 0;
     w = targetTunnelnA; // Desired tunnel current
 
-    static int tries = 0;
+    static double errorTunnelNa = 0.0;
+    int16_t adcValueRaw, adcValue = 0;
+    string dataBuffer;
 
     while (true)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
 
-        int16_t adcValue = readAdc(); // Read voltage from preamplifier
-        // adcValue = abs(adcValue);
-        // Error if nefative. Accept small negative values near 0 Volt
-        if (adcValue < -2000)
-        {
-            UsbPcInterface::send("ERROR. Wrong polarity at ADC Input. %d\n", adcValue);
-            continue;
-        }
+        adcValueRaw = readAdc(); // Read voltage from preamplifier
+        adcValue = adcValueDebounced(adcValueRaw);
 
-        if (adcValue < 0)
-        {
-            adcValue = -adcValue;
-        }
+        currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX) / ADC_VALUE_MAX;
+        currentTunnelnA = currentTunnelnA * 3; // Voltage Divider ADC Input
 
-        // Convert ADC value to tunnel current (nA)
-        currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
-                          (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
-        r = currentTunnelnA; // Actual tunnel current
-        e = w - r;           // Error = desired - actual
-
-        // if currentTunnelnA > desired LED1, if < desited LED2
-        if (currentTunnelnA > w + toleranceTunnelnA)
+      
+        if (currentTunnelnA > targetTunnelnA + toleranceTunnelnA)
         {
             gpio_set_level(IO_27, 1);
         }
@@ -151,21 +131,20 @@ extern "C" void measureLoop(void *unused)
         {
             gpio_set_level(IO_27, 0);
         }
+        
+        
+        errorTunnelNa = targetTunnelnA - currentTunnelnA;
 
         // If the error is within the allowed limit, process the result
-        if (abs(e) <= toleranceTunnelnA)
+        if (abs(errorTunnelNa) <= toleranceTunnelnA)
         {
-            tries = 0;
+
             gpio_set_level(IO_25, 1);
 
-            // if currentTunnelnA > desired LED1, if < desited LED2
-
-            // Store the result in the data queue
             dataQueue.emplace(DataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
-            // Send data to PC
             sendDataPaket();
 
-            // Calculate new XY position
+            // Calculate next XY position
             if (!rtmGrid.moveOn())
             {
                 vTaskResume(handleVspiLoop); // Process new XY position
@@ -182,139 +161,88 @@ extern "C" void measureLoop(void *unused)
             gpio_set_level(IO_25, 0);
 
             // Calculate new control value
-            z = kP * e + kI * eOld + zOld;
-            eOld = e;
+            // Calculate new Z Value with PI controller
+            uint16_t dacOutput = computePI(currentTunnelnA, targetTunnelnA);
 
-            // Saturate the control value to fit within DAC boundaries
-            zSaturate = saturate16bit((uint32_t)z, 0, DAC_VALUE_MAX);
-            currentZDac = zSaturate; // Set new Z height
-
-            tries++;
-            if (tries > 1000)
-            {
-                timer_stop();
-                tries = 0;
-                UsbPcInterface::send("AD%d Z%u nA%.2f e%.2f  \n", adcValue, zSaturate, currentTunnelnA, e);
-                timer_start();
-            }
-
-            // Resume DAC loop to set the new Z position
+            currentZDac = dacOutput;
             vTaskResume(handleVspiLoop);
+
         }
 
-        zOld = zSaturate; // Store previous control Z-value
     }
 }
 
-// PI Controller function
-uint16_t computePI(int16_t setpoint, int16_t measurement)
+// State variables for PID
+
+double integralError = 0.0;
+const double integralMax = 5000.0; // Maximum value for integral term
+
+// Clamp function to constrain values
+double clamp(double value, double minValue, double maxValue)
 {
-    static double pi_integral = 0.0; // Integral accumulator
-    double Kp = 0.5;                 // Proportional gain (adjust based on your system)
-    double Ki = 0.05;                // Integral gain (adjust based on your system)
-
-    // Define DAC range (16-bit DAC: 0 to 65535)
-    uint16_t maxOutput = 65535; // Maximum output (DAC range)
-    uint16_t minOutput = 0;     // Minimum output (DAC range)
-
-    // Calculate error
-    int16_t error = setpoint - measurement;
-
-    // Proportional term
-    double proportional = Kp * error;
-
-    //
-    // Integral term (accumulated over function calls)
-    pi_integral += error * Ki; // dt = 0.001 for 1ms period
-
-    // Prevent integral windup
-    if (pi_integral > maxOutput)
-    {
-        pi_integral = maxOutput;
-    }
-    if (pi_integral < minOutput)
-    {
-        pi_integral = minOutput;
-    }
-
-    // Compute total output
-    double output = proportional + pi_integral;
-
-    // Clamp output to DAC range (0 to 65535 for 16-bit DAC)
-    if (output > maxOutput)
-    {
-        output = maxOutput;
-    }
-    if (output < minOutput)
-    {
-        output = minOutput;
-    }
-
-    // UsbPcInterface::send("adc:%d error:%d p:%f \n", measurement,error, proportional);
-
-    // Return the output as a uint16_t (scaled for the 16-bit DAC)
-    return (uint16_t)output; // Ensure it's an unsigned 16-bit value
+    if (value < minValue)
+        return minValue;
+    if (value > maxValue)
+        return maxValue;
+    return value;
 }
 
-/**
- * @brief Finds the tunnel current using a PID control loop.
- *
- * This timer-triggered loop continuously adjusts the Z-height using a PID controller to maintain
- * the desired tunneling current. It measures the current tunnel current using
- * the ADC, compares it to the target, and updates the Z-height accordingly.
- * The loop runs until the system stabilizes within a set tolerance for the
- * tunneling current or reaches a maximum iteration count.
- *
- * Key components include:
- *  - Proportional (P), Integral (I), and Derivative (D) terms for PID control.
- *  - Saturation of Z-height to DAC limits to prevent over-control.
- *  - Error delta (`delta`), target tunnel current (`targetTunnelCurrentnA`), and
- *    measured tunnel current (`measuredTunnelCurrentnA`) are used for feedback control.
- *  - Data is sent to the PC for monitoring or logging, and Z-position is updated using SPI.
- *
- * @param unused FreeRTOS task parameter, not used in this implementation.
- */
+// PID function to compute output every millisecond
+uint16_t computePI(double currentNa, double targetNa)
+{
+    // Calculate error
+    double error = targetNa - currentNa;
+
+    // Update integral term with clamping to prevent windup
+    integralError += error;
+    integralError = clamp(integralError, -integralMax, integralMax);
+
+    // Compute output using proportional and integral terms
+    double output = kP * error + kI * integralError;
+
+    // Clamp output to range [0, maxOutput]
+    output = clamp(output, 0.0, DAC_VALUE_MAX);
+
+    uint16_t dacz = static_cast<uint16_t>(std::round(output));
+
+    UsbPcInterface::send("target,%.2f nA,%.2f error,%.2f dac,%u\n", targetNa, currentNa, error, dacz);
+
+    return dacz;
+}
+
+
 extern "C" void findTunnelLoop(void *unused)
 {
-    const uint16_t setpoint = 10000; // Example desired value in the range 0..65535
+
+    int16_t adcValueRaw, adcValue = 0;
+    string dataBuffer;
+
+    // Reset vall outputs sendTunnelPaket();
+    currentXDac = 0;
+    currentYDac = 0;
+    currentZDac = 0;
+    vTaskResume(handleVspiLoop);
 
     int counter = 0;
 
     while (counter < 50)
     {
+        vTaskSuspend(NULL);           // Sleep until resumed by TUNNEL_TIMER
 
-        vTaskSuspend(NULL);           // Sleep until resumed by a timer
-        int16_t adcValue = readAdc(); // Read voltage from preamplifier
+        adcValueRaw = readAdc(); // Read voltage from preamplifier
+        adcValue = adcValueDebounced(adcValueRaw);
 
-        // Error if high value negative. Low voltage negative is ok.
-        if (adcValue < -1000)
-        {
-            UsbPcInterface::send("ERROR. Wrong polarity at ADC Input. %d\n", adcValue);
-            continue;
-        }
+        currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX) / ADC_VALUE_MAX; 
+        currentTunnelnA = currentTunnelnA * 3; // Voltage Divider ADC Input
 
-        // Low volages may be negative from Opamp
-        if (adcValue < 0)
-        {
-            adcValue = -adcValue;
-        }
-        // Result: Values 0 ... 32767
+        // Calculate new Z Value with PI controller
+        uint16_t dacOutput = computePI(currentTunnelnA, targetTunnelnA);
 
-        uint16_t dacOutput = computePI(setpoint, adcValue);
-
-        currentZDac = dacOutput; // Set new Z height
-
-        // Resume DAC loop to set the new Z posi
-
-        // UsbPcInterface::send("adcValue,%d %u\n", adcValue, dacOutput);
-
-        // DataElementTunnel::DataElementTunnel(uint32_t dacz, int16_t adc, bool isTunnel, float currentNa)
-        //     : dacz(dacz), adc(adc), isTunnel(isTunnel), currentNa(currentNa)
-
-        tunnelQueue.emplace(DataElementTunnel(dacOutput, adcValue, true, 0.99));
+        currentZDac = dacOutput;
         counter++;
+        vTaskResume(handleVspiLoop);
     }
-    sendTunnelPaket();
+    // sendTunnelPaket();
     currentXDac = 0;
     currentYDac = 0;
     currentZDac = 0;
@@ -457,4 +385,23 @@ uint16_t saturate16bit(uint32_t input, uint16_t min, uint16_t max)
         return max;
     }
     return static_cast<uint16_t>(input);
+}
+
+int16_t adcValueDebounced(int16_t adcValue)
+{
+
+    // Error if high value negative. Low voltage negative is ok.
+    if (adcValue < -1000)
+    {
+        UsbPcInterface::send("ERROR. Wrong polarity at ADC Input. %d\n", adcValue);
+        return 0;
+    }
+
+    // Low volages may be negative from Opamp
+    if (adcValue < 0)
+    {
+        adcValue = -adcValue;
+    }
+    // Result: Values 0 ... 32767
+    return adcValue;
 }
