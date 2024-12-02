@@ -235,7 +235,7 @@ extern "C" void findTunnelLoop(void *unused)
         // Calculate new Z Value with PI controller
         uint16_t dacOutput = computePI(currentTunnelnA, targetTunnelnA);
 
-        UsbPcInterface::send("target,%.2f nA,%.2f error,%.2f dac,%u\n", piresult.targetNa, piresult.currentNa, piresult.error, piresult.dacz);
+        UsbPcInterface::send("TUNNEL,target,%.2f,nA,%.2f,error,%.2f,dac,%u\n", piresult.targetNa, piresult.currentNa, piresult.error, piresult.dacz);
 
         currentZDac = dacOutput;
         counter++;
