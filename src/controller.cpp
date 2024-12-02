@@ -119,22 +119,17 @@ extern "C" void measureLoop(void *unused)
         currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX) / ADC_VALUE_MAX;
         currentTunnelnA = currentTunnelnA * 3; // Voltage Divider ADC Input
 
-        if (currentTunnelnA > targetTunnelnA + toleranceTunnelnA)
-        {
-            gpio_set_level(IO_27, 1);
-        }
-        else
-        {
-            gpio_set_level(IO_27, 0);
-        }
-
+       
+      
         errorTunnelNa = targetTunnelnA - currentTunnelnA;
 
         // If the error is within the allowed limit, process the result
         if (abs(errorTunnelNa) <= toleranceTunnelnA)
         {
-
-            gpio_set_level(IO_25, 1);
+            // YELLOW
+            gpio_set_level(IO_25, 0); // red LED
+            gpio_set_level(IO_27, 1);  // yellow LED
+            gpio_set_level(IO_02, 0); // green LED
 
             dataQueue.emplace(DataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
             sendDataPaket();
@@ -153,7 +148,18 @@ extern "C" void measureLoop(void *unused)
         // If the error is too large, adjust the Z position
         else
         {
-            gpio_set_level(IO_25, 0);
+
+            gpio_set_level(IO_27, 0); // yellow LED
+            
+            if (currentTunnelnA > targetTunnelnA){
+                gpio_set_level(IO_25, 1); // red LED
+                gpio_set_level(IO_02, 0); // green LED
+            }
+            else{
+                gpio_set_level(IO_25, 0); // red LED
+                gpio_set_level(IO_02, 1); // green LED
+            }
+
             // Calculate new Z Value with PI controller
             uint16_t dacOutput = computePI(currentTunnelnA, targetTunnelnA);
 
@@ -235,7 +241,7 @@ extern "C" void findTunnelLoop(void *unused)
         // Calculate new Z Value with PI controller
         uint16_t dacOutput = computePI(currentTunnelnA, targetTunnelnA);
 
-        UsbPcInterface::send("TUNNEL,target,%.2f,nA,%.2f,error,%.2f,dac,%u\n", piresult.targetNa, piresult.currentNa, piresult.error, piresult.dacz);
+        UsbPcInterface::send("TUNNEL,tar,%.2f,nA,%.2f,err,%.2f,dac,%u\n", piresult.targetNa, piresult.currentNa, piresult.error, dacOutput);
 
         currentZDac = dacOutput;
         counter++;
@@ -392,6 +398,10 @@ int16_t adcValueDebounced(int16_t adcValue)
     // Error if high value negative. Low voltage negative is ok.
     if (adcValue < -1000)
     {
+        gpio_set_level(IO_25, 1); // red LED
+        gpio_set_level(IO_27, 1); // yellow LED
+        gpio_set_level(IO_02, 1); // green LED
+
         UsbPcInterface::send("ERROR. Wrong polarity at ADC Input. %d\n", adcValue);
         return 0;
     }

@@ -48,11 +48,13 @@ extern "C" void app_main(void)
     gpio_set_direction(IO_27, GPIO_MODE_OUTPUT);
     gpio_set_direction(IO_02, GPIO_MODE_OUTPUT);
 
+    
     // Initialize GPIO levels
-    gpio_set_level(IO_04, 0);
-    gpio_set_level(IO_25, 0);
-    gpio_set_level(IO_02, 0);
-    gpio_set_level(IO_27, 0);
+    gpio_set_level(IO_17, 0); // white LED
+    gpio_set_level(IO_04, 0); // blue LED
+    gpio_set_level(IO_25, 0); // red LED
+    gpio_set_level(IO_27, 0); // yellow LED
+    gpio_set_level(IO_02, 0); // green LED
 
     // USB Interface initialization
     UsbPcInterface usb;
