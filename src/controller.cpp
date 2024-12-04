@@ -56,6 +56,7 @@ extern "C" void adjustStart()
  */
 extern "C" void measureStart()
 {
+
     xTaskCreatePinnedToCore(measureLoop, "measurementLoop", 10000, NULL, 2, &handleControllerLoop, 1);
     timer_initialize(MODE_MEASURE);
 }
@@ -93,13 +94,11 @@ extern "C" void adjustLoop(void *unused)
         vTaskSuspend(NULL); // Sleep, will be retriggered by gptimer
 
         int16_t adcValue = readAdc(); // Read voltage from preamplifier
-
-        currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX * 1e3) /
-                          (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
+        currentTunnelnA = calculateTunnelNa(adcValue);
 
         double adcInVolt = (adcValue * ADC_VOLTAGE_MAX * 1e2) /
                            (ADC_VALUE_MAX * RESISTOR_PREAMP_MOHM);
-        UsbPcInterface::send("ADJUST,%f,%f,%d\n", adcInVolt, currentTunnelnA, adcValue);
+        UsbPcInterface::send("ADJUST,%.3f,%.3f,%d\n", adcInVolt, currentTunnelnA, adcValue);
     }
 }
 
@@ -109,34 +108,32 @@ extern "C" void measureLoop(void *unused)
     int16_t adcValueRaw, adcValue = 0;
     string dataBuffer;
 
+    static int counter = 0;
+    static bool is_max = false;
+    static bool is_min = false;
     while (true)
     {
+
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
 
         adcValueRaw = readAdc(); // Read voltage from preamplifier
         adcValue = adcValueDebounced(adcValueRaw);
+        currentTunnelnA = calculateTunnelNa(adcValue);
 
-        currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX) / ADC_VALUE_MAX;
-        currentTunnelnA = currentTunnelnA * 3; // Voltage Divider ADC Input
-
-       
-      
         errorTunnelNa = targetTunnelnA - currentTunnelnA;
+        ledStatus(currentTunnelnA, targetTunnelnA, toleranceTunnelnA, currentZDac);
 
         // If the error is within the allowed limit, process the result
         if (abs(errorTunnelNa) <= toleranceTunnelnA)
         {
-            // YELLOW
-            gpio_set_level(IO_25, 0); // red LED
-            gpio_set_level(IO_27, 1);  // yellow LED
-            gpio_set_level(IO_02, 0); // green LED
-
+            counter = 0;
             dataQueue.emplace(DataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac));
             sendDataPaket();
 
             // Calculate next XY position
             if (!rtmGrid.moveOn())
             {
+
                 vTaskResume(handleVspiLoop); // Process new XY position
             }
             else
@@ -149,21 +146,42 @@ extern "C" void measureLoop(void *unused)
         else
         {
 
-            gpio_set_level(IO_27, 0); // yellow LED
-            
-            if (currentTunnelnA > targetTunnelnA){
-                gpio_set_level(IO_25, 1); // red LED
-                gpio_set_level(IO_02, 0); // green LED
-            }
-            else{
-                gpio_set_level(IO_25, 0); // red LED
-                gpio_set_level(IO_02, 1); // green LED
-            }
-
             // Calculate new Z Value with PI controller
             uint16_t dacOutput = computePI(currentTunnelnA, targetTunnelnA);
 
+            counter++;
+            if (counter % 200 == 0)
+            {
+                if (is_min == false && is_max == false)
+                {
+                    UsbPcInterface::send("LOG,tar,%.2f,nA,%.2f,err,%.2f,dac,%u\n", piresult.targetNa, piresult.currentNa, piresult.error, dacOutput);
+                }
+
+                if (dacOutput == 0xFFFF)
+                {
+                    is_max = true;
+                }
+                else
+                {
+                    is_max = false;
+                }
+                if (dacOutput == 0)
+                {
+                    is_min = true;
+                }
+                else
+                {
+                    is_min = false;
+                }
+
+                if (dacOutput == 0xFFFF)
+                {
+                    dacOutput = 1;
+                }
+            }
+
             currentZDac = dacOutput;
+
             vTaskResume(handleVspiLoop);
         }
     }
@@ -187,9 +205,12 @@ double clamp(double value, double minValue, double maxValue)
 // PID function to compute output every millisecond
 uint16_t computePI(double currentNa, double targetNa)
 {
-    
+
     // Calculate error
     double error = targetNa - currentNa;
+    
+    // TODO !!!!!!!!!!!!!!!!!!!!!!!!! PEDI
+    //error = -error;
 
     // Update integral term with clamping to prevent windup
     integralError += error;
@@ -203,7 +224,6 @@ uint16_t computePI(double currentNa, double targetNa)
 
     uint16_t dacz = static_cast<uint16_t>(std::round(output));
 
-   
     piresult.targetNa = targetNa;
     piresult.currentNa = currentNa;
     piresult.error = error;
@@ -228,25 +248,40 @@ extern "C" void findTunnelLoop(void *unused)
 
     int counter = 0;
 
-    while (counter < 50)
+    bool break_loop = false;
+    while ((counter < 500) and !break_loop)
     {
         vTaskSuspend(NULL); // Sleep until resumed by TUNNEL_TIMER
 
         adcValueRaw = readAdc(); // Read voltage from preamplifier
         adcValue = adcValueDebounced(adcValueRaw);
+        currentTunnelnA = calculateTunnelNa(adcValue);
+        ledStatus(currentTunnelnA, targetTunnelnA, toleranceTunnelnA, currentZDac);
 
-        currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX) / ADC_VALUE_MAX;
-        currentTunnelnA = currentTunnelnA * 3; // Voltage Divider ADC Input
-
+       
         // Calculate new Z Value with PI controller
         uint16_t dacOutput = computePI(currentTunnelnA, targetTunnelnA);
 
-        UsbPcInterface::send("TUNNEL,tar,%.2f,nA,%.2f,err,%.2f,dac,%u\n", piresult.targetNa, piresult.currentNa, piresult.error, dacOutput);
+        UsbPcInterface::send("TUNNEL,tar,%.2f,nA,%.3f,err,%.3f,dac,%u\n", piresult.targetNa, piresult.currentNa, piresult.error, dacOutput);
 
         currentZDac = dacOutput;
         counter++;
         vTaskResume(handleVspiLoop);
+        if ((currentZDac == 0) | (currentZDac == 0xFFFF))
+        {
+            // gpio_set_level(IO_17, 1);
+            // gpio_set_level(IO_04, 1);
+            break_loop = true;
+        }
     }
+
+    if (break_loop == true)
+    {
+        UsbPcInterface::send("TUNNEL,END,DAC,%u\n", currentZDac);
+    }
+    else
+        UsbPcInterface::send("TUNNEL,END,COUNTER,%d\n", counter);
+
     // sendTunnelPaket();
     currentXDac = 0;
     currentYDac = 0;
@@ -396,13 +431,14 @@ int16_t adcValueDebounced(int16_t adcValue)
 {
 
     // Error if high value negative. Low voltage negative is ok.
-    if (adcValue < -1000)
+    if (adcValue < -2000)
     {
         gpio_set_level(IO_25, 1); // red LED
         gpio_set_level(IO_27, 1); // yellow LED
         gpio_set_level(IO_02, 1); // green LED
 
         UsbPcInterface::send("ERROR. Wrong polarity at ADC Input. %d\n", adcValue);
+        vTaskDelay(1000 / portTICK_PERIOD_MS); // Delay for 1 second
         return 0;
     }
 
@@ -413,4 +449,34 @@ int16_t adcValueDebounced(int16_t adcValue)
     }
     // Result: Values 0 ... 32767
     return adcValue;
+}
+
+void ledStatus(double currentTunnelnA, double targetTunnelnA, double toleranceTunnelnA, uint16_t dac)
+{
+
+    if (abs(targetTunnelnA - currentTunnelnA) <= toleranceTunnelnA)
+    {
+        gpio_set_level(IO_25, 0); // red LED
+        gpio_set_level(IO_27, 1); // yellow LED
+        gpio_set_level(IO_02, 0); // green LED
+    }
+    else if (currentTunnelnA > targetTunnelnA)
+    {
+        gpio_set_level(IO_25, 1); // red LED
+        gpio_set_level(IO_27, 0); // yellow LED
+        gpio_set_level(IO_02, 0); // green LED
+    }
+    else
+    {
+        gpio_set_level(IO_25, 0); // red LED
+        gpio_set_level(IO_27, 0); // yellow LED
+        gpio_set_level(IO_02, 1); // green LED
+    }
+}
+
+double calculateTunnelNa(int16_t adcValue)
+{
+    currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX) / ADC_VALUE_MAX;
+    currentTunnelnA = currentTunnelnA * 3; // Voltage Divider ADC Input
+    return currentTunnelnA;
 }

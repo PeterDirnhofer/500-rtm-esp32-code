@@ -286,7 +286,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
             if ((i % 50) == 0)
             {
                 ledLevel = !ledLevel;
-                gpio_set_level(IO_17, ledLevel); // white LED
+                // gpio_set_level(IO_17, ledLevel); // white LED
             }
         }
         else{

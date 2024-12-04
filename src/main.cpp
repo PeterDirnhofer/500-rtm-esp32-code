@@ -30,6 +30,8 @@
 #include "dataStoring.h"
 #include "UsbPcInterface.h"
 #include "ParameterSetter.h"
+#include "esp_log.h"
+#include <esp_log.h>
 
 using namespace std;
 
@@ -93,6 +95,8 @@ extern "C" void app_main(void)
     {
         esp_restart();
     }
+
+      
 
     // Process parameters from PC
     string p0 = "", p1 = "";

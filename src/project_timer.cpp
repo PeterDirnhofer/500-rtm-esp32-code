@@ -80,11 +80,11 @@ extern "C" void timer_initialize(int mode)
     // Set the alarm count based on the mode
     if (mode == MODE_MEASURE)
     {
-        alarm_config.alarm_count = 1260; // 1260 us
+        alarm_config.alarm_count = 1260 * MEASURE_TIMER_MS; // 1260 us
     }
     else if (mode == MODE_TUNNEL_FIND)
     {
-        alarm_config.alarm_count = 1000 * TUNNEL_TIMER_MS; // 1 second
+        alarm_config.alarm_count = 1000 * TUNNEL_TIMER_MS; // ms * 
     }
     else // mode == MODE_ADJUST_TEST_TIP
     {

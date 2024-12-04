@@ -106,11 +106,11 @@ esp_err_t ParameterSetting::putDefaultParametersToFlash()
 {
     vector<string> params = {
         "PARAMETER",
-        "300.0", // kP
-        "5.0",   // kI
+        "5000.0", // kP
+        "500.0",   // kI
         "0.0",   // kD
-        "10",   // targetTunnelCurrentnA
-        "1.2",  // toleranceTunnelCurrentnA
+        "1.00",   // targetTunnelCurrentnA
+        "0.3",  // toleranceTunnelCurrentnA
         "0",     // startX
         "0",     // startY
         "0",     // direction

@@ -107,5 +107,7 @@ extern "C" double constrain(double value, double min, double max);
 int16_t adcValueDebounced(int16_t adcValue);
 double clamp(double value, double minValue, double maxValue);
 uint16_t computePI(double currentNa, double targetNa);
+void ledStatus(double currentTunnelnA, double targetTunnelnA, double toleranceTunnelnA, uint16_t dac);
+double calculateTunnelNa(int16_t adcValue);
 
 #endif // CONTROLLER

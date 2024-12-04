@@ -137,5 +137,5 @@ extern uint8_t lastConfigByte;
 #define MODE_RESTART 5 // starts esp_restart();
 
 #define TUNNEL_TIMER_MS 1  // Period time in TUNNEL find loop
-
+#define MEASURE_TIMER_MS 1
 #endif
