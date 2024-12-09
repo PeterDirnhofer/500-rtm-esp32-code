@@ -25,13 +25,13 @@ esp_err_t i2cAdcInit()
 {
     // Use espressif 5.3 or later
     // INIT ADC
-    //  Config ADS 1115 Single0
-    //  0x04
+    //  Config ADS 1115 
+    //  0x74
     //  Bits 15 14 13 12  11 10 09 08
-    //        0  0  0  0   0  1  0  0
+    //        0  1  1  1   1  0  0  0
     //       15 Single Conversion
-    //           0  0  0  Measure Comparator AIN0 against AIN1
-    //                     0  1  0  gain +- 2.048 V
+    //           1  1  1  Measure Comparator AIN3 against GND
+    //                     0  1  0    gain +- 2.048 V
     //                              0 Continuous mode, no reset after conversion
 
     // 0xE3
