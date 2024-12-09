@@ -76,9 +76,8 @@ esp_err_t i2cAdcInit()
     // Set Configuration Register of ADS1115
     uint8_t data_wr[3];
     data_wr[0] = CONFIG_REGISTER;
-    // TODO Set Inputs E3 against GND
-    // data_wr[1] = 0x04;
-    data_wr[1] = 0x04;
+    // 0x74: 	Input multiplexer: Measure AIN3 vs. GND. PGA setting: ±2.048 V full-scale range.
+    data_wr[1] = 0x74;
     data_wr[2] = 0xE3;
 
     ESP_ERROR_CHECK(i2c_master_transmit(dev_handle, data_wr, 3, -1));
