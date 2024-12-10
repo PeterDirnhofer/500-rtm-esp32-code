@@ -4,9 +4,14 @@
 #include <cmath>
 #include "globalVariables.h"
 #include <string>
+#include <queue>
+#include <sstream>
+#include <iomanip>
 
 static const char *TAG = "controller";
 static PIResult piresult;
+
+static queue<string> tunnelQueue;
 
 // ---- Hardware Initialization ----
 
@@ -209,9 +214,7 @@ uint16_t computePI(double currentNa, double targetNa)
     // Calculate error
     double error = targetNa - currentNa;
     
-    // TODO !!!!!!!!!!!!!!!!!!!!!!!!! PEDI
-    //error = -error;
-
+  
     // Update integral term with clamping to prevent windup
     integralError += error;
     integralError = clamp(integralError, -integralMax, integralMax);
@@ -233,56 +236,89 @@ uint16_t computePI(double currentNa, double targetNa)
 
     return dacz;
 }
-
 extern "C" void findTunnelLoop(void *unused)
 {
-
     int16_t adcValueRaw, adcValue = 0;
     string dataBuffer;
 
-    // Reset vall outputs sendTunnelPaket();
+    // Reset all outputs
     currentXDac = 0;
     currentYDac = 0;
     currentZDac = 0;
     vTaskResume(handleVspiLoop);
 
     int counter = 0;
-
     bool break_loop = false;
-    while ((counter < 500) and !break_loop)
+
+    int MAXCOUNTS = 300;
+
+    while ((counter < MAXCOUNTS) && !break_loop)
     {
         vTaskSuspend(NULL); // Sleep until resumed by TUNNEL_TIMER
 
+        
         adcValueRaw = readAdc(); // Read voltage from preamplifier
         adcValue = adcValueDebounced(adcValueRaw);
         currentTunnelnA = calculateTunnelNa(adcValue);
         ledStatus(currentTunnelnA, targetTunnelnA, toleranceTunnelnA, currentZDac);
 
-       
         // Calculate new Z Value with PI controller
         uint16_t dacOutput = computePI(currentTunnelnA, targetTunnelnA);
 
-        UsbPcInterface::send("TUNNEL,tar,%.2f,nA,%.3f,err,%.3f,dac,%u\n", piresult.targetNa, piresult.currentNa, piresult.error, dacOutput);
+        // Create a stringstream to format message
+        std::ostringstream messageStream;
+        messageStream << "TUNNEL,tar,"
+                      << std::fixed << std::setprecision(2) << piresult.targetNa << ",nA,"
+                      << std::fixed << std::setprecision(2) << piresult.currentNa << ",dac," << std::to_string(dacOutput) << "\n";
+
+        // Add message to tunnelQueue
+        tunnelQueue.emplace(messageStream.str()); // Add formatted message to queue
 
         currentZDac = dacOutput;
         counter++;
-        vTaskResume(handleVspiLoop);
-        if ((currentZDac == 0) | (currentZDac == 0xFFFF))
+
+        
+
+
+        // // Send packet and debug log every 50 iterations
+        // if (counter % 10 == 0)
+        // {
+        //     // Log before calling sendTunnelPaket
+        //     UsbPcInterface::send("Calling sendTunnelPaket, counter: %d\n", counter);
+        //     int sendResult = sendTunnelPaket(); // Capture result for debugging
+        //     vTaskDelay(10 / portTICK_PERIOD_MS);
+
+        //     if (sendResult != 0)
+        //     {
+        //         UsbPcInterface::send("Error sending tunnel packet. Result: %d\n", sendResult);
+        //     }
+        // }
+
+        if (currentZDac == 0xFFFF)
         {
-            // gpio_set_level(IO_17, 1);
-            // gpio_set_level(IO_04, 1);
+
+            UsbPcInterface::send("TUNNEL,END,NO CURRENT at DAC Z = max\n");
+            vTaskDelay(10 / portTICK_PERIOD_MS);
             break_loop = true;
         }
+        else if (currentZDac == 0)
+        {
+            //tunnelQueue.emplace("TUNNEL,END,SHORTCUT at DAC Z = 0\n");
+            UsbPcInterface::send("TUNNEL,END,SHORTCUT at DAC Z = 0\n");
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+            break_loop = true;
+        }
+        vTaskResume(handleVspiLoop);
     }
 
-    if (break_loop == true)
+    if (counter == MAXCOUNTS)
     {
-        UsbPcInterface::send("TUNNEL,END,DAC,%u\n", currentZDac);
-    }
-    else
         UsbPcInterface::send("TUNNEL,END,COUNTER,%d\n", counter);
+    }
 
-    // sendTunnelPaket();
+   
+    sendTunnelPaket(); // Capture final result for debugging
+    //vTaskDelay(2000 / portTICK_PERIOD_MS);
     currentXDac = 0;
     currentYDac = 0;
     currentZDac = 0;
@@ -308,29 +344,20 @@ extern "C" int sendTunnelPaket()
     }
 
     timer_stop(); // Pause timer to avoid timing issues during send
-    // DataElementTunnel::DataElementTunnel(uint16_t dacz, uint16_t adc, bool isTunnel)
-
-    // DataElementTunnel::DataElementTunnel(uint32_t dacz, int16_t adc, bool isTunnel, float currentNa)
-    //     : dacz(dacz), adc(adc), isTunnel(isTunnel), currentNa(currentNa)
 
     while (!tunnelQueue.empty())
     {
-        // Getter methods for queue elements
-        uint32_t dacz = tunnelQueue.front().getDacZ();
-        int16_t adc = tunnelQueue.front().getAdc();
-        bool istunnel = tunnelQueue.front().getIsTunnel();
-        float currentNa = tunnelQueue.front().getCurrentNa();
-        // Conditional logic to send "tunnel" or "no"
+        const string &message = tunnelQueue.front();
 
-        const char *tunnelStatus = (istunnel) ? "tunnel" : "no";
-
-        // Send data to PC with logging
-        // UsbPcInterface::send("TUNNEL;%u,%d,%s,%.2f\n", dacz, adc, tunnelStatus, currentNa);
-        // Send data to PC with logging in the desired order
-        UsbPcInterface::send("TUNNEL,%s,%u,%d,%.2f\n", tunnelStatus, dacz, adc, currentNa);
-
-        tunnelQueue.pop(); // Remove processed element from queue
+        if (UsbPcInterface::send(message.c_str()) < 0) // Send the message
+        {
+            return -2; // Error occurred while sending
+        }
+        tunnelQueue.pop(); // Remove the message after successful send
     }
+
+    // Reinitialize the queue (clear the queue)
+    tunnelQueue = queue<string>(); // Create a new empty queue
 
     timer_start(); // Resume the timer after sending
 
@@ -438,7 +465,7 @@ int16_t adcValueDebounced(int16_t adcValue)
         gpio_set_level(IO_02, 1); // green LED
 
         UsbPcInterface::send("ERROR. Wrong polarity at ADC Input. %d\n", adcValue);
-        vTaskDelay(1000 / portTICK_PERIOD_MS); // Delay for 1 second
+        //vTaskDelay(1000 / portTICK_PERIOD_MS); // Delay for 1 second
         return 0;
     }
 

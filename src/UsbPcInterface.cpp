@@ -3,6 +3,8 @@
 static const char *TAG = "UsbPcInterface";
 static const char *TIP_ERROR_MESSAGE = "Invalid format 'TIP' command. \nSend 'TIP,10000,20000,30000' to set X,Y,Z\n'TIP,?' to see actual X Y Z values\n";
 
+#include <controller.h>
+
 UsbPcInterface::UsbPcInterface()
     : mTaskHandle(NULL), mStarted(false)
 {
@@ -106,6 +108,12 @@ int UsbPcInterface::send(const char *fmt, ...)
     int rc = uart_write_bytes(UART_NUM_1, s, len);
 
     va_end(ap);
+    // Wait for completion (if uart_write_bytes is non-blocking)
+    if (rc >= 0)
+    {
+        // Assume `uart_wait_tx_done` blocks until all bytes are sent.
+        uart_wait_tx_done(UART_NUM_1, portMAX_DELAY);
+    }
 
     return rc;
 }
@@ -269,8 +277,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     static const char *TAG = "UsbPcInterface::getCommandsFromPC";
 
     uint32_t i = 0;
-    int ledLevel = 0;
-    bool idle_was_sent = false;
+    static bool idle_was_sent = false;
 
     while (UsbPcInterface::mUsbAvailable == false)
     {
@@ -282,11 +289,14 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
                 this->send("IDLE\n");
                 idle_was_sent = true;
             }
+            uint16_t adcValueRaw = readAdc(); // Read voltage from preamplifier
+            int16_t adcValue = adcValueDebounced(adcValueRaw);
+            double currentTunnelnA = calculateTunnelNa(adcValue);
+            ledStatus(currentTunnelnA, targetTunnelnA, toleranceTunnelnA, currentZDac);
 
             if ((i % 50) == 0)
             {
-                ledLevel = !ledLevel;
-                // gpio_set_level(IO_17, ledLevel); // white LED
+                this->send("nA %.2f tar %.2f t %.2f \n", currentTunnelnA, targetTunnelnA, toleranceTunnelnA);
             }
         }
         else{

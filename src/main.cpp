@@ -78,6 +78,7 @@ extern "C" void app_main(void)
             ESP_LOGE(TAG, "Failed to put default parameters to flash: %s", esp_err_to_name(result)); // Log error with message
         }
     }
+    parameterSetter.getParametersFromFlash(false);
 
     initHardware();
 
