@@ -238,6 +238,7 @@ uint16_t computePI(double currentNa, double targetNa)
 }
 extern "C" void findTunnelLoop(void *unused)
 {
+    static double errorTunnelNa = 0.0;
     int16_t adcValueRaw, adcValue = 0;
     string dataBuffer;
 
@@ -255,11 +256,11 @@ extern "C" void findTunnelLoop(void *unused)
     while ((counter < MAXCOUNTS) && !break_loop)
     {
         vTaskSuspend(NULL); // Sleep until resumed by TUNNEL_TIMER
-
         
         adcValueRaw = readAdc(); // Read voltage from preamplifier
         adcValue = adcValueDebounced(adcValueRaw);
         currentTunnelnA = calculateTunnelNa(adcValue);
+        errorTunnelNa = targetTunnelnA - currentTunnelnA;
         ledStatus(currentTunnelnA, targetTunnelnA, toleranceTunnelnA, currentZDac);
 
         // Calculate new Z Value with PI controller
@@ -277,34 +278,18 @@ extern "C" void findTunnelLoop(void *unused)
         currentZDac = dacOutput;
         counter++;
 
-        
-
-
-        // // Send packet and debug log every 50 iterations
-        // if (counter % 10 == 0)
-        // {
-        //     // Log before calling sendTunnelPaket
-        //     UsbPcInterface::send("Calling sendTunnelPaket, counter: %d\n", counter);
-        //     int sendResult = sendTunnelPaket(); // Capture result for debugging
-        //     vTaskDelay(10 / portTICK_PERIOD_MS);
-
-        //     if (sendResult != 0)
-        //     {
-        //         UsbPcInterface::send("Error sending tunnel packet. Result: %d\n", sendResult);
-        //     }
-        // }
-
         if (currentZDac == 0xFFFF)
         {
 
-            UsbPcInterface::send("TUNNEL,END,NO CURRENT at DAC Z = max\n");
+            tunnelQueue.emplace("TUNNEL,END,NO CURRENT at DAC Z = max\n");
+
             vTaskDelay(10 / portTICK_PERIOD_MS);
             break_loop = true;
         }
         else if (currentZDac == 0)
         {
             //tunnelQueue.emplace("TUNNEL,END,SHORTCUT at DAC Z = 0\n");
-            UsbPcInterface::send("TUNNEL,END,SHORTCUT at DAC Z = 0\n");
+            tunnelQueue.emplace("TUNNEL,END,SHORTCUT at DAC Z = 0\n");
             vTaskDelay(10 / portTICK_PERIOD_MS);
             break_loop = true;
         }
@@ -313,7 +298,7 @@ extern "C" void findTunnelLoop(void *unused)
 
     if (counter == MAXCOUNTS)
     {
-        UsbPcInterface::send("TUNNEL,END,COUNTER,%d\n", counter);
+        tunnelQueue.emplace("TUNNEL,END,COUNTER,%d\n", counter);
     }
 
    
