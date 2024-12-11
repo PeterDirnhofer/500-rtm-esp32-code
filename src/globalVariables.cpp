@@ -3,6 +3,8 @@
 #include "driver/spi_master.h"
 #include <string>
 
+int ACTMODE = MODE_IDLE;
+int TUNNEL_REQUEST = 0;
 esp_err_t retVspi;
 spi_transaction_t tVspi;
 
@@ -57,3 +59,4 @@ uint16_t maxNumberAttemptsSPI = 10;
 intr_handle_t s_timer_handle;
 
 uint16_t modeWorking;
+

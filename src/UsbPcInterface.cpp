@@ -1,9 +1,11 @@
 #include <UsbPcInterface.h>
+#include <globalVariables.h>
 
 static const char *TAG = "UsbPcInterface";
 static const char *TIP_ERROR_MESSAGE = "Invalid format 'TIP' command. \nSend 'TIP,10000,20000,30000' to set X,Y,Z\n'TIP,?' to see actual X Y Z values\n";
 
 #include <controller.h>
+
 
 UsbPcInterface::UsbPcInterface()
     : mTaskHandle(NULL), mStarted(false)
@@ -78,11 +80,23 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
                 for (int x = 0; x < strlen(part3.c_str()); x++)
                     part3[x] = toupper(part3[x]);
 
-                if (strcmp(part3.c_str(), "TIP") == 0) // TIP command
-                {
-                    UsbPcInterface::mUpdateTip(rcvString);
-                }
-                else // other commands
+                string part6 = rcvString.substr(0, 6);
+                for (int x = 0; x < strlen(part6.c_str()); x++)
+                    part6[x] = toupper(part6[x]);
+
+                
+                if (strcmp(part3.c_str(), "TIP") == 0) {  // TP command
+                    UsbPcInterface::mUpdateTip(rcvString); }
+                    else if ((ACTMODE==MODE_TUNNEL_FIND) and strcmp(part3.c_str(), "TUN") == 0) // TUNNEL  command
+                    {
+                        TUNNEL_REQUEST = 1;
+                    }
+                    else if ((ACTMODE == MODE_TUNNEL_FIND) and strcmp(part6.c_str(), "TUNNEL") != 0) // TUNNEL  command
+                    {
+                        esp_restart();
+                    }
+
+                else// other commands
                 {
                     UsbPcInterface::mUsbReceiveString.clear();
                     UsbPcInterface::mUsbReceiveString.append(rcvString);
@@ -353,6 +367,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
     {
 
         UsbPcInterface::m_workingmode = MODE_TUNNEL_FIND;
+        TUNNEL_REQUEST = 1;
         ESP_LOGI(TAG, "TUNNEL_FIND detected\n");
         return ESP_OK;
     }
@@ -383,7 +398,9 @@ string UsbPcInterface::toUpper(const char *str)
 
 int UsbPcInterface::getWorkingMode()
 {
-    return UsbPcInterface::m_workingmode;
+   
+    ACTMODE = UsbPcInterface::m_workingmode;
+    return ACTMODE;
 }
 
 vector<string> UsbPcInterface::getParametersFromPc()

@@ -59,6 +59,8 @@ extern "C" void app_main(void)
     gpio_set_level(IO_02, 0); // green LED
 
     // USB Interface initialization
+
+    
     UsbPcInterface usb;
     usb.start();
     // UsbPcInterface::send("IDLE\n");

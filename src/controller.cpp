@@ -7,9 +7,11 @@
 #include <queue>
 #include <sstream>
 #include <iomanip>
+#include "UsbPcInterface.h"
 
 static const char *TAG = "controller";
 static PIResult piresult;
+static double integralError = 0.0;
 
 static queue<string> tunnelQueue;
 
@@ -192,55 +194,11 @@ extern "C" void measureLoop(void *unused)
     }
 }
 
-// State variables for PID
-
-double integralError = 0.0;
-const double integralMax = 5000.0; // Maximum value for integral term
-
-// Clamp function to constrain values
-double clamp(double value, double minValue, double maxValue)
-{
-    if (value < minValue)
-        return minValue;
-    if (value > maxValue)
-        return maxValue;
-    return value;
-}
-
-// PID function to compute output every millisecond
-uint16_t computePI(double currentNa, double targetNa)
-{
-
-    // Calculate error
-    double error = targetNa - currentNa;
-    
-  
-    // Update integral term with clamping to prevent windup
-    integralError += error;
-    integralError = clamp(integralError, -integralMax, integralMax);
-
-    // Compute output using proportional and integral terms
-    double output = kP * error + kI * integralError;
-
-    // Clamp output to range [0, maxOutput]
-    output = clamp(output, 0.0, DAC_VALUE_MAX);
-
-    uint16_t dacz = static_cast<uint16_t>(std::round(output));
-
-    piresult.targetNa = targetNa;
-    piresult.currentNa = currentNa;
-    piresult.error = error;
-    piresult.dacz = dacz;
-
-    // UsbPcInterface::send("target,%.2f nA,%.2f error,%.2f dac,%u\n", targetNa, currentNa, error, dacz);
-
-    return dacz;
-}
 extern "C" void findTunnelLoop(void *unused)
 {
-    static double errorTunnelNa = 0.0;
     int16_t adcValueRaw, adcValue = 0;
     string dataBuffer;
+    bool first_loop = true;
 
     // Reset all outputs
     currentXDac = 0;
@@ -253,24 +211,47 @@ extern "C" void findTunnelLoop(void *unused)
 
     int MAXCOUNTS = 300;
 
-    while ((counter < MAXCOUNTS) && !break_loop)
+    while (!break_loop)
     {
         vTaskSuspend(NULL); // Sleep until resumed by TUNNEL_TIMER
-        
+        if (ACTMODE != MODE_TUNNEL_FIND)
+        {
+            break_loop = true;
+            continue;
+        }
+
         adcValueRaw = readAdc(); // Read voltage from preamplifier
         adcValue = adcValueDebounced(adcValueRaw);
         currentTunnelnA = calculateTunnelNa(adcValue);
-        errorTunnelNa = targetTunnelnA - currentTunnelnA;
         ledStatus(currentTunnelnA, targetTunnelnA, toleranceTunnelnA, currentZDac);
+
+        if (TUNNEL_REQUEST == 0)
+        {
+            first_loop = true;
+            continue;
+        }
+
+        if (first_loop)
+        {
+            first_loop = false;
+            // Reset all outputs
+            currentXDac = 0;
+            currentYDac = 0;
+            currentZDac = 0;
+            vTaskResume(handleVspiLoop);
+            integralError = 0;
+            counter = 0;
+            continue;
+        }
 
         // Calculate new Z Value with PI controller
         uint16_t dacOutput = computePI(currentTunnelnA, targetTunnelnA);
 
         // Create a stringstream to format message
-        std::ostringstream messageStream;
+        ostringstream messageStream;
         messageStream << "TUNNEL,tar,"
-                      << std::fixed << std::setprecision(2) << piresult.targetNa << ",nA,"
-                      << std::fixed << std::setprecision(2) << piresult.currentNa << ",dac," << std::to_string(dacOutput) << "\n";
+                      << fixed << setprecision(2) << piresult.targetNa << ",nA,"
+                      << fixed << setprecision(2) << piresult.currentNa << ",dac," << to_string(dacOutput) << "\n";
 
         // Add message to tunnelQueue
         tunnelQueue.emplace(messageStream.str()); // Add formatted message to queue
@@ -282,32 +263,32 @@ extern "C" void findTunnelLoop(void *unused)
         {
 
             tunnelQueue.emplace("TUNNEL,END,NO CURRENT at DAC Z = max\n");
-
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-            break_loop = true;
+            sendTunnelPaket();
+            TUNNEL_REQUEST = 0;
         }
         else if (currentZDac == 0)
         {
-            //tunnelQueue.emplace("TUNNEL,END,SHORTCUT at DAC Z = 0\n");
             tunnelQueue.emplace("TUNNEL,END,SHORTCUT at DAC Z = 0\n");
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-            break_loop = true;
+            sendTunnelPaket();
+            TUNNEL_REQUEST = 0;
         }
+        if (counter == MAXCOUNTS)
+        {
+            tunnelQueue.emplace("TUNNEL,END,SUCCESS,%d\n", counter);
+            sendTunnelPaket();
+            TUNNEL_REQUEST = 0;
+        }
+
         vTaskResume(handleVspiLoop);
     }
 
-    if (counter == MAXCOUNTS)
-    {
-        tunnelQueue.emplace("TUNNEL,END,COUNTER,%d\n", counter);
-    }
+    // tunnelQueue.emplace("TUNNEL,STOP\n");
+    // sendTunnelPaket(); // Capture final result for debugging
 
-   
-    sendTunnelPaket(); // Capture final result for debugging
-    //vTaskDelay(2000 / portTICK_PERIOD_MS);
-    currentXDac = 0;
-    currentYDac = 0;
-    currentZDac = 0;
-    vTaskResume(handleVspiLoop);
+    // currentXDac = 0;
+    // currentYDac = 0;
+    // currentZDac = 0;
+    // vTaskResume(handleVspiLoop);
 }
 
 // ---- Helper Functions ----
@@ -450,7 +431,7 @@ int16_t adcValueDebounced(int16_t adcValue)
         gpio_set_level(IO_02, 1); // green LED
 
         UsbPcInterface::send("ERROR. Wrong polarity at ADC Input. %d\n", adcValue);
-        //vTaskDelay(1000 / portTICK_PERIOD_MS); // Delay for 1 second
+        // vTaskDelay(1000 / portTICK_PERIOD_MS); // Delay for 1 second
         return 0;
     }
 
@@ -491,4 +472,47 @@ double calculateTunnelNa(int16_t adcValue)
     currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX) / ADC_VALUE_MAX;
     currentTunnelnA = currentTunnelnA * 3; // Voltage Divider ADC Input
     return currentTunnelnA;
+}
+
+// State variables for PID
+
+const double integralMax = 5000.0; // Maximum value for integral term
+
+// Clamp function to constrain values
+double clamp(double value, double minValue, double maxValue)
+{
+    if (value < minValue)
+        return minValue;
+    if (value > maxValue)
+        return maxValue;
+    return value;
+}
+
+// PID function to compute output every millisecond
+uint16_t computePI(double currentNa, double targetNa)
+{
+
+    // Calculate error
+    double error = targetNa - currentNa;
+
+    // Update integral term with clamping to prevent windup
+    integralError += error;
+    integralError = clamp(integralError, -integralMax, integralMax);
+
+    // Compute output using proportional and integral terms
+    double output = kP * error + kI * integralError;
+
+    // Clamp output to range [0, maxOutput]
+    output = clamp(output, 0.0, DAC_VALUE_MAX);
+
+    uint16_t dacz = static_cast<uint16_t>(std::round(output));
+
+    piresult.targetNa = targetNa;
+    piresult.currentNa = currentNa;
+    piresult.error = error;
+    piresult.dacz = dacz;
+
+    // UsbPcInterface::send("target,%.2f nA,%.2f error,%.2f dac,%u\n", targetNa, currentNa, error, dacz);
+
+    return dacz;
 }

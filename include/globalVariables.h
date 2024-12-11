@@ -11,6 +11,9 @@ using namespace std;
 #include "dataStoring.h"
 #include "movementXY.h"
 
+extern int ACTMODE;
+extern int TUNNEL_REQUEST;
+
 struct PIResult
 {
     double targetNa;
@@ -136,4 +139,7 @@ extern uint8_t lastConfigByte;
 
 #define TUNNEL_TIMER_MS 1 // Period time in TUNNEL find loop
 #define MEASURE_TIMER_MS 1
+
+
+
 #endif
