@@ -50,7 +50,6 @@ extern "C" void app_main(void)
     gpio_set_direction(IO_27, GPIO_MODE_OUTPUT);
     gpio_set_direction(IO_02, GPIO_MODE_OUTPUT);
 
-    
     // Initialize GPIO levels
     gpio_set_level(IO_17, 0); // white LED
     gpio_set_level(IO_04, 0); // blue LED
@@ -60,7 +59,6 @@ extern "C" void app_main(void)
 
     // USB Interface initialization
 
-    
     UsbPcInterface usb;
     usb.start();
     // UsbPcInterface::send("IDLE\n");
@@ -98,8 +96,6 @@ extern "C" void app_main(void)
     {
         esp_restart();
     }
-
-      
 
     // Process parameters from PC
     string p0 = "", p1 = "";
@@ -155,7 +151,7 @@ extern "C" void app_main(void)
             UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,float,float,...");
         }
     }
-    // PARAMETER,10,1000,10.0,0.01,0,0,0,199,199,10
+    // TODO = size_keys + 1
     else if (parameterCount == 13)
     {
         esp_err_t err = parameterSetter.putParametersToFlash(usb.getParametersFromPc());
