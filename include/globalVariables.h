@@ -109,7 +109,7 @@ extern uint16_t currentZDac;
 
 extern double kP,
     kI, kD, targetTunnelnA, currentTunnelnA, toleranceTunnelnA;
-extern uint16_t startX, startY, multimultiplicatorGridAdc;
+extern uint16_t startX, startY, multimultiplicatorGridAdc, measureMs;
 extern uint16_t nvs_maxX, nvs_maxY;
 extern bool direction;
 extern uint16_t sendDataAfterXDatasets;

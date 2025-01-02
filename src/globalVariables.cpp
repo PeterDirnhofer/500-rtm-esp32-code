@@ -35,7 +35,7 @@ uint16_t currentXDac;
 uint16_t currentYDac;
 uint16_t currentZDac;
 double kP, kI, kD, targetTunnelnA, toleranceTunnelnA, currentTunnelnA;
-uint16_t startX, startY = 0;
+uint16_t startX, startY = 0, measureMs = 1;
 uint16_t nvs_maxX, nvs_maxY = 0, multiplicatorGridAdc;
 bool direction = 0;
 uint16_t sendDataAfterXDatasets = 100;

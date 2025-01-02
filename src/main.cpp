@@ -156,7 +156,7 @@ extern "C" void app_main(void)
         }
     }
     // PARAMETER,10,1000,10.0,0.01,0,0,0,199,199,10
-    else if (parameterCount == 12)
+    else if (parameterCount == 13)
     {
         esp_err_t err = parameterSetter.putParametersToFlash(usb.getParametersFromPc());
         if (err == ESP_OK)
