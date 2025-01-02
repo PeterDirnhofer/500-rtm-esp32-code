@@ -13,7 +13,6 @@ using namespace std;
 
 static const char *TAG = "ParameterSetting";
 
-static const int size_keys = 12;
 static const std::array<const char *, size_keys> keys = {
     "kP", "kI", "kD", "targetNa", "toleranceNa", "startX", "startY", "measureMs", "direction", "maxX", "maxY", "multiplicator"};
 
