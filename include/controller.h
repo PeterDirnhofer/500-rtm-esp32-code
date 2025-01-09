@@ -19,11 +19,12 @@
  *
  * @return esp_err_t ESP_OK on success, error code otherwise.
  */
-extern "C" esp_err_t initHardware();
+extern "C" esp_err_t initAdcDac();
 
 /**
  * @brief Starts the measurement task loop and initializes the timer for the measurement mode.
  */
+
 extern "C" void measureStart();
 
 /**
@@ -67,47 +68,6 @@ extern "C" void adjustStart();
  */
 extern "C" void adjustLoop(void *unused);
 
-/**
- * @brief Saturates the input value within the given 16-bit boundaries.
- *
- * @param input The value to be saturated.
- * @param min The minimum allowed value.
- * @param max The maximum allowed value.
- * @return uint16_t The saturated value.
- */
-extern "C" uint16_t saturate16bit(uint32_t input, uint16_t min, uint16_t max);
-
-/**
- * @brief Sends the measurement data stored in the queue to the PC.
- *        Pauses the measurement if the queue overflows.
- *
- * @param terminate Whether to terminate after sending the data.
- * @return int 0 on success, error code otherwise.
- */
-extern "C" int sendDataPaket(bool terminate = false);
-
-/**
- * @brief Sends the tunnel data stored in the queue to the PC.
- *
- * @param terminate Whether to terminate after sending the data.
- * @return int 0 on success, error code otherwise.
- */
-extern "C" int sendTunnelPaket();
-
-/**
- * @brief Constrains the value within a specified range.
- *
- * @param value The value to be constrained.
- * @param min The minimum allowed value.
- * @param max The maximum allowed value.
- * @return double The constrained value.
- */
-extern "C" double constrain(double value, double min, double max);
-
-int16_t adcValueDebounced(int16_t adcValue);
-double clamp(double value, double minValue, double maxValue);
-uint16_t computePI(double currentNa, double targetNa);
-void ledStatus(double currentTunnelnA, double targetTunnelnA, double toleranceTunnelnA, uint16_t dac);
 double calculateTunnelNa(int16_t adcValue);
 
 #endif // CONTROLLER

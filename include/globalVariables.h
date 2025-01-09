@@ -3,6 +3,7 @@
 
 using namespace std;
 #include <queue>
+#include <mutex>
 #include "esp_err.h"
 #include "driver/spi_slave.h"
 #include "driver/spi_master.h"
@@ -110,7 +111,8 @@ extern bool direction;
 extern uint16_t sendDataAfterXDatasets;
 
 extern queue<DataElement> dataQueue;
-// extern queue<string> tunnelQueue;
+extern mutex dataQueueMutex;
+//extern queue<std::string> tunnelQueue;
 
 extern scanGrid rtmGrid;
 

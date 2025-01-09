@@ -41,6 +41,7 @@ bool direction = 0;
 uint16_t sendDataAfterXDatasets = 100;
 
 queue<DataElement> dataQueue;
+mutex dataQueueMutex;
 // queue<string> tunnelQueue;
 
 scanGrid rtmGrid(200, 200); // default grid

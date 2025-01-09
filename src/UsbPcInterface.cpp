@@ -1,5 +1,6 @@
 #include <UsbPcInterface.h>
 #include <globalVariables.h>
+#include <helper_functions.h>
 
 static const char *TAG = "UsbPcInterface";
 static const char *TIP_ERROR_MESSAGE = "Invalid format 'TIP' command. \nSend 'TIP,10000,20000,30000' to set X,Y,Z\n'TIP,?' to see actual X Y Z values\n";
@@ -150,26 +151,6 @@ int UsbPcInterface::sendParameter(const char *fmt, ...)
     int rc = uart_write_bytes(UART_NUM_1, s1.c_str(), len);
     va_end(ap);
     return rc;
-}
-
-esp_err_t UsbPcInterface::sendData()
-{
-
-    while (!dataQueue.empty())
-    {
-        // Store the front element in a variable
-        DataElement &element = dataQueue.front();
-
-        // Now use this element to access data
-        uint16_t X = element.getDataX();
-        uint16_t Y = element.getDataY();
-        uint16_t Z = element.getDataZ();
-        send("DATA,%u,u%,%u\r", X, Y, Z);
-        dataQueue.pop();
-    }
-    send("DATA,COMPLETE\n");
-
-    return ESP_OK;
 }
 
 int16_t normToMaxMin(long int invalue)

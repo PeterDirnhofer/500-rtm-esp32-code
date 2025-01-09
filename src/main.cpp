@@ -41,7 +41,7 @@ extern "C" void app_main(void)
 
     // Set default log level to NONE to suppress other logs
     esp_log_level_set("*", ESP_LOG_NONE);
-    
+
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++++++++++++++++ STARTED");
 
@@ -59,7 +59,6 @@ extern "C" void app_main(void)
     gpio_set_level(IO_27, 0); // yellow LED
     gpio_set_level(IO_02, 0); // green LED
 
-    
     // USB Interface initialization
 
     UsbPcInterface usb;
@@ -83,7 +82,7 @@ extern "C" void app_main(void)
     }
     parameterSetter.getParametersFromFlash(false);
 
-    initHardware();
+    initAdcDac();
 
     // ##############################################################
     // SELECT Run Mode
