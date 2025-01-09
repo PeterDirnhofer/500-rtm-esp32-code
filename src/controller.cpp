@@ -111,6 +111,13 @@ extern "C" void adjustLoop(void *unused)
 
 extern "C" void measureLoop(void *unused)
 {
+    static const char *TAG = "measureLoop";
+    //esp_log_level_set("*", ESP_LOG_NONE);
+
+    // Set log level for the application to INFO
+    esp_log_level_set(TAG, ESP_LOG_INFO);
+    ESP_LOGI(TAG, "+++++++++++++++++ STARTED\n");
+
     static double errorTunnelNa = 0.0;
     int16_t adcValueRaw, adcValue = 0;
     string dataBuffer;
@@ -192,6 +199,7 @@ extern "C" void measureLoop(void *unused)
             vTaskResume(handleVspiLoop);
         }
     }
+    ESP_LOGI(TAG, "Stop measureLoop");
 }
 
 extern "C" void findTunnelLoop(void *unused)

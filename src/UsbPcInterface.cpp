@@ -6,7 +6,6 @@ static const char *TIP_ERROR_MESSAGE = "Invalid format 'TIP' command. \nSend 'TI
 
 #include <controller.h>
 
-
 UsbPcInterface::UsbPcInterface()
     : mTaskHandle(NULL), mStarted(false)
 {
@@ -27,6 +26,7 @@ void UsbPcInterface::start()
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .rx_flow_ctrl_thresh = 0, // !!! PeDi Added to avoid Warning -Wmissing-field-initializers
         .source_clk = UART_SCLK_APB,
+        .flags = 0, // Initialize the flags member to zero
 
     };
     // We won't use a buffer for sending data.
@@ -84,19 +84,20 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
                 for (int x = 0; x < strlen(part6.c_str()); x++)
                     part6[x] = toupper(part6[x]);
 
-                
-                if (strcmp(part3.c_str(), "TIP") == 0) {  // TP command
-                    UsbPcInterface::mUpdateTip(rcvString); }
-                    else if ((ACTMODE==MODE_TUNNEL_FIND) and strcmp(part3.c_str(), "TUN") == 0) // TUNNEL  command
-                    {
-                        TUNNEL_REQUEST = 1;
-                    }
-                    else if ((ACTMODE == MODE_TUNNEL_FIND) and strcmp(part6.c_str(), "TUNNEL") != 0) // TUNNEL  command
-                    {
-                        esp_restart();
-                    }
+                if (strcmp(part3.c_str(), "TIP") == 0)
+                { // TP command
+                    UsbPcInterface::mUpdateTip(rcvString);
+                }
+                else if ((ACTMODE == MODE_TUNNEL_FIND) and strcmp(part3.c_str(), "TUN") == 0) // TUNNEL  command
+                {
+                    TUNNEL_REQUEST = 1;
+                }
+                else if ((ACTMODE == MODE_TUNNEL_FIND) and strcmp(part6.c_str(), "TUNNEL") != 0) // TUNNEL  command
+                {
+                    esp_restart();
+                }
 
-                else// other commands
+                else // other commands
                 {
                     UsbPcInterface::mUsbReceiveString.clear();
                     UsbPcInterface::mUsbReceiveString.append(rcvString);
@@ -313,7 +314,8 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
                 this->send("nA %.2f tar %.2f t %.2f \n", currentTunnelnA, targetTunnelnA, toleranceTunnelnA);
             }
         }
-        else{
+        else
+        {
             idle_was_sent = false;
         }
 
@@ -398,7 +400,7 @@ string UsbPcInterface::toUpper(const char *str)
 
 int UsbPcInterface::getWorkingMode()
 {
-   
+
     ACTMODE = UsbPcInterface::m_workingmode;
     return ACTMODE;
 }

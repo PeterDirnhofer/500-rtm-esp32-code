@@ -1,4 +1,5 @@
 #include "ParameterSetter.h"
+#include "defaultParameters.h"
 #include <esp_log.h>
 #include "UsbPcInterface.h"
 #include <esp_err.h>
@@ -102,21 +103,8 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
 // List of default Paramater
 esp_err_t ParameterSetting::putDefaultParametersToFlash()
 {
-    vector<string> params = {
-        "PARAMETER",
-        "5000.0", // kP
-        "500.0",  // kI
-        "0.0",    // kD
-        "1.00",   // targetTunnelCurrentnA
-        "0.3",    // toleranceTunnelCurrentnA
-        "0",      // startX
-        "0",      // startY
-        "1",      // measure milliseconds
-        "0",      // direction
-        "199",    // maxX
-        "199",    // maxY
-        "100"     // multiplicator
-    };
+    vector<string> params = defaultParameters;
+
 
     esp_err_t result = this->putParametersToFlash(params); // Capture result of the function call
     if (result != ESP_OK)
@@ -154,14 +142,12 @@ esp_err_t ParameterSetting::parametersAreValid()
 {
     for (int i = 0; i < size_keys; i++)
     {
-        ESP_LOGI(TAG, "Checking key: %s", keys[i]); // Log each key before validation
         if (!isKey(keys[i]))
         {
             ESP_LOGE(TAG, "is no valid key: %s", keys[i]); // Log the current key
             return ESP_ERR_NVS_NOT_FOUND;
         }
     }
-    ESP_LOGI(TAG, "ALL KEYS OK"); // Log the current key
     return ESP_OK;
 }
 
@@ -218,7 +204,7 @@ esp_err_t ParameterSetting::getParametersFromFlash(bool display)
     if (display)
         UsbPcInterface::sendParameter("maxY,%d\n", mMaxY);
 
-    uint16_t mMultiplicator = (uint16_t)getFloat(keys[1], __FLT_MAX__);
+    uint16_t mMultiplicator = (uint16_t)getFloat(keys[11], __FLT_MAX__);
     rtmGrid.setMultiplicatorGridAdc(mMultiplicator);
     if (display)
         UsbPcInterface::sendParameter("MultiplicatorGridAdc,%d\n", mMultiplicator);

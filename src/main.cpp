@@ -39,9 +39,11 @@ extern "C" void app_main(void)
 {
     static const char *TAG = "app_main";
 
-    // Set log level for the application
-    esp_log_level_set("app_main", ESP_LOG_INFO);
-    ESP_LOGI(TAG, "STARTED");
+    // Set default log level to NONE to suppress other logs
+    esp_log_level_set("*", ESP_LOG_NONE);
+    
+    esp_log_level_set(TAG, ESP_LOG_INFO);
+    ESP_LOGI(TAG, "+++++++++++++++++ STARTED");
 
     // GPIO configuration for Monitoring on Jumper J3 GPIO_RESERVE
     gpio_set_direction(IO_17, GPIO_MODE_OUTPUT);
@@ -57,6 +59,7 @@ extern "C" void app_main(void)
     gpio_set_level(IO_27, 0); // yellow LED
     gpio_set_level(IO_02, 0); // green LED
 
+    
     // USB Interface initialization
 
     UsbPcInterface usb;

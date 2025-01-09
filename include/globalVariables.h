@@ -10,6 +10,7 @@ using namespace std;
 
 #include "dataStoring.h"
 #include "movementXY.h"
+#include "driver/gpio.h"
 
 extern int ACTMODE;
 extern int TUNNEL_REQUEST;
@@ -38,12 +39,6 @@ struct PIResult
 #define GPIO_CS_VSPI_DACZ 5
 
 // Additional ports for monitoring/debugging
-#define IO_02 GPIO_NUM_2
-#define IO_04 GPIO_NUM_4
-#define IO_17 GPIO_NUM_17
-#define IO_25 GPIO_NUM_25
-#define IO_27 GPIO_NUM_27
-#define IO_35 GPIO_NUM_35
 
 #define DMA_CHAN_VSPI 2
 
@@ -140,6 +135,12 @@ extern uint8_t lastConfigByte;
 #define TUNNEL_TIMER_MS 1 // Period time in TUNNEL find loop
 #define MEASURE_TIMER_MS 1
 
+#define IO_02 GPIO_NUM_2
+#define IO_04 GPIO_NUM_4
+#define IO_27 GPIO_NUM_27
+#define IO_25 GPIO_NUM_25
+#define IO_17 GPIO_NUM_17
 
+extern SemaphoreHandle_t measureLoopSemaphore;
 
 #endif
