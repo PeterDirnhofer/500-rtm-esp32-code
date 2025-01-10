@@ -42,7 +42,8 @@ uint16_t sendDataAfterXDatasets = 100;
 
 queue<DataElement> dataQueue;
 mutex dataQueueMutex;
-// queue<string> tunnelQueue;
+queue<string> dataQueue1;
+mutex dataQueue1Mutex;
 
 scanGrid rtmGrid(200, 200); // default grid
 bool configNeeded = true;

@@ -15,7 +15,6 @@ static const char *TAG = "helper_functions";
 static PIResult piresult;
 static double integralError = 0.0; // State variables for PID
 const double integralMax = 5000.0; // Maximum value for integral term
-static std::queue<std::string> tunnelQueue;
 
 extern "C" void errorBlink()
 {
@@ -28,34 +27,6 @@ extern "C" void errorBlink()
     }
 }
 
-extern "C" int sendTunnelPaket()
-{
-    if (tunnelQueue.empty())
-    {
-        ESP_LOGW(TAG, "Tunnel queue is empty. No data to send.");
-        return -1; // Return early if there's no data
-    }
-
-    timer_stop(); // Pause timer to avoid timing issues during send
-
-    while (!tunnelQueue.empty())
-    {
-        const std::string &message = tunnelQueue.front();
-
-        if (UsbPcInterface::send(message.c_str()) < 0) // Send the message
-        {
-            return -2; // Error occurred while sending
-        }
-        tunnelQueue.pop(); // Remove the message after successful send
-    }
-
-    // Reinitialize the queue (clear the queue)
-    tunnelQueue = std::queue<std::string>(); // Create a new empty queue
-
-    timer_start(); // Resume the timer after sending
-
-    return 0; // Indicate success
-}
 
 double constrain(double value, double min, double max)
 {
@@ -101,23 +72,45 @@ int16_t adcValueDebounced(int16_t adcValue)
 
 void ledStatus(double currentTunnelnA, double targetTunnelnA, double toleranceTunnelnA, uint16_t dac)
 {
+    static std::string last_limit = "";
+    static const char *TAG = "ledStatus";
+    esp_log_level_set(TAG, ESP_LOG_INFO);
+
     if (abs(targetTunnelnA - currentTunnelnA) <= toleranceTunnelnA)
     {
-        gpio_set_level(IO_25, 0); // red LED
-        gpio_set_level(IO_27, 1); // yellow LED
-        gpio_set_level(IO_02, 0); // green LED
+        
+        
+        if(last_limit != "LIMIT"){
+            gpio_set_level(IO_25, 0); // red LED
+            gpio_set_level(IO_27, 1); // yellow LED
+            gpio_set_level(IO_02, 0); // green LED
+            ESP_LOGI(TAG, "%s -> LIMIT", last_limit.c_str());
+            last_limit = "LIMIT";
+        }
     }
     else if (currentTunnelnA > targetTunnelnA)
     {
-        gpio_set_level(IO_25, 1); // red LED
-        gpio_set_level(IO_27, 0); // yellow LED
-        gpio_set_level(IO_02, 0); // green LED
+       
+        if (last_limit != "HI")
+        {
+            gpio_set_level(IO_25, 1); // red LED
+            gpio_set_level(IO_27, 0); // yellow LED
+            gpio_set_level(IO_02, 0); // green LED
+            ESP_LOGI(TAG, "%s > HI", last_limit.c_str());
+            last_limit = "HI";
+        }
     }
     else
     {
-        gpio_set_level(IO_25, 0); // red LED
-        gpio_set_level(IO_27, 0); // yellow LED
-        gpio_set_level(IO_02, 1); // green LED
+    
+        if (last_limit != "LO")
+        {
+            gpio_set_level(IO_25, 0); // red LED
+            gpio_set_level(IO_27, 0); // yellow LED
+            gpio_set_level(IO_02, 1); // green LED
+            ESP_LOGI(TAG, "%s > LO", last_limit.c_str());
+            last_limit = "LO";
+        }
     }
 }
 

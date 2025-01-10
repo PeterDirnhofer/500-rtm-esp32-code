@@ -9,7 +9,6 @@
 #include <mutex>
 #include "helper_functions.h"
 
-static std::queue<std::string> tunnelQueue;
 static const char *TAG = "controller";
 static PIResult piresult;
 static double integralError = 0.0;
@@ -34,7 +33,6 @@ extern "C" void measureLoop(void *unused)
     static const char *TAG = "measureLoop";
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
     ESP_LOGI(TAG, "+++++++++++++++++ STARTED\n");
-
     static double errorTunnelNa = 0.0;
     int16_t adcValueRaw, adcValue = 0;
     std::string dataBuffer;
@@ -62,9 +60,12 @@ extern "C" void measureLoop(void *unused)
         errorTunnelNa = targetTunnelnA - currentTunnelnA;
         ledStatus(currentTunnelnA, targetTunnelnA, toleranceTunnelnA, currentZDac);
 
+
+
         // If the error is within the allowed limit, process the result
         if (abs(errorTunnelNa) <= toleranceTunnelnA)
         {
+            
             counter = 0;
             DataElement dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac);
             {
@@ -137,90 +138,33 @@ extern "C" void measureLoop(void *unused)
 
 extern "C" void findTunnelLoop(void *unused)
 {
-    int16_t adcValueRaw, adcValue = 0;
-    std::string dataBuffer;
-    bool first_loop = true;
 
-    // Reset all outputs
-    currentXDac = 0;
-    currentYDac = 0;
-    currentZDac = 0;
-    vTaskResume(handleVspiLoop);
+    
+    // int16_t adcValueRaw, adcValue = 0;
+    // std::string dataBuffer;
+    // bool first_loop = true;
 
-    int counter = 0;
-    bool break_loop = false;
+    // // Reset all outputs
+    // currentXDac = 0;
+    // currentYDac = 0;
+    // currentZDac = 0;
+    // vTaskResume(handleVspiLoop);
 
-    int MAXCOUNTS = 300;
+    // int counter = 0;
+    // bool break_loop = false;
 
-    while (!break_loop)
-    {
-        vTaskSuspend(NULL); // Sleep until resumed by TUNNEL_TIMER
-        if (ACTMODE != MODE_TUNNEL_FIND)
-        {
-            break_loop = true;
-            continue;
-        }
+    // int MAXCOUNTS = 300;
 
-        adcValueRaw = readAdc(); // Read voltage from preamplifier
-        adcValue = adcValueDebounced(adcValueRaw);
-        currentTunnelnA = calculateTunnelNa(adcValue);
-        ledStatus(currentTunnelnA, targetTunnelnA, toleranceTunnelnA, currentZDac);
-
-        if (TUNNEL_REQUEST == 0)
-        {
-            first_loop = true;
-            continue;
-        }
-
-        if (first_loop)
-        {
-            first_loop = false;
-            // Reset all outputs
-            currentXDac = 0;
-            currentYDac = 0;
-            currentZDac = 0;
-            vTaskResume(handleVspiLoop);
-            integralError = 0;
-            counter = 0;
-            continue;
-        }
-
-        // Calculate new Z Value with PI controller
-        uint16_t dacOutput = computePI(currentTunnelnA, targetTunnelnA);
-
-        // Create a stringstream to format message
-        std::ostringstream messageStream;
-        messageStream << "TUNNEL,tar,"
-                      << std::fixed << std::setprecision(2) << piresult.targetNa << ",nA,"
-                      << std::fixed << std::setprecision(2) << piresult.currentNa << ",dac," << std::to_string(dacOutput) << "\n";
-
-        // Add message to tunnelQueue
-        tunnelQueue.emplace(messageStream.str()); // Add formatted message to queue
-
-        currentZDac = dacOutput;
-        counter++;
-
-        if (currentZDac == 0xFFFF)
-        {
-            tunnelQueue.emplace("TUNNEL,END,NO CURRENT at DAC Z = max\n");
-            sendTunnelPaket();
-            TUNNEL_REQUEST = 0;
-        }
-        else if (currentZDac == 0)
-        {
-            tunnelQueue.emplace("TUNNEL,END,SHORTCUT at DAC Z = 0\n");
-            sendTunnelPaket();
-            TUNNEL_REQUEST = 0;
-        }
-        if (counter == MAXCOUNTS)
-        {
-            tunnelQueue.emplace("TUNNEL,END,SUCCESS,%d\n", counter);
-            sendTunnelPaket();
-            TUNNEL_REQUEST = 0;
-        }
-
-        vTaskResume(handleVspiLoop);
-    }
+    // while (!break_loop)
+    // {
+    //     vTaskSuspend(NULL); // Sleep until resumed by TUNNEL_TIMER
+    //     if (ACTMODE != MODE_TUNNEL_FIND)
+    //     {
+    //         break_loop = true;
+    //         continue;
+    //     }
+        
+   // }
 }
 
 extern "C" void dataTransmissionLoop(void *unused)

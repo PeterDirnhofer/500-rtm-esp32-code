@@ -13,6 +13,8 @@ using namespace std;
 #include "movementXY.h"
 #include "driver/gpio.h"
 
+#include <string>
+
 extern int ACTMODE;
 extern int TUNNEL_REQUEST;
 
@@ -111,8 +113,8 @@ extern bool direction;
 extern uint16_t sendDataAfterXDatasets;
 
 extern queue<DataElement> dataQueue;
+extern queue<string> dataQueue1;
 extern mutex dataQueueMutex;
-//extern queue<std::string> tunnelQueue;
 
 extern scanGrid rtmGrid;
 
