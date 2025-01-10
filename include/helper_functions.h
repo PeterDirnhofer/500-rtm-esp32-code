@@ -2,7 +2,7 @@
 #define HELPER_FUNCTIONS_H
 
 #include <stdint.h>
-
+extern "C" void errorBlink();
 extern "C" int sendTunnelPaket();
 double constrain(double value, double min, double max);
 uint16_t saturate16bit(uint32_t input, uint16_t min, uint16_t max);

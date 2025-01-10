@@ -1,4 +1,3 @@
-
 #include "helper_functions.h"
 
 #include "globalVariables.h"
@@ -17,6 +16,17 @@ static PIResult piresult;
 static double integralError = 0.0; // State variables for PID
 const double integralMax = 5000.0; // Maximum value for integral term
 static std::queue<std::string> tunnelQueue;
+
+extern "C" void errorBlink()
+{
+    while (true)
+    {
+        gpio_set_level(IO_04, 1);       // Turn on LED
+        vTaskDelay(pdMS_TO_TICKS(100)); // Delay 100 ms
+        gpio_set_level(IO_04, 0);       // Turn off LED
+        vTaskDelay(pdMS_TO_TICKS(100)); // Delay 100 ms
+    }
+}
 
 extern "C" int sendTunnelPaket()
 {

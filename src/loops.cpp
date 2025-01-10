@@ -49,13 +49,7 @@ extern "C" void measureLoop(void *unused)
         if (gpio_get_level(IO_04) == 1)
         {
             ESP_LOGE(TAG, "ERROR: IO_04 level is not 0 before setting it to 1");
-            while (true)
-            {
-                gpio_set_level(IO_04, 1);       // Turn on LED
-                vTaskDelay(pdMS_TO_TICKS(100)); // Delay 100 ms
-                gpio_set_level(IO_04, 0);       // Turn off LED
-                vTaskDelay(pdMS_TO_TICKS(100)); // Delay 100 ms
-            }
+            errorBlink();
         }
         else
         {
