@@ -177,21 +177,15 @@ void vspiDacLoop(void *unused)
         }
 
         vspiSendDac(currentZDac, buffer.get(), handleDacZ); // Dac Z
-        if (currentZDac == 0xFFFF)
-        {
-            gpio_set_level(IO_04, 1); // blue LED
-        }
-        else
-        {
-            gpio_set_level(IO_04, 0); // blue LED
-        }
+       
+        // TODO set PWM
         if (currentZDac == 0)
         {
-            gpio_set_level(IO_17, 1); // blue LED
+            gpio_set_level(IO_17, 1); // white LED
         }
         else
         {
-            gpio_set_level(IO_17, 0); // blue LED
+            gpio_set_level(IO_17, 0); // white LED
         }
 
         vTaskSuspend(NULL); // will be resumed by controller

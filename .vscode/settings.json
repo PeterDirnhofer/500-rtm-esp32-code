@@ -59,7 +59,15 @@
         "mutex": "cpp",
         "thread": "cpp",
         "*.ipp": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "bit": "cpp",
+        "compare": "cpp",
+        "complex": "cpp",
+        "concepts": "cpp",
+        "iomanip": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

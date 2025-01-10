@@ -32,7 +32,7 @@ extern "C" void adjustLoop(void *unused)
 extern "C" void measureLoop(void *unused)
 {
     static const char *TAG = "measureLoop";
-    esp_log_level_set(TAG, ESP_LOG_INFO);
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
     ESP_LOGI(TAG, "+++++++++++++++++ STARTED\n");
 
     static double errorTunnelNa = 0.0;
@@ -44,25 +44,23 @@ extern "C" void measureLoop(void *unused)
     static bool is_min = false;
     while (true)
     {
-        // Check if the semaphore is available
-        if (measureLoopSemaphore == NULL)
-        {
-            ESP_LOGE(TAG, "measureLoopSemaphore is not initialized");
-            vTaskDelay(pdMS_TO_TICKS(100)); // Delay to avoid tight loop
-            continue;
-        }
-
-        if (xSemaphoreTake(measureLoopSemaphore, 0) != pdTRUE)
-        {
-            ESP_LOGE(TAG, "Measurement loop retriggered before the last loop was finished");
-            continue; // Skip the current iteration
-        }
-
-        // Take the semaphore at the start of the task
-        xSemaphoreTake(measureLoopSemaphore, portMAX_DELAY);
 
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
-
+        if (gpio_get_level(IO_04) == 1)
+        {
+            ESP_LOGE(TAG, "ERROR: IO_04 level is not 0 before setting it to 1");
+            while (true)
+            {
+                gpio_set_level(IO_04, 1);       // Turn on LED
+                vTaskDelay(pdMS_TO_TICKS(100)); // Delay 100 ms
+                gpio_set_level(IO_04, 0);       // Turn off LED
+                vTaskDelay(pdMS_TO_TICKS(100)); // Delay 100 ms
+            }
+        }
+        else
+        {
+            gpio_set_level(IO_04, 1); // blue LED
+        }
         adcValueRaw = readAdc(); // Read voltage from preamplifier
         adcValue = adcValueDebounced(adcValueRaw);
         currentTunnelnA = calculateTunnelNa(adcValue);
@@ -136,10 +134,10 @@ extern "C" void measureLoop(void *unused)
             currentZDac = dacOutput;
 
             vTaskResume(handleVspiLoop);
+            gpio_set_level(IO_04, 0); // blue LED
         }
 
-        // Give the semaphore at the end of the task
-        xSemaphoreGive(measureLoopSemaphore);
+     
     }
 }
 
@@ -262,6 +260,7 @@ extern "C" void dataTransmissionLoop(void *unused)
             }
             else
             {
+                vTaskDelay(pdMS_TO_TICKS(10));
                 continue;
             }
         }

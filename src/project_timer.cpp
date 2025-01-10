@@ -17,14 +17,16 @@ SemaphoreHandle_t measureLoopSemaphore = NULL;
 // Callback function for MEASURE timer tick
 static bool tickMeasure(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
-    if (xSemaphoreTake(measureLoopSemaphore, 0) == pdTRUE)
-    {
-        vTaskResume(handleControllerLoop);
-    }
-    else
-    {
-        ESP_LOGE(TAG, "Measurement loop did not finish in time");
-    }
+
+    vTaskResume(handleControllerLoop);
+    // if (xSemaphoreTake(measureLoopSemaphore, 0) == pdTRUE)
+    // {
+    //     vTaskResume(handleControllerLoop);
+    // }
+    // else
+    // {
+    //     ESP_LOGE(TAG, "Measurement loop did not finish in time");
+    // }
     return true;
 }
 // Callback function for TUNNEL_FIND timer tick
@@ -90,17 +92,7 @@ extern "C" void timer_initialize(int mode)
     // Set the alarm count based on the mode
     if (mode == MODE_MEASURE)
     {
-        // Create the semaphore
-        if (measureLoopSemaphore == NULL)
-        {
-            measureLoopSemaphore = xSemaphoreCreateBinary();
-            if (measureLoopSemaphore == NULL)
-            {
-                ESP_LOGE(TAG, "Failed to create measureLoopSemaphore");
-                return;
-            }
-            xSemaphoreGive(measureLoopSemaphore); // Initialize the semaphore
-        }
+        
         // alarm_config.alarm_count = 1260 * MEASURE_TIMER_MS; // 1260 us
         alarm_config.alarm_count = 1260 * measureMs; // 1260 us
     }
