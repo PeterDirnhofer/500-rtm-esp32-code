@@ -27,7 +27,6 @@ extern "C" void errorBlink()
     }
 }
 
-
 double constrain(double value, double min, double max)
 {
     return (value < min) ? min : (value > max) ? max
@@ -68,6 +67,15 @@ int16_t adcValueDebounced(int16_t adcValue)
     }
     // Result: Values 0 ... 32767
     return adcValue;
+}
+
+double clamp(double value, double minValue, double maxValue)
+{
+    if (value < minValue)
+        return minValue;
+    if (value > maxValue)
+        return maxValue;
+    return value;
 }
 
 void ledStatus(double currentTunnelnA, double targetTunnelnA, double toleranceTunnelnA, uint16_t dac)
@@ -119,15 +127,6 @@ double calculateTunnelNa(int16_t adcValue)
     double currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX) / ADC_VALUE_MAX;
     currentTunnelnA = currentTunnelnA * 3; // Voltage Divider ADC Input
     return currentTunnelnA;
-}
-
-double clamp(double value, double minValue, double maxValue)
-{
-    if (value < minValue)
-        return minValue;
-    if (value > maxValue)
-        return maxValue;
-    return value;
 }
 
 uint16_t computePI(double currentNa, double targetNa)
