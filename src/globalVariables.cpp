@@ -39,11 +39,8 @@ uint16_t startX, startY = 0, measureMs = 1;
 uint16_t nvs_maxX, nvs_maxY = 0, multiplicatorGridAdc;
 bool direction = 0;
 uint16_t sendDataAfterXDatasets = 100;
-
 queue<DataElement> dataQueue;
 mutex dataQueueMutex;
-queue<string> dataQueue1;
-mutex dataQueue1Mutex;
 
 scanGrid rtmGrid(200, 200); // default grid
 bool configNeeded = true;

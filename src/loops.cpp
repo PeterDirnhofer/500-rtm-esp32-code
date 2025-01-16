@@ -44,10 +44,10 @@ extern "C" void measureLoop(void *unused)
 
     static uint16_t targetAdc = calculateTargetAdc(targetTunnelnA);
     static uint16_t toleranceAdc = calculateTargetAdc(toleranceTunnelnA);
-    
+
     while (true)
     {
-       
+
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
 
         if (gpio_get_level(IO_04) == 1)
@@ -62,17 +62,20 @@ extern "C" void measureLoop(void *unused)
 
         int16_t adcValue = readAdc(); // Read voltage from preamplifier
         ledStatusAdc(adcValue, targetAdc, toleranceAdc, currentZDac);
-        
-        
+
         int16_t errorAdc = targetAdc - adcValue;
         // Current within limit
-        if (abs(errorAdc) <= toleranceAdc){
-            if (rtmGrid.getCurrentX() == 0){
+        if (abs(errorAdc) <= toleranceAdc)
+        {
+            if (rtmGrid.getCurrentX() == 0)
+            {
                 ESP_LOGI(TAG, "Current Y position: %d", rtmGrid.getCurrentY());
             }
 
             DataElement dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(),
                                     currentZDac);
+
+            // ESP_LOGI(TAG, "DataElement: X=%d, Y=%d, Z=%d", dataElement.getDataX(), dataElement.getDataY(), dataElement.getDataZ());
 
             dataQueue.push(dataElement);
 
@@ -85,7 +88,6 @@ extern "C" void measureLoop(void *unused)
             if (!rtmGrid.moveOn())
             {
                 vTaskResume(handleVspiLoop); // Process new XY position
-
             }
             else
             {
@@ -99,7 +101,8 @@ extern "C" void measureLoop(void *unused)
                 esp_restart(); // Restart once all XY positions are complete
             }
         }
-        else{
+        else
+        {
             newDacZ = computePiDac(adcValue, targetAdc);
             currentZDac = newDacZ;
             vTaskResume(handleVspiLoop);
@@ -108,10 +111,6 @@ extern "C" void measureLoop(void *unused)
 
         continue;
 
-        
-        
-        
-        
         currentTunnelnA = calculateTunnelNa(adcValue);
         errorTunnelNa = targetTunnelnA - currentTunnelnA;
 
@@ -134,13 +133,18 @@ extern "C" void measureLoop(void *unused)
             }
             else
             {
-                // Signal completion and restart
-                DataElement endSignal(0, 0,
-                                      0); // Use a special value to signal completion
-                {
-                    std::lock_guard<std::mutex> lock(dataQueueMutex);
-                    dataQueue.push(endSignal);
-                }
+
+                UsbPcInterface::send("DATA,DONE\n");
+                vTaskDelay(pdMS_TO_TICKS(100));
+
+
+                // // Signal completion and restart
+                // DataElement endSignal(0, 0,
+                //                       0); // Use a special value to signal completion
+                // {
+                //     std::lock_guard<std::mutex> lock(dataQueueMutex);
+                //     dataQueue.push(endSignal);
+                // }
                 esp_restart(); // Restart once all XY positions are complete
             }
         }
@@ -194,32 +198,6 @@ extern "C" void measureLoop(void *unused)
 
 extern "C" void findTunnelLoop(void *unused)
 {
-
-    // int16_t adcValueRaw, adcValue = 0;
-    // std::string dataBuffer;
-    // bool first_loop = true;
-
-    // // Reset all outputs
-    // currentXDac = 0;
-    // currentYDac = 0;
-    // currentZDac = 0;
-    // vTaskResume(handleVspiLoop);
-
-    // int counter = 0;
-    // bool break_loop = false;
-
-    // int MAXCOUNTS = 300;
-
-    // while (!break_loop)
-    // {
-    //     vTaskSuspend(NULL); // Sleep until resumed by TUNNEL_TIMER
-    //     if (ACTMODE != MODE_TUNNEL_FIND)
-    //     {
-    //         break_loop = true;
-    //         continue;
-    //     }
-
-    // }
 }
 
 extern "C" void dataTransmissionLoop(void *unused)
