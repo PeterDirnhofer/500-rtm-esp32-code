@@ -31,20 +31,25 @@ extern "C" void adjustLoop(void *unused)
 extern "C" void measureLoop(void *unused)
 {
     static const char *TAG = "measureLoop";
-    esp_log_level_set(TAG, ESP_LOG_WARN);
+    esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++++++++++++++++ STARTED\n");
     static double errorTunnelNa = 0.0;
-   
+    uint16_t newDacZ = 0;
+
     std::string dataBuffer;
 
     static int counter = 0;
     static bool is_max = false;
     static bool is_min = false;
+
+    static uint16_t targetAdc = calculateTargetAdc(targetTunnelnA);
+    static uint16_t toleranceAdc = calculateTargetAdc(toleranceTunnelnA);
+    
     while (true)
     {
        
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
-        
+
         if (gpio_get_level(IO_04) == 1)
         {
             ESP_LOGE(TAG, "ERROR: IO_04 level is not 0 before setting it to 1");
@@ -56,13 +61,59 @@ extern "C" void measureLoop(void *unused)
         }
 
         int16_t adcValue = readAdc(); // Read voltage from preamplifier
+        ledStatusAdc(adcValue, targetAdc, toleranceAdc, currentZDac);
+        
+        
+        int16_t errorAdc = targetAdc - adcValue;
+        // Current within limit
+        if (abs(errorAdc) <= toleranceAdc){
+            if (rtmGrid.getCurrentX() == 0){
+                ESP_LOGI(TAG, "Current Y position: %d", rtmGrid.getCurrentY());
+            }
+
+            DataElement dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(),
+                                    currentZDac);
+
+            dataQueue.push(dataElement);
+
+            // {
+            //     std::lock_guard<std::mutex> lock(dataQueueMutex);
+            //     dataQueue.push(dataElement);
+            // }
+
+            // Calculate next XY position
+            if (!rtmGrid.moveOn())
+            {
+                vTaskResume(handleVspiLoop); // Process new XY position
+
+            }
+            else
+            {
+                // Signal completion and restart
+                DataElement endSignal(0, 0,
+                                      0); // Use a special value to signal completion
+                {
+                    std::lock_guard<std::mutex> lock(dataQueueMutex);
+                    dataQueue.push(endSignal);
+                }
+                esp_restart(); // Restart once all XY positions are complete
+            }
+        }
+        else{
+            newDacZ = computePiDac(adcValue, targetAdc);
+            currentZDac = newDacZ;
+            vTaskResume(handleVspiLoop);
+        }
+        gpio_set_level(IO_04, 0); // blue LED
+
+        continue;
+
+        
+        
+        
+        
         currentTunnelnA = calculateTunnelNa(adcValue);
         errorTunnelNa = targetTunnelnA - currentTunnelnA;
-      
-        ledStatus(currentTunnelnA, targetTunnelnA, toleranceTunnelnA, currentZDac);
-       
-        // Log the values of currentTunnelnA, targetTunnelnA, toleranceTunnelnA, and
-        // currentZDac
 
         // If the error is within the allowed limit, process the result
         if (abs(errorTunnelNa) <= toleranceTunnelnA)
@@ -98,7 +149,7 @@ extern "C" void measureLoop(void *unused)
         {
             // Calculate new Z Value with PI controller
             uint16_t dacOutput = computePI(currentTunnelnA, targetTunnelnA);
-            ESP_LOGI(TAG, "piresult.targetNa: %.2f, piresult.currentNa: %.2f, piresult.error: %.2f, dacOutput: %u",
+            ESP_LOGD(TAG, "piresult.targetNa: %.2f, piresult.currentNa: %.2f, piresult.error: %.2f, dacOutput: %u",
                      piresult.targetNa, piresult.currentNa, piresult.error, dacOutput);
             counter++;
             if (counter % 200 == 0)
