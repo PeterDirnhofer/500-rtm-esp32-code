@@ -26,6 +26,8 @@ struct PIResult
     uint16_t dacz;
 };
 
+extern PIResult piresult;
+
 #define MODUS_RUN 0
 #define MODUS_MONITOR_TUNNEL_CURRENT 1
 

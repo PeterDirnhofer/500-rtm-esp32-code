@@ -12,7 +12,7 @@
 
 static const char *TAG = "helper_functions";
 
-static PIResult piresult;
+PIResult piresult;
 static double integralError = 0.0; // State variables for PID
 const double integralMax = 5000.0; // Maximum value for integral term
 
@@ -80,7 +80,7 @@ double clamp(double value, double minValue, double maxValue)
 
 void ledStatus(double currentTunnelnA, double targetTunnelnA, double toleranceTunnelnA, uint16_t dac)
 {
-    static std::string last_limit = "";
+    static std::string last_limit = "INIT";
     static const char *TAG = "ledStatus";
     esp_log_level_set(TAG, ESP_LOG_INFO);
 
