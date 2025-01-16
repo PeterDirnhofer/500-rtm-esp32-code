@@ -34,6 +34,15 @@ extern "C" void adjustStart()
 
 extern "C" void measureStart()
 {
+    static const char *TAG = "measureStart";
+    esp_log_level_set(TAG, ESP_LOG_INFO);
+
+    queueRtos = xQueueCreate(1000, sizeof(DataElement)); if (queueRtos == NULL) {
+        // Handle error
+        ESP_LOGE("Queue", "Failed to create queue");
+        vTaskDelay(pdMS_TO_TICKS(100));
+        esp_restart();
+    }
     // Create the data transmission task
     xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000, NULL, 1, NULL, 0);
 

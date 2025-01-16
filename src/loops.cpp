@@ -33,15 +33,9 @@ extern "C" void measureLoop(void *unused)
     static const char *TAG = "measureLoop";
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++++++++++++++++ STARTED\n");
-    static double errorTunnelNa = 0.0;
     uint16_t newDacZ = 0;
 
     std::string dataBuffer;
-
-    static int counter = 0;
-    static bool is_max = false;
-    static bool is_min = false;
-
     static uint16_t targetAdc = calculateTargetAdc(targetTunnelnA);
     static uint16_t toleranceAdc = calculateTargetAdc(toleranceTunnelnA);
 
@@ -75,15 +69,13 @@ extern "C" void measureLoop(void *unused)
             DataElement dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(),
                                     currentZDac);
 
-            // ESP_LOGI(TAG, "DataElement: X=%d, Y=%d, Z=%d", dataElement.getDataX(), dataElement.getDataY(), dataElement.getDataZ());
+            if (xQueueSend(queueRtos, &dataElement, portMAX_DELAY) != pdPASS)
+            {
+                // Handle error
+                ESP_LOGE("Queue", "Failed to send to queue");
+            }
 
-            dataQueue.push(dataElement);
-
-            // {
-            //     std::lock_guard<std::mutex> lock(dataQueueMutex);
-            //     dataQueue.push(dataElement);
-            // }
-
+           
             // Calculate next XY position
             if (!rtmGrid.moveOn())
             {
@@ -94,10 +86,13 @@ extern "C" void measureLoop(void *unused)
                 // Signal completion and restart
                 DataElement endSignal(0, 0,
                                       0); // Use a special value to signal completion
+                if (xQueueSend(queueRtos, &endSignal, portMAX_DELAY) != pdPASS)
                 {
-                    std::lock_guard<std::mutex> lock(dataQueueMutex);
-                    dataQueue.push(endSignal);
+                    // Handle error
+                    ESP_LOGE("Queue", "Failed to send to queue");
                 }
+
+                vTaskDelay(pdMS_TO_TICKS(100));
                 esp_restart(); // Restart once all XY positions are complete
             }
         }
@@ -108,91 +103,6 @@ extern "C" void measureLoop(void *unused)
             vTaskResume(handleVspiLoop);
         }
         gpio_set_level(IO_04, 0); // blue LED
-
-        continue;
-
-        currentTunnelnA = calculateTunnelNa(adcValue);
-        errorTunnelNa = targetTunnelnA - currentTunnelnA;
-
-        // If the error is within the allowed limit, process the result
-        if (abs(errorTunnelNa) <= toleranceTunnelnA)
-        {
-            ESP_LOGI(TAG, "In limit");
-            counter = 0;
-            DataElement dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(),
-                                    currentZDac);
-            {
-                std::lock_guard<std::mutex> lock(dataQueueMutex);
-                dataQueue.push(dataElement);
-            }
-
-            // Calculate next XY position
-            if (!rtmGrid.moveOn())
-            {
-                vTaskResume(handleVspiLoop); // Process new XY position
-            }
-            else
-            {
-
-                UsbPcInterface::send("DATA,DONE\n");
-                vTaskDelay(pdMS_TO_TICKS(100));
-
-
-                // // Signal completion and restart
-                // DataElement endSignal(0, 0,
-                //                       0); // Use a special value to signal completion
-                // {
-                //     std::lock_guard<std::mutex> lock(dataQueueMutex);
-                //     dataQueue.push(endSignal);
-                // }
-                esp_restart(); // Restart once all XY positions are complete
-            }
-        }
-        // If the error is too large, adjust the Z position
-        else
-        {
-            // Calculate new Z Value with PI controller
-            uint16_t dacOutput = computePI(currentTunnelnA, targetTunnelnA);
-            ESP_LOGD(TAG, "piresult.targetNa: %.2f, piresult.currentNa: %.2f, piresult.error: %.2f, dacOutput: %u",
-                     piresult.targetNa, piresult.currentNa, piresult.error, dacOutput);
-            counter++;
-            if (counter % 200 == 0)
-            {
-                if (!is_min && !is_max)
-                {
-                    UsbPcInterface::send("LOG,tar,%.2f,nA,%.2f,err,%.2f,dac,%u\n",
-                                         piresult.targetNa, piresult.currentNa,
-                                         piresult.error, dacOutput);
-                }
-
-                if (dacOutput == 0xFFFF)
-                {
-                    is_max = true;
-                }
-                else
-                {
-                    is_max = false;
-                }
-                if (dacOutput == 0)
-                {
-                    is_min = true;
-                }
-                else
-                {
-                    is_min = false;
-                }
-
-                if (dacOutput == 0xFFFF)
-                {
-                    dacOutput = 1;
-                }
-            }
-
-            currentZDac = dacOutput;
-
-            vTaskResume(handleVspiLoop);
-            gpio_set_level(IO_04, 0); // blue LED
-        }
     }
 }
 
@@ -209,31 +119,32 @@ extern "C" void dataTransmissionLoop(void *unused)
 
     while (!break_loop)
     {
+
+        DataElement element;
+        // Receive data from the queue
+        if (xQueueReceive(queueRtos, &element, portMAX_DELAY) == pdPASS)
         {
-            std::lock_guard<std::mutex> lock(dataQueueMutex);
-            if (!dataQueue.empty())
+            uint16_t X = element.getDataX();
+            uint16_t Y = element.getDataY();
+            uint16_t Z = element.getDataZ();
+
+            if (X == 0 && Y == 0 && Z == 0)
             {
-                uint16_t X = dataQueue.front().getDataX();
-                uint16_t Y = dataQueue.front().getDataY();
-                uint16_t Z = dataQueue.front().getDataZ();
-
-                if (X == 0 && Y == 0 && Z == 0)
-                {
-                    UsbPcInterface::send("DATA,DONE\n");
-                    break_loop = true;
-                }
-                else
-                {
-                    UsbPcInterface::send("DATA,%d,%d,%d\n", X, Y, Z);
-                }
-
-                dataQueue.pop(); // Remove from queue
+                UsbPcInterface::send("DATA,DONE\n");
+                break_loop = true;
             }
             else
             {
-                vTaskDelay(pdMS_TO_TICKS(10));
-                continue;
+                // Process the data element
+                std::ostringstream oss;
+                oss << "DATA," << X << "," << Y << "," << Z << "\n";
+                UsbPcInterface::send(oss.str().c_str());
             }
+        }
+        else
+        {
+            // Handle error
+            ESP_LOGE(TAG, "Failed to receive from queue");
         }
     }
 }

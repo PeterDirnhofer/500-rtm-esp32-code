@@ -10,13 +10,12 @@ class DataElement
     uint16_t z;
 
 public:
-    // Constructor for DataElement
-    DataElement(uint16_t x, uint16_t y, uint16_t z);
+    DataElement() : x(0), y(0), z(0) {}
+    DataElement(uint16_t x, uint16_t y, uint16_t z) : x(x), y(y), z(z) {}
 
-    // Getter methods
-    uint16_t getDataX() { return x; };
-    uint16_t getDataY() { return y; };
-    uint16_t getDataZ() { return z; };
+    uint16_t getDataX() const { return x; }
+    uint16_t getDataY() const { return y; }
+    uint16_t getDataZ() const { return z; }
 };
 
 class DataElementTunnel

@@ -115,8 +115,9 @@ extern uint16_t nvs_maxX, nvs_maxY;
 extern bool direction;
 extern uint16_t sendDataAfterXDatasets;
 
-extern queue<DataElement> dataQueue;
-extern mutex dataQueueMutex;
+
+// Declare the queue handle as an extern variable
+extern QueueHandle_t queueRtos;
 
 extern scanGrid rtmGrid;
 

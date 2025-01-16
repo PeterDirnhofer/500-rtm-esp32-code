@@ -20,7 +20,7 @@ void UsbPcInterface::start()
 {
     const uart_config_t uart_config = {
         // TODO higher baudrate ? HTERM can e.g. 256000
-        .baud_rate = 115200,
+        .baud_rate = 115200*2,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
