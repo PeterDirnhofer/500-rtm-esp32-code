@@ -1,11 +1,17 @@
 #include <UsbPcInterface.h>
 #include <globalVariables.h>
 #include <helper_functions.h>
+#include <controller.h>
+#include <string>
+#include <vector>
+#include <cstdarg>
+#include <cstring>
+#include <cstdlib>
+#include <cctype>
+#include <sstream>
 
 static const char *TAG = "UsbPcInterface";
 static const char *TIP_ERROR_MESSAGE = "Invalid format 'TIP' command. \nSend 'TIP,10000,20000,30000' to set X,Y,Z\n'TIP,?' to see actual X Y Z values\n";
-
-#include <controller.h>
 
 UsbPcInterface::UsbPcInterface()
     : mTaskHandle(NULL), mStarted(false)
@@ -42,7 +48,7 @@ void UsbPcInterface::start()
 extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
 {
 
-    string rcvString = "";
+    std::string rcvString = "";
     bool found_LF;
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
@@ -77,11 +83,11 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
 
             if (found_LF)
             {
-                string part3 = rcvString.substr(0, 3);
+                std::string part3 = rcvString.substr(0, 3);
                 for (int x = 0; x < strlen(part3.c_str()); x++)
                     part3[x] = toupper(part3[x]);
 
-                string part6 = rcvString.substr(0, 6);
+                std::string part6 = rcvString.substr(0, 6);
                 for (int x = 0; x < strlen(part6.c_str()); x++)
                     part6[x] = toupper(part6[x]);
 
@@ -143,7 +149,7 @@ int UsbPcInterface::sendParameter(const char *fmt, ...)
     vsprintf(s, fmt, ap);
 
     ESP_LOGD(TAG, "uartsend %s\n", s);
-    string s1 = "PARAMETER,";
+    std::string s1 = "PARAMETER,";
 
     int len = strlen(s);
     s1.append(s, len);
@@ -167,13 +173,13 @@ int16_t normToMaxMin(long int invalue)
 /// @brief Set X Y Z TIP position or return actual X Y Z
 /// @param s Input String 'TIP,X,Y,Z'  or 'TIP,?'. Strings X Y and Z are normalized to the range of '0' and '32767'
 /// @return When received 'TIP,?' returns a string with actual X Y Z Position
-esp_err_t UsbPcInterface::mUpdateTip(string s)
+esp_err_t UsbPcInterface::mUpdateTip(std::string s)
 {
 
     char *cstr = new char[s.length() + 1];
     strcpy(cstr, s.c_str());
 
-    vector<string> arguments;
+    std::vector<std::string> arguments;
 
     // how many comma are in string
     int numberOfValues = 1;
@@ -368,7 +374,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 }
 
 // Function to convert a C-string to uppercase
-string UsbPcInterface::toUpper(const char *str)
+std::string UsbPcInterface::toUpper(const char *str)
 {
     std::string result;
     while (*str)
@@ -386,21 +392,21 @@ int UsbPcInterface::getWorkingMode()
     return ACTMODE;
 }
 
-vector<string> UsbPcInterface::getParametersFromPc()
+std::vector<std::string> UsbPcInterface::getParametersFromPc()
 {
     return this->mParametersVector;
 }
 
-vector<string> s_getParametersFromPC()
+std::vector<std::string> s_getParametersFromPC()
 {
-    vector<string> hs;
+    std::vector<std::string> hs;
 
     hs.push_back("EINS");
 
     return hs;
 }
 
-void UsbPcInterface::printErrorMessageAndRestart(string error_string)
+void UsbPcInterface::printErrorMessageAndRestart(std::string error_string)
 {
 
     send("ERROR %s\n", error_string.c_str());
