@@ -95,14 +95,7 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
                 { // TP command
                     UsbPcInterface::mUpdateTip(rcvString);
                 }
-                else if ((ACTMODE == MODE_TUNNEL_FIND) and strcmp(part3.c_str(), "TUN") == 0) // TUNNEL  command
-                {
-                    TUNNEL_REQUEST = 1;
-                }
-                else if ((ACTMODE == MODE_TUNNEL_FIND) and strcmp(part6.c_str(), "TUNNEL") != 0) // TUNNEL  command
-                {
-                    esp_restart();
-                }
+               
 
                 else // other commands
                 {
@@ -352,14 +345,7 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
         return ESP_OK;
     }
 
-    else if (strcmp(this->mParametersVector[0].c_str(), "TUNNEL") == 0)
-    {
-
-        UsbPcInterface::m_workingmode = MODE_TUNNEL_FIND;
-        TUNNEL_REQUEST = 1;
-        ESP_LOGI(TAG, "TUNNEL_FIND detected\n");
-        return ESP_OK;
-    }
+   
     else if (strcmp(this->mParametersVector[0].c_str(), "RESTART") == 0)
     {
 

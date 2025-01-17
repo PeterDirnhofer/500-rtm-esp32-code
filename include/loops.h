@@ -13,6 +13,5 @@
 extern "C" void dataTransmissionLoop(void *unused);
 extern "C" void adjustLoop(void *unused);
 extern "C" void measureLoop(void *unused);
-extern "C" void findTunnelLoop(void *unused);
 
 #endif // LOOPS_H

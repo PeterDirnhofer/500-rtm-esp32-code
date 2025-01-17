@@ -115,12 +115,6 @@ extern "C" void app_main(void)
         adjustStart();
         vTaskDelete(NULL);
     }
-    else if (usb.getWorkingMode() == MODE_TUNNEL_FIND)
-    {
-        parameterSetter.getParametersFromFlash(false); // Get measurement parameters from NVS
-        findTunnelStart();
-        vTaskDelete(NULL);
-    }
     else if (usb.getWorkingMode() == MODE_MEASURE)
     {
         parameterSetter.getParametersFromFlash(false); // Get measurement parameters from NVS

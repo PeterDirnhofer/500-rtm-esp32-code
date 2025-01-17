@@ -16,7 +16,7 @@ using namespace std;
 #include <string>
 
 extern int ACTMODE;
-extern int TUNNEL_REQUEST;
+
 
 struct PIResult
 {
@@ -59,7 +59,6 @@ extern TaskHandle_t handleUartRcvLoop;
 extern TaskHandle_t handleVspiLoop;
 extern TaskHandle_t handleSendDatasets;
 extern TaskHandle_t handleControllerLoop;
-extern TaskHandle_t handleTunnelLoop;
 extern TaskHandle_t handleAdjustLoop;
 extern TaskHandle_t handleTask;
 
@@ -136,10 +135,8 @@ extern uint8_t lastConfigByte;
 #define MODE_ADJUST_TEST_TIP 1
 #define MODE_MEASURE 2
 #define MODE_PARAMETER 3
-#define MODE_TUNNEL_FIND 4
 #define MODE_RESTART 5 // starts esp_restart();
 
-#define TUNNEL_TIMER_MS 1 // Period time in TUNNEL find loop
 #define MEASURE_TIMER_MS 1
 
 #define IO_02 GPIO_NUM_2

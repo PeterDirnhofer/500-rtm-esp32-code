@@ -16,7 +16,6 @@ TaskHandle_t handleUartRcvLoop = NULL;
 TaskHandle_t handleVspiLoop = NULL;
 TaskHandle_t handleSendDatasets = NULL;
 TaskHandle_t handleControllerLoop = NULL;
-TaskHandle_t handleTunnelLoop = NULL;
 TaskHandle_t handleAdjustLoop = NULL;
 TaskHandle_t handleTask = NULL;
 

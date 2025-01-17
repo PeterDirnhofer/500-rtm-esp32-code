@@ -96,10 +96,6 @@ extern "C" void measureLoop(void *unused) {
     }
 }
 
-// Find tunnel loop task
-extern "C" void findTunnelLoop(void *unused) {
-    // Implementation for findTunnelLoop
-}
 
 // Data transmission loop task
 extern "C" void dataTransmissionLoop(void *unused) {

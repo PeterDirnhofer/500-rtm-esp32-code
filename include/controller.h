@@ -37,21 +37,9 @@ extern "C" void measureStart();
  */
 extern "C" void measureLoop(void *unused);
 
-/**
- * @brief Starts the tunnel finding task loop and initializes the timer for the tunnel finding mode.
- */
-extern "C" void findTunnelStart();
 
-/**
- * @brief Task loop for finding the tunneling current using PID control.
- *
- * This function controls the Z-height to maintain the desired tunneling current
- * by adjusting the Z-position via PID control. The function runs until the
- * current is within the specified tolerance or a maximum iteration count is reached.
- *
- * @param unused FreeRTOS task parameter, not used in this implementation.
- */
-extern "C" void findTunnelLoop(void *unused);
+
+
 
 /**
  * @brief Starts the adjustment task loop and initializes the timer for adjust mode.

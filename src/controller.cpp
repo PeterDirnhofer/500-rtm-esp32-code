@@ -50,11 +50,3 @@ extern "C" void measureStart()
     timer_initialize(MODE_MEASURE);
 }
 
-extern "C" void findTunnelStart()
-{
-    // Create the tunnel finding loop task pinned to core 1 with 10 KB stack
-    xTaskCreatePinnedToCore(findTunnelLoop, "findTunnelLoop", 10000, NULL, 2, &handleTunnelLoop, 1);
-
-    // Initialize the timer for the tunnel finding mode
-    timer_initialize(MODE_TUNNEL_FIND);
-}

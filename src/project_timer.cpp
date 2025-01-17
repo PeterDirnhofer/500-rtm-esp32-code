@@ -20,12 +20,6 @@ static bool tickMeasure(gptimer_handle_t timer, const gptimer_alarm_event_data_t
     vTaskResume(handleControllerLoop);
     return true;
 }
-// Callback function for TUNNEL_FIND timer tick
-static bool tickTunnelFind(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
-{
-    vTaskResume(handleTunnelLoop);
-    return true;
-}
 
 // Callback function for ADJUST_TEST_TIP timer tick
 static bool tickAdjust(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
@@ -73,10 +67,7 @@ extern "C" void timer_initialize(int mode)
     {
         alarm_config.alarm_count = 1260 * measureMs; // 1260 us
     }
-    else if (mode == MODE_TUNNEL_FIND)
-    {
-        alarm_config.alarm_count = 1260 * measureMs; // ms *
-    }
+    
     else // mode == MODE_ADJUST_TEST_TIP
     {
         alarm_config.alarm_count = 1000 * 1000; // 1 second
@@ -93,10 +84,7 @@ extern "C" void timer_initialize(int mode)
     {
         cbs.on_alarm = tickMeasure;
     }
-    else if (mode == MODE_TUNNEL_FIND)
-    {
-        cbs.on_alarm = tickTunnelFind;
-    }
+    
     else // mode == MODE_ADJUST_TEST_TIP
     {
         cbs.on_alarm = tickAdjust;

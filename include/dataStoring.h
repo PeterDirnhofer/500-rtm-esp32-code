@@ -18,22 +18,5 @@ public:
     uint16_t getDataZ() const { return z; }
 };
 
-class DataElementTunnel
-{
-    int16_t dacz;
-    int16_t adc;
-    bool isTunnel;
-    float currentNa; // New member for current
-
-public:
-    // Constructor
-    DataElementTunnel(uint32_t dacz, int16_t adc, bool isTunnel, float currentNa);
-
-    // Getter methods
-    uint32_t getDacZ() { return dacz; }
-    int16_t getAdc() { return adc; }
-    bool getIsTunnel() { return isTunnel; }
-    float getCurrentNa() { return currentNa; } // Getter for currentNa
-};
 
 #endif // DATASTORING_H
