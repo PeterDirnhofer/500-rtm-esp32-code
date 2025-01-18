@@ -10,9 +10,6 @@
 #include <sstream>
 #include <iomanip>
 
-
-PIResult piresult;
-static double integralError = 0.0; // State variables for PID
 const double integralMax = 5000.0; // Maximum value for integral term
 static int integralErrorAdc = 0;
 static const int integralMaxAdc = 1000;
@@ -72,7 +69,7 @@ int16_t adcValueDebounced(int16_t adcValue)
 
 int clampAdc(int value, int min, int max)
 {
-    // 0 .. 32767 
+    // 0 .. 32767
 
     if (value < min)
         return min;
@@ -134,9 +131,6 @@ void ledStatusAdc(int16_t adcValue, uint16_t targetAdc, uint16_t toleranceAdc, u
     }
 }
 
-
-
-
 void ledStatus(double currentTunnelnA, double targetTunnelnA, double toleranceTunnelnA, uint16_t dac)
 {
     static std::string last_limit = "INIT";
@@ -145,9 +139,9 @@ void ledStatus(double currentTunnelnA, double targetTunnelnA, double toleranceTu
 
     if (abs(targetTunnelnA - currentTunnelnA) <= toleranceTunnelnA)
     {
-        
-        
-        if(last_limit != "LIMIT"){
+
+        if (last_limit != "LIMIT")
+        {
             gpio_set_level(IO_25, 0); // red LED
             gpio_set_level(IO_27, 1); // yellow LED
             gpio_set_level(IO_02, 0); // green LED
@@ -157,7 +151,7 @@ void ledStatus(double currentTunnelnA, double targetTunnelnA, double toleranceTu
     }
     else if (currentTunnelnA > targetTunnelnA)
     {
-       
+
         if (last_limit != "HI")
         {
             gpio_set_level(IO_25, 1); // red LED
@@ -169,7 +163,7 @@ void ledStatus(double currentTunnelnA, double targetTunnelnA, double toleranceTu
     }
     else
     {
-    
+
         if (last_limit != "LO")
         {
             gpio_set_level(IO_25, 0); // red LED
@@ -181,13 +175,11 @@ void ledStatus(double currentTunnelnA, double targetTunnelnA, double toleranceTu
     }
 }
 
-
-uint16_t calculateTargetAdc(double targetNa)
+uint16_t calculateAdcFromnA(double targetNa)
 {
 
     double adcValue = (targetNa / ADC_VOLTAGE_DIVIDER) * (ADC_VALUE_MAX / ADC_VOLTAGE_MAX);
     return static_cast<uint16_t>(std::round(adcValue));
-
 }
 
 double calculateTunnelNa(int16_t adcValue)
@@ -203,11 +195,10 @@ uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
     esp_log_level_set(TAG, ESP_LOG_INFO);
 
     // Calculate the error
-    int error = targetAdc -adcValue;
+    int error = targetAdc - adcValue;
     integralErrorAdc += error;
 
-  
-    //ESP_LOGI(TAG, "ADC Value: %d, Target ADC: %d", adcValue, targetAdc);
+    // ESP_LOGI(TAG, "ADC Value: %d, Target ADC: %d", adcValue, targetAdc);
 
     // Step-by-step calculation of the output
     double proportionalTerm = kP * error;
@@ -228,30 +219,4 @@ uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
     // ESP_LOGI(TAG, "Computed DAC Output: %u", output_u);
 
     return output_u;
-}
-uint16_t computePI(double currentNa, double targetNa)
-{
-    // Calculate error
-    double error = targetNa - currentNa;
-
-    // Update integral term with clamping to prevent windup
-    integralError += error;
-    integralError = clamp(integralError, -integralMax, integralMax);
-
-    // Compute output using proportional and integral terms
-    double output = kP * error + kI * integralError;
-
-    // Clamp output to range [0, maxOutput]
-    output = clamp(output, 0.0, DAC_VALUE_MAX);
-
-    uint16_t dacz = static_cast<uint16_t>(std::round(output));
-
-    piresult.targetNa = targetNa;
-    piresult.currentNa = currentNa;
-    piresult.error = error;
-    piresult.dacz = dacz;
-
-    // UsbPcInterface::send("target,%.2f nA,%.2f error,%.2f dac,%u\n", targetNa, currentNa, error, dacz);
-
-    return dacz;
 }

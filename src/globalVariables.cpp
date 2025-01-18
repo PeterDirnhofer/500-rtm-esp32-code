@@ -33,6 +33,8 @@ uint16_t currentYPos;
 uint16_t currentXDac;
 uint16_t currentYDac;
 uint16_t currentZDac;
+uint16_t targetTunnelAdc;
+uint16_t toleranceTunnelAdc;
 double kP, kI, kD, targetTunnelnA, toleranceTunnelnA, currentTunnelnA;
 uint16_t startX, startY = 0, measureMs = 1;
 uint16_t nvs_maxX, nvs_maxY = 0, multiplicatorGridAdc;

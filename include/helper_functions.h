@@ -11,9 +11,7 @@ void ledStatusAdc(int16_t adcValue, uint16_t targetAdc, uint16_t toleranceAdc, u
 double calculateTunnelNa(int16_t adcValue);
 double clamp(double value, double minValue, double maxValue);
 int16_t clampAdc(int16_t value, int16_t minValue, int16_t maxValue);
-uint16_t computePI(double currentNa, double targetNa);
 uint16_t computePiDac(int16_t adcValue, int16_t targetAdc);
-uint16_t calculateTargetAdc(double targetNa);
-
+uint16_t calculateAdcFromnA(double targetNa);
 
 #endif // HELPER_FUNCTIONS_H

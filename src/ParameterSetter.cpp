@@ -9,6 +9,7 @@
 #include "globalVariables.h"
 #include <array>
 #include "esp_log.h"
+#include "helper_functions.h"
 
 using namespace std;
 
@@ -105,7 +106,6 @@ esp_err_t ParameterSetting::putDefaultParametersToFlash()
 {
     vector<string> params = defaultParameters;
 
-
     esp_err_t result = this->putParametersToFlash(params); // Capture result of the function call
     if (result != ESP_OK)
     {                                                                                            // Check if the result is not OK
@@ -169,10 +169,12 @@ esp_err_t ParameterSetting::getParametersFromFlash(bool display)
     targetTunnelnA = (double)getFloat(keys[3], __FLT_MAX__);
     if (display)
         UsbPcInterface::sendParameter("targetTunnelCurrentnA,%f\n", targetTunnelnA);
+    targetTunnelAdc = calculateAdcFromnA(targetTunnelnA);
 
     toleranceTunnelnA = (double)getFloat(keys[4], __FLT_MAX__);
     if (display)
         UsbPcInterface::sendParameter("toleranceTunnelCurrentnA,%f\n", toleranceTunnelnA);
+    toleranceTunnelAdc = calculateAdcFromnA(toleranceTunnelnA);
 
     startX = (uint16_t)getFloat(keys[5], __FLT_MAX__);
     rtmGrid.setStartX(startX);

@@ -18,22 +18,12 @@ using namespace std;
 extern int ACTMODE;
 
 
-struct PIResult
-{
-    double targetNa;
-    double currentNa;
-    double error;
-    uint16_t dacz;
-};
 
-extern PIResult piresult;
-
-#define MODUS_RUN 0
-#define MODUS_MONITOR_TUNNEL_CURRENT 1
 
 // Additional USB Interface
 #define TXD_PIN (GPIO_NUM_33)
 #define RXD_PIN (GPIO_NUM_32)
+#define BAUDRATE 460800 // 115200 * 4
 
 // SPI for DAC X Y Z
 #define GPIO_MOSI_VSPI 23
@@ -73,7 +63,8 @@ extern spi_device_handle_t handleDacZ;
 extern uint16_t currentXDac;
 extern uint16_t currentYDac;
 extern uint16_t currentZDac;
-// extern uint16_t multimultiplicatorGridAdc;
+
+
 
 #define _I2C_NUMBER(num) I2C_NUM_##num
 #define I2C_NUMBER(num) _I2C_NUMBER(num)
@@ -95,9 +86,6 @@ extern uint16_t currentZDac;
 #define THRESHOLD_HI_REGISTER 0x03
 #define CONVERSION_REGISTER 0x00
 
-// #define ADS_1115_ADDRESS_WRITE 0x90
-// #define ADS_1115_ADDRESS_READ 0x91
-
 #define ADC_VALUE_MAX 32767   // 2^15-1
 #define ADC_VOLTAGE_MAX 2.048 // Voltage from 0 to 2.048V mapped to 0 to 32767
 #define ADC_VOLTAGE_DIVIDER 3
@@ -106,7 +94,7 @@ extern uint16_t currentZDac;
 
 
 #define DAC_VALUE_MAX 65535 // 2^16-1
-
+extern uint16_t targetTunnelAdc, toleranceTunnelAdc;
 extern double kP,
     kI, kD, targetTunnelnA, currentTunnelnA, toleranceTunnelnA;
 extern uint16_t startX, startY, multimultiplicatorGridAdc, measureMs;
