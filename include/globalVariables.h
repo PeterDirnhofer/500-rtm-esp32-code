@@ -17,13 +17,10 @@ using namespace std;
 
 extern int ACTMODE;
 
-
-
-
 // Additional USB Interface
 #define TXD_PIN (GPIO_NUM_33)
 #define RXD_PIN (GPIO_NUM_32)
-#define BAUDRATE 460800 // 115200 * 4
+#define BAUDRATE 115200 // 460800 // 115200 * 4
 
 // SPI for DAC X Y Z
 #define GPIO_MOSI_VSPI 23
@@ -64,8 +61,6 @@ extern uint16_t currentXDac;
 extern uint16_t currentYDac;
 extern uint16_t currentZDac;
 
-
-
 #define _I2C_NUMBER(num) I2C_NUM_##num
 #define I2C_NUMBER(num) _I2C_NUMBER(num)
 
@@ -90,8 +85,7 @@ extern uint16_t currentZDac;
 #define ADC_VOLTAGE_MAX 2.048 // Voltage from 0 to 2.048V mapped to 0 to 32767
 #define ADC_VOLTAGE_DIVIDER 3
 
-#define RESISTOR_PREAMP_MOHM 100    // 100 MOhm Preamp resistor
-
+#define RESISTOR_PREAMP_MOHM 100 // 100 MOhm Preamp resistor
 
 #define DAC_VALUE_MAX 65535 // 2^16-1
 extern uint16_t targetTunnelAdc, toleranceTunnelAdc;
@@ -101,7 +95,6 @@ extern uint16_t startX, startY, multimultiplicatorGridAdc, measureMs;
 extern uint16_t nvs_maxX, nvs_maxY;
 extern bool direction;
 extern uint16_t sendDataAfterXDatasets;
-
 
 // Declare the queue handle as an extern variable
 extern QueueHandle_t queueRtos;
