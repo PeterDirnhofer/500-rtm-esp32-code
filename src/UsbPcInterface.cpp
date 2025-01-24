@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cctype>
 #include <sstream>
+#include <algorithm>
 
 static const char *TAG = "UsbPcInterface";
 static const char *TIP_ERROR_MESSAGE = "Invalid format 'TIP' command. \nSend 'TIP,10000,20000,30000' to set X,Y,Z\n'TIP,?' to see actual X Y Z values\n";
@@ -58,55 +59,65 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
     {
 
         const int rxCount = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 100 / portTICK_PERIOD_MS);
-        if (rxCount > 0)
+        if (rxCount == 0)
         {
-            data[rxCount] = 0;
-            int i = 0;
-
-            while ((i < rxCount) && (found_LF == false))
-            {
-
-                if (data[i] == 0xA) // Linefeed
-                {
-                    found_LF = true;
-                }
-                else if (data[i] == 0x3) // CTRL C
-                {
-                    esp_restart();
-                }
-                else if (data[i] >= 0x20) // Save only printable characters
-                {
-                    rcvString += (char)data[i];
-                }
-                i++;
-            }
-
-            if (found_LF)
-            {
-                std::string part3 = rcvString.substr(0, 3);
-                for (int x = 0; x < strlen(part3.c_str()); x++)
-                    part3[x] = toupper(part3[x]);
-
-                std::string part6 = rcvString.substr(0, 6);
-                for (int x = 0; x < strlen(part6.c_str()); x++)
-                    part6[x] = toupper(part6[x]);
-
-                if (strcmp(part3.c_str(), "TIP") == 0)
-                { // TP command
-                    UsbPcInterface::mUpdateTip(rcvString);
-                }
-               
-
-                else // other commands
-                {
-                    UsbPcInterface::mUsbReceiveString.clear();
-                    UsbPcInterface::mUsbReceiveString.append(rcvString);
-                    UsbPcInterface::mUsbAvailable = true;
-                }
-                rcvString.clear();
-                found_LF = false;
-            }
+            continue; // Skip the rest of the loop if no data was read
         }
+
+        data[rxCount] = 0;
+        int i = 0;
+
+        while ((i < rxCount) && (found_LF == false))
+        {
+            if (data[i] == 0xA)
+            { // Linefeed
+                found_LF = true;
+            }
+            else if (data[i] == 0x3)
+            { // CTRL C
+                esp_restart();
+            }
+            else if (data[i] >= 0x20)
+            { // Use only printable characters
+                rcvString += (char)data[i];
+            }
+            i++;
+        }
+
+        if (!found_LF) {
+            continue;
+        }
+        
+
+        // Convert the entire rcvString to uppercase
+        std::transform(rcvString.begin(), rcvString.end(), rcvString.begin(), ::toupper);
+
+
+
+        std::string part3 = rcvString.substr(0, 3);
+        std::string part6 = rcvString.substr(0, 6);
+        
+        // for (int x = 0; x < strlen(part3.c_str()); x++)
+        //     part3[x] = toupper(part3[x]);
+
+        // std::string part6 = rcvString.substr(0, 6);
+        // for (int x = 0; x < strlen(part6.c_str()); x++)
+        //     part6[x] = toupper(part6[x]);
+
+        if (strcmp(part3.c_str(), "TIP") == 0)
+        { // TP command
+            UsbPcInterface::mUpdateTip(rcvString);
+        }
+
+        else // other commands
+        {
+            UsbPcInterface::mUsbReceiveString.clear();
+            UsbPcInterface::mUsbReceiveString.append(rcvString);
+            UsbPcInterface::mUsbAvailable = true;
+        }
+        rcvString.clear();
+        found_LF = false;
+        
     }
 }
 
@@ -345,7 +356,6 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
         return ESP_OK;
     }
 
-   
     else if (strcmp(this->mParametersVector[0].c_str(), "RESTART") == 0)
     {
 
@@ -374,8 +384,14 @@ std::string UsbPcInterface::toUpper(const char *str)
 int UsbPcInterface::getWorkingMode()
 {
 
-    ACTMODE = UsbPcInterface::m_workingmode;
+    ACTMODE = this->m_workingmode;
     return ACTMODE;
+}
+
+void UsbPcInterface::setWorkingMode(int workingmode)
+{
+
+    this->m_workingmode = workingmode;
 }
 
 std::vector<std::string> UsbPcInterface::getParametersFromPc()

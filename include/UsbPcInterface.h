@@ -40,7 +40,7 @@ public:
   vector<string> getParametersFromPc();
   static const int RX_BUF_SIZE = 200;
   inline static bool adjustIsActive = false;
-  
+  void setWorkingMode(int workingmode);
 
 private:
   static void mUartRcvLoop(void *unused);
