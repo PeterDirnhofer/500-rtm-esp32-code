@@ -1,11 +1,10 @@
 // Header DECLARATION
 // https://marketplace.visualstudio.com/items?itemName=FleeXo.cpp-class-creator
-#ifndef UARTCLASS_H
-#define UARTCLASS_H
-#pragma once
+#ifndef USBPCINTERFACE_H
+#define USBPCINTERFACE_H
 
-//#include "freertos/FreeRTOS.h"
-//#include "freertos/task.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include <cstring>
 #include <vector>
 #include <memory>
@@ -41,18 +40,19 @@ public:
   static const int RX_BUF_SIZE = 200;
   inline static bool adjustIsActive = false;
   void setWorkingMode(int workingmode);
+  inline static string mUsbReceiveString = "";
+  inline static bool mUsbAvailable = false;
+  static esp_err_t mUpdateTip(string);
 
 private:
   static void mUartRcvLoop(void *unused);
-  static esp_err_t mUpdateTip(string);
-  inline static string mUsbReceiveString = "";
-  inline static bool mUsbAvailable = false;
   TaskHandle_t mTaskHandle;
   bool mStarted;
   vector<string> mParametersVector;
   int numberOfValues = 1;
   inline static int m_workingmode = MODE_IDLE;
-  
+
+  static void dispatcherTask(void *unused);
 };
 
-#endif
+#endif // USBPCINTERFACE_H

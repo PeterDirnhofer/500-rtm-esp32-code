@@ -39,11 +39,8 @@ using namespace std;
 extern "C" void app_main(void)
 {
     static const char *TAG = "app_main";
-    static bool acknowledge = false;
 
-    // Set default log level to NONE to suppress other logs
     esp_log_level_set("*", ESP_LOG_NONE);
-
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++++++++++++++++ STARTED");
 
@@ -63,14 +60,15 @@ extern "C" void app_main(void)
 
     // USB Interface initialization
 
-
     UsbPcInterface usb;
     usb.start();
-    // UsbPcInterface::send("IDLE\n");
+    UsbPcInterface::send("AAAAA IDLE\n");
 
     // Parameter setting
     ParameterSetting parameterSetter;
     UsbPcInterface::adjustIsActive = false;
+
+   
 
     // Check for valid parameters in Flash; set defaults if invalid
     if (parameterSetter.parametersAreValid() != ESP_OK)
@@ -81,20 +79,29 @@ extern "C" void app_main(void)
         if (result != ESP_OK)
         {                                                                                            // Check if putting defaults was unsuccessful
             ESP_LOGE(TAG, "Failed to put default parameters to flash: %s", esp_err_to_name(result)); // Log error with message
+            UsbPcInterface::printErrorMessageAndRestart("ERROR Failed to put default parameters to flash");
         }
     }
     parameterSetter.getParametersFromFlash(false);
-   
 
     initAdcDac();
+    UsbPcInterface::send("CCCCCCCCCCCCCCCCCCC IDLE\n");
+    // Start Dispatcher Task
+
+    dispatcherTaskStart();
+
+    UsbPcInterface::send("DDDDDDDDDDDDDDDDD IDLE\n");
 
     // ##############################################################
     // SELECT Run Mode
     // Wait for command from PC via USB
-    while (true) {
+    while (true)
+    {
 
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        ESP_LOGI(TAG, "TICK1");
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        ESP_LOGI(TAG, "TICK1 main loop");
+        ESP_LOGI(TAG, "Current working mode: %d", usb.getWorkingMode());
+        continue;
 
         if (usb.getCommandsFromPC() != ESP_OK)
         {
@@ -126,13 +133,13 @@ extern "C" void app_main(void)
         parameterCount = usb.getParametersFromPc().size();
 
         // If there are two parameters, get the second one
-        if (parameterCount == 2) {
+        if (parameterCount == 2)
+        {
             p1 = usb.getParametersFromPc()[1];
         }
         ESP_LOGI(TAG, "Parameter p0: %s", p0.c_str());
         ESP_LOGI(TAG, "Parameter p1: %s", p1.c_str());
-       
-       
+
         // Handle different working modes
         if (usb.getWorkingMode() == MODE_ADJUST_TEST_TIP)
         {
@@ -153,17 +160,16 @@ extern "C" void app_main(void)
         // PARAMETER,?
         if (p1.compare("?") == 0)
         {
-            
+
             ESP_LOGI(TAG, "AAAAAAA getParametersFromFlash");
             parameterSetter.getParametersFromFlash(false);
             ESP_LOGI(TAG, "Stored Parameters:");
-            acknowledge = true;
             string storedParameters = parameterSetter.getParameters();
             ESP_LOGI(TAG, "%s", storedParameters.c_str());
 
             ESP_LOGI(TAG, "AAAAAAA start acknowledge");
             vTaskDelay(pdMS_TO_TICKS(200));
-           
+
             continue;
             // esp_restart();
             // UsbPcInterface::printErrorMessageAndRestart("");

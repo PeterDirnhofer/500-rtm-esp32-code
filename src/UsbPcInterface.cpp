@@ -11,12 +11,19 @@
 #include <sstream>
 #include <algorithm>
 
+// Define the queue handle
+QueueHandle_t uartQueue = NULL;
+
 static const char *TAG = "UsbPcInterface";
+
 static const char *TIP_ERROR_MESSAGE = "Invalid format 'TIP' command. \nSend 'TIP,10000,20000,30000' to set X,Y,Z\n'TIP,?' to see actual X Y Z values\n";
+
 
 UsbPcInterface::UsbPcInterface()
     : mTaskHandle(NULL), mStarted(false)
 {
+    esp_log_level_set("*", ESP_LOG_NONE);
+    esp_log_level_set(TAG, ESP_LOG_INFO);
 }
 
 UsbPcInterface::~UsbPcInterface()
@@ -32,94 +39,77 @@ void UsbPcInterface::start()
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-        .rx_flow_ctrl_thresh = 0, // !!! PeDi Added to avoid Warning -Wmissing-field-initializers
+        .rx_flow_ctrl_thresh = 0, 
         .source_clk = UART_SCLK_APB,
         .flags = 0, // Initialize the flags member to zero
 
     };
-    // We won't use a buffer for sending data.
+    // Install UART driver
     uart_driver_install(UART_NUM_1, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
     uart_param_config(UART_NUM_1, &uart_config);
     uart_set_pin(UART_NUM_1, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
     xTaskCreatePinnedToCore(this->mUartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->mTaskHandle, (BaseType_t)0);
+
+    // Create the queue
+    // uartQueue = xQueueCreate(10, sizeof(std::string)); // Adjust the size and length as needed
+
+   
     this->mStarted = true;
 }
 
-extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
-{
-
-    std::string rcvString = "";
-    bool found_LF;
-
+extern "C" void UsbPcInterface::mUartRcvLoop(void *unused) {
+    std::string buffer = "";
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
+    ESP_LOGI(TAG, "Start mUartRcvLoop");
 
-    found_LF = false;
+    ESP_LOGI(TAG, "UART_NUM_1: %d", UART_NUM_1);
+
     while (1)
     {
 
+        // Read data from UART
         const int rxCount = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 100 / portTICK_PERIOD_MS);
+       
         if (rxCount == 0)
         {
             continue; // Skip the rest of the loop if no data was read
         }
 
-        data[rxCount] = 0;
-        int i = 0;
+        data[rxCount] = 0; // Null-terminate the received data
+        buffer.append((char *)data);
 
-        while ((i < rxCount) && (found_LF == false))
+
+        // Log the buffer content
+        ESP_LOGI(TAG, "Buffer content: %s", buffer.c_str());
+        size_t pos = 0;
+        while ((pos = buffer.find('\n')) != std::string::npos)
         {
-            if (data[i] == 0xA)
-            { // Linefeed
-                found_LF = true;
-            }
-            else if (data[i] == 0x3)
-            { // CTRL C
+            std::string line = buffer.substr(0, pos);
+            buffer.erase(0, pos + 1);
+
+            // Handle special case: If 0x3 (CTRL C) is received, restart
+            if (line.find('\x03') != std::string::npos)
+            {
                 esp_restart();
             }
-            else if (data[i] >= 0x20)
-            { // Use only printable characters
-                rcvString += (char)data[i];
+
+            // Convert the entire line to uppercase
+            std::transform(line.begin(), line.end(), line.begin(), ::toupper);
+
+            // Send the received line to the queue
+            if (xQueueSend(uartQueue, &line, portMAX_DELAY) != pdPASS)
+            {
+                ESP_LOGE(TAG, "Failed to send to queue");
             }
-            i++;
         }
-
-        if (!found_LF) {
-            continue;
-        }
-        
-
-        // Convert the entire rcvString to uppercase
-        std::transform(rcvString.begin(), rcvString.end(), rcvString.begin(), ::toupper);
-
-
-
-        std::string part3 = rcvString.substr(0, 3);
-        std::string part6 = rcvString.substr(0, 6);
-        
-        // for (int x = 0; x < strlen(part3.c_str()); x++)
-        //     part3[x] = toupper(part3[x]);
-
-        // std::string part6 = rcvString.substr(0, 6);
-        // for (int x = 0; x < strlen(part6.c_str()); x++)
-        //     part6[x] = toupper(part6[x]);
-
-        if (strcmp(part3.c_str(), "TIP") == 0)
-        { // TP command
-            UsbPcInterface::mUpdateTip(rcvString);
-        }
-
-        else // other commands
-        {
-            UsbPcInterface::mUsbReceiveString.clear();
-            UsbPcInterface::mUsbReceiveString.append(rcvString);
-            UsbPcInterface::mUsbAvailable = true;
-        }
-        rcvString.clear();
-        found_LF = false;
-        
     }
+
+    ESP_LOGI(TAG, "Quit mUartRcvLoop");
+    free(data);
+    vTaskDelete(NULL);
 }
+
 
 int UsbPcInterface::send(const char *fmt, ...)
 {
@@ -335,10 +325,11 @@ extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()
 
     if (strcmp(this->mParametersVector[0].c_str(), "ADJUST") == 0)
     {
+        return ESP_OK;
 
         UsbPcInterface::m_workingmode = MODE_ADJUST_TEST_TIP;
         UsbPcInterface::adjustIsActive = true;
-        ESP_LOGI(TAG, "ADJUST detected\n");
+        ESP_LOGI(TAG, "BBBB ADJUST detected\n");
         return ESP_OK;
     }
     else if (strcmp(this->mParametersVector[0].c_str(), "MEASURE") == 0)
