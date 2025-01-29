@@ -62,14 +62,14 @@ extern "C" void app_main(void)
 
     UsbPcInterface usb;
     usb.start();
-    UsbPcInterface::send("AAAAA IDLE\n");
+
+    dispatcherTaskStart();
 
     // Parameter setting
     ParameterSetting parameterSetter;
     UsbPcInterface::adjustIsActive = false;
 
    
-
     // Check for valid parameters in Flash; set defaults if invalid
     if (parameterSetter.parametersAreValid() != ESP_OK)
     {
@@ -86,9 +86,8 @@ extern "C" void app_main(void)
 
     initAdcDac();
     UsbPcInterface::send("CCCCCCCCCCCCCCCCCCC IDLE\n");
-    // Start Dispatcher Task
-
-    dispatcherTaskStart();
+    
+ 
 
     UsbPcInterface::send("DDDDDDDDDDDDDDDDD IDLE\n");
 

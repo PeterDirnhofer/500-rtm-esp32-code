@@ -18,6 +18,8 @@ static const char *TAG = "UsbPcInterface";
 
 static const char *TIP_ERROR_MESSAGE = "Invalid format 'TIP' command. \nSend 'TIP,10000,20000,30000' to set X,Y,Z\n'TIP,?' to see actual X Y Z values\n";
 
+// Declare the queue handle
+extern QueueHandle_t uartQueue;
 
 UsbPcInterface::UsbPcInterface()
     : mTaskHandle(NULL), mStarted(false)
@@ -39,11 +41,12 @@ void UsbPcInterface::start()
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-        .rx_flow_ctrl_thresh = 0, 
+        .rx_flow_ctrl_thresh = 0,
         .source_clk = UART_SCLK_APB,
         .flags = 0, // Initialize the flags member to zero
 
     };
+
     // Install UART driver
     uart_driver_install(UART_NUM_1, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
     uart_param_config(UART_NUM_1, &uart_config);
@@ -51,56 +54,53 @@ void UsbPcInterface::start()
 
     xTaskCreatePinnedToCore(this->mUartRcvLoop, "uartRcvLoop", 10000, NULL, 4, &this->mTaskHandle, (BaseType_t)0);
 
-    // Create the queue
-    // uartQueue = xQueueCreate(10, sizeof(std::string)); // Adjust the size and length as needed
-
-   
     this->mStarted = true;
 }
 
-extern "C" void UsbPcInterface::mUartRcvLoop(void *unused) {
+extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
+{
+
+    if (uartQueue == NULL)
+    {
+        uartQueue = xQueueCreate(10, sizeof(std::string)); 
+        ESP_LOGI(TAG, "uartQueue started");
+    }
+
     std::string buffer = "";
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
     ESP_LOGI(TAG, "Start mUartRcvLoop");
 
-    ESP_LOGI(TAG, "UART_NUM_1: %d", UART_NUM_1);
-
     while (1)
     {
-
         // Read data from UART
         const int rxCount = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 100 / portTICK_PERIOD_MS);
-       
-        if (rxCount == 0)
+
+        if (rxCount > 0)
         {
-            continue; // Skip the rest of the loop if no data was read
-        }
+            data[rxCount] = 0; // Null-terminate the received data
+            buffer.append((char *)data);
 
-        data[rxCount] = 0; // Null-terminate the received data
-        buffer.append((char *)data);
-
-
-        // Log the buffer content
-        ESP_LOGI(TAG, "Buffer content: %s", buffer.c_str());
-        size_t pos = 0;
-        while ((pos = buffer.find('\n')) != std::string::npos)
-        {
-            std::string line = buffer.substr(0, pos);
-            buffer.erase(0, pos + 1);
-
-            // Handle special case: If 0x3 (CTRL C) is received, restart
-            if (line.find('\x03') != std::string::npos)
+            size_t pos = 0;
+            while ((pos = buffer.find('\n')) != std::string::npos)
             {
-                esp_restart();
-            }
+                std::string line = buffer.substr(0, pos);
+                buffer.erase(0, pos + 1);
 
-            // Convert the entire line to uppercase
-            std::transform(line.begin(), line.end(), line.begin(), ::toupper);
+                // Handle special case: If 0x3 (CTRL C) is received, restart
+                if (line.find('\x03') != std::string::npos)
+                {
+                    esp_restart();
+                }
 
-            // Send the received line to the queue
-            if (xQueueSend(uartQueue, &line, portMAX_DELAY) != pdPASS)
-            {
-                ESP_LOGE(TAG, "Failed to send to queue");
+                // Convert the entire line to uppercase
+                std::transform(line.begin(), line.end(), line.begin(), ::toupper);
+
+                // Send the received line to the queue
+                if (xQueueSend(uartQueue, &line, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGE(TAG, "Failed to send to queue");
+                }
+                ESP_LOGI(TAG, "From PC: %s", line.c_str());
             }
         }
     }
@@ -109,7 +109,6 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused) {
     free(data);
     vTaskDelete(NULL);
 }
-
 
 int UsbPcInterface::send(const char *fmt, ...)
 {
@@ -164,9 +163,6 @@ int16_t normToMaxMin(long int invalue)
     return (int16_t)invalue;
 }
 
-/// @brief Set X Y Z TIP position or return actual X Y Z
-/// @param s Input String 'TIP,X,Y,Z'  or 'TIP,?'. Strings X Y and Z are normalized to the range of '0' and '32767'
-/// @return When received 'TIP,?' returns a string with actual X Y Z Position
 esp_err_t UsbPcInterface::mUpdateTip(std::string s)
 {
 
