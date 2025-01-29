@@ -185,7 +185,7 @@ esp_err_t UsbPcInterface::mUpdateTip(std::string s)
     {
         tokens.push_back(token);
     }
-
+    
     // Ensure there are exactly 3 values
     if (tokens.size() != 3)
     {

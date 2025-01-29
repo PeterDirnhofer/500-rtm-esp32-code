@@ -60,5 +60,6 @@ uint16_t maxNumberAttemptsSPI = 10;
 intr_handle_t s_timer_handle;
 // Define the global adjustIsActive variable
 bool adjustIsActive = false;
+bool measureIsActive = false;
 
 uint16_t modeWorking;

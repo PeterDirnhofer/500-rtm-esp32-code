@@ -31,6 +31,12 @@ extern "C" void dispatcherTask(void *unused)
         // Wait for data to be available in the queue with a timeout of 100 ms
         if (xQueueReceive(queueFromPc, &rcvString, pdMS_TO_TICKS(100)) == pdPASS)
         {
+            if (rcvString == "STOP")
+            {
+                adjustIsActive = false;
+                measureIsActive = false;
+                continue;
+            }
 
             if (rcvString == "ADJUST")
             {
@@ -40,11 +46,10 @@ extern "C" void dispatcherTask(void *unused)
 
             if (adjustIsActive && rcvString.find("TIP") != std::string::npos)
             {
-
-                
                 UsbPcInterface::mUpdateTip(rcvString);
                 continue;
             }
+            
 
         }
         else
@@ -92,6 +97,7 @@ extern "C" void adjustStart()
 
 extern "C" void measureStart()
 {
+    measureIsActive = true;
     static const char *TAG = "measureStart";
     esp_log_level_set(TAG, ESP_LOG_INFO);
 

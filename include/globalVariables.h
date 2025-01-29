@@ -129,5 +129,6 @@ extern uint8_t lastConfigByte;
 extern SemaphoreHandle_t measureLoopSemaphore;
 // Declare the global adjustIsActive variable
 extern bool adjustIsActive;
+extern bool measureIsActive;
 
 #endif

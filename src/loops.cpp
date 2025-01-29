@@ -42,7 +42,7 @@ extern "C" void measureLoop(void *unused)
     uint16_t newDacZ = 0;
     std::string dataBuffer;
 
-    while (true)
+    while (measureIsActive)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
 
