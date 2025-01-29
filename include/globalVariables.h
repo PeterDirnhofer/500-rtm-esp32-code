@@ -127,5 +127,7 @@ extern uint8_t lastConfigByte;
 #define IO_17 GPIO_NUM_17
 
 extern SemaphoreHandle_t measureLoopSemaphore;
+// Declare the global adjustIsActive variable
+extern bool adjustIsActive;
 
 #endif

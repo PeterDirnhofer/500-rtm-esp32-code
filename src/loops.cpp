@@ -15,7 +15,7 @@ extern "C" void adjustLoop(void *unused)
     static const char *TAG = "adjustLoop";
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
 
-    while (true)
+    while (adjustIsActive)
     {
         vTaskSuspend(NULL); // Sleep, will be retriggered by gptimer
 
@@ -29,6 +29,7 @@ extern "C" void adjustLoop(void *unused)
         // Send data via USB interface
         UsbPcInterface::send("ADJUST,%.3f,%.3f,%d\n", adcInVolt, currentTunnelnA, adcValue);
     }
+    ESP_LOGI(TAG, "Adjust loop stopped");
 }
 
 // Measurement loop task

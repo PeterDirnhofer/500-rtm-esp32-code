@@ -80,10 +80,11 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
             buffer.append((char *)data);
 
             size_t pos = 0;
-            while ((pos = buffer.find('\n')) != std::string::npos)
+
+            while ((pos = buffer.find_first_of("\n\r")) != std::string::npos)
             {
                 std::string line = buffer.substr(0, pos);
-                buffer.erase(0, pos + 1);
+                buffer.erase(0, buffer.find_first_not_of("\n\r", pos + 1));
 
                 // Handle special case: If 0x3 (CTRL C) is received, restart
                 if (line.find('\x03') != std::string::npos)
@@ -99,7 +100,6 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
                 {
                     ESP_LOGE(TAG, "Failed to send to queue");
                 }
-                
             }
         }
     }
@@ -165,101 +165,68 @@ int16_t normToMaxMin(long int invalue)
 esp_err_t UsbPcInterface::mUpdateTip(std::string s)
 {
 
-    char *cstr = new char[s.length() + 1];
-    strcpy(cstr, s.c_str());
+    esp_log_level_set(TAG, ESP_LOG_INFO);
 
-    std::vector<std::string> arguments;
-
-    // how many comma are in string
-    int numberOfValues = 1;
-    for (int i = 0; i < UsbPcInterface::mUsbReceiveString.length(); i++)
-        if (cstr[i] == ',')
-            numberOfValues++;
-
-    char *p = strtok(cstr, ",");
-
-    arguments.clear();
-    while (p != 0)
-    {
-        char buffer[20];
-        sprintf(buffer, "%s", p);
-        arguments.push_back(buffer);
-        p = strtok(NULL, ",");
-    }
-
-    if (UsbPcInterface::adjustIsActive == false)
-    {
-        UsbPcInterface::send("No valid command. 'TIP' is only valid in ADJUST mode\n");
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    int l = arguments.size();
-
-    if (l == 2) //  && (strcmp(arguments[1].c_str(), "ADJUST") == 0))
-    {
-
-        if (strcmp(arguments[1].c_str(), "?") == 0)
-        {
-            UsbPcInterface::send("TIP,%d,%d,%d\n", currentXDac, currentYDac, currentZDac);
-            return ESP_OK;
-        }
-        else
-        {
-            UsbPcInterface::send(TIP_ERROR_MESSAGE);
-            return ESP_ERR_INVALID_ARG;
-        }
-    }
-
-    if (l != 4)
+    // Check if the command starts with "TIP,"
+    if (s.rfind("TIP,", 0) != 0)
     {
         UsbPcInterface::send(TIP_ERROR_MESSAGE);
         return ESP_ERR_INVALID_ARG;
     }
 
-    // TIP,X,Y,Z
-    if (l == 4)
+    // Remove "TIP," prefix
+    s = s.substr(4);
+
+    // Split the remaining string by commas
+    std::vector<std::string> tokens;
+    std::stringstream ss(s);
+    std::string token;
+    while (std::getline(ss, token, ','))
     {
-        uint16_t x = 0;
-        uint16_t y = 0;
-        uint16_t z = 0;
-
-        char *endPtr;
-        long int xl = strtol(arguments[1].c_str(), &endPtr, 10);
-
-        if (strlen(endPtr) > 0)
-        {
-            UsbPcInterface::send("%sDetail: X value is not an integer\n", TIP_ERROR_MESSAGE);
-            return ESP_ERR_INVALID_ARG;
-        }
-        x = normToMaxMin(xl);
-
-        long int yl = strtol(arguments[2].c_str(), &endPtr, 10);
-        if (strlen(endPtr) > 0)
-        {
-            UsbPcInterface::send("%sDetail: Y value is not an integer\n", TIP_ERROR_MESSAGE);
-            return ESP_ERR_INVALID_ARG;
-        }
-        y = normToMaxMin(yl);
-
-        long int zl = strtol(arguments[3].c_str(), &endPtr, 10);
-        if (strlen(endPtr) > 0)
-        {
-            UsbPcInterface::send("%sDetail: Z value is not an integer\n", TIP_ERROR_MESSAGE);
-            return ESP_ERR_INVALID_ARG;
-        }
-        z = normToMaxMin(zl);
-
-        // Set X Y Z Tip Values
-        currentXDac = x;
-        currentYDac = y;
-        currentZDac = z;
-        vTaskResume(handleVspiLoop); // realize X Y Z. Will suspend itself
-
-        return ESP_OK;
+        tokens.push_back(token);
     }
 
-    UsbPcInterface::send("TIP_ERROR_MESSAGE");
-    return ESP_ERR_INVALID_ARG;
+    // Ensure there are exactly 3 values
+    if (tokens.size() != 3)
+    {
+        UsbPcInterface::send(TIP_ERROR_MESSAGE);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Convert the values to integers
+    char *endPtr;
+    long int xl = strtol(tokens[0].c_str(), &endPtr, 10);
+    if (*endPtr != '\0')
+    {
+        UsbPcInterface::send("%sDetail: X value is not an integer\n", TIP_ERROR_MESSAGE);
+        return ESP_ERR_INVALID_ARG;
+    }
+    uint16_t x = normToMaxMin(xl);
+
+    long int yl = strtol(tokens[1].c_str(), &endPtr, 10);
+    if (*endPtr != '\0')
+    {
+        UsbPcInterface::send("%sDetail: Y value is not an integer\n", TIP_ERROR_MESSAGE);
+        return ESP_ERR_INVALID_ARG;
+    }
+    uint16_t y = normToMaxMin(yl);
+
+    long int zl = strtol(tokens[2].c_str(), &endPtr, 10);
+    if (*endPtr != '\0')
+    {
+        UsbPcInterface::send("%sDetail: Z value is not an integer\n", TIP_ERROR_MESSAGE);
+        return ESP_ERR_INVALID_ARG;
+    }
+    uint16_t z = normToMaxMin(zl);
+
+    ESP_LOGI(TAG, "TIP command received with values: X=%d, Y=%d, Z=%d", x, y, z);
+
+    // Set X Y Z Tip Values
+    currentXDac = x;
+    currentYDac = y;
+    currentZDac = z;
+    vTaskResume(handleVspiLoop); // realize X Y Z. Will suspend itself
+    return ESP_OK;
 }
 
 extern "C" esp_err_t UsbPcInterface::getCommandsFromPC()

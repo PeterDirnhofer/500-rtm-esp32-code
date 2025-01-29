@@ -31,23 +31,21 @@ extern "C" void dispatcherTask(void *unused)
         // Wait for data to be available in the queue with a timeout of 100 ms
         if (xQueueReceive(queueFromPc, &rcvString, pdMS_TO_TICKS(100)) == pdPASS)
         {
-            ESP_LOGI(TAG, "From PC: %s", rcvString.c_str());
 
+            if (rcvString == "ADJUST")
+            {
+                adjustStart();
+                continue;
+            }
 
-            
-            std::string part3 = rcvString.substr(0, 3);
-            std::string part6 = rcvString.substr(0, 6);
+            if (adjustIsActive && rcvString.find("TIP") != std::string::npos)
+            {
 
-            if (strcmp(part3.c_str(), "TIP") == 0)
-            { // TIP command
+                
                 UsbPcInterface::mUpdateTip(rcvString);
+                continue;
             }
-            else
-            { // Other commands
-                UsbPcInterface::mUsbReceiveString.clear();
-                UsbPcInterface::mUsbReceiveString.append(rcvString);
-                UsbPcInterface::mUsbAvailable = true;
-            }
+
         }
         else
         {
@@ -87,6 +85,7 @@ extern "C" esp_err_t initAdcDac()
 
 extern "C" void adjustStart()
 {
+    adjustIsActive = true;
     xTaskCreatePinnedToCore(adjustLoop, "adjustLoop", 10000, NULL, 2, &handleAdjustLoop, 1);
     timer_initialize(MODE_ADJUST_TEST_TIP);
 }
