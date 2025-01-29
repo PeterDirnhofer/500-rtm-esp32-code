@@ -60,40 +60,16 @@ extern "C" void app_main(void)
     // USB Interface initialization
     UsbPcInterface usb;
     usb.start();
-    // Start read from PC and Dispatcher
+    // Start read from PC and Start Dispatcher
     dispatcherTaskStart();
-   
-    // Parameter setting
-    ParameterSetting parameterSetter;
-    // Check for valid parameters in Flash; set defaults if invalid
-    esp_err_t result = parameterSetter.getParametersFromFlash();
-    if (result != ESP_OK)
-    {
-        ESP_LOGE(TAG, "Failed to get parameters from flash: %s", esp_err_to_name(result));
-    }
-    ESP_LOGI(TAG, "Foo After  getParametersFromFlash");
 
-    if (parameterSetter.parametersAreValid() != ESP_OK)
-    {
-        ESP_LOGW("TAG", "No valid Parameters found. Set to default ... ");
-
-        result = parameterSetter.putDefaultParametersToFlash(); // Capture the result
-        if (result != ESP_OK)
-        {                                                                                            // Check if putting defaults was unsuccessful
-            ESP_LOGE(TAG, "Failed to put default parameters to flash: %s", esp_err_to_name(result)); // Log error with message
-            UsbPcInterface::printErrorMessageAndRestart("ERROR Failed to put default parameters to flash");
-        }
-    }
-
-    ESP_LOGI(TAG, "BBBBBBBBBBBBBBBBBBBBBB STARTED");
-    parameterSetter.getParametersFromFlash(false);
-    ESP_LOGI(TAG, "CCCCCCCCCCCCCCCCCCc STARTED");
     initAdcDac();
 
-    ESP_LOGI(TAG, "DDDDDDDDDDDDDD STARTED");
-    // ##############################################################
-    // SELECT Run Mode
-    // Wait for command from PC via USB
+    // Parameter setting
+    ParameterSetting parameterSetter;
+    parameterSetter.getParametersFromFlash(false);
+    
+
     while (true)
     {
 
@@ -101,114 +77,114 @@ extern "C" void app_main(void)
         vTaskDelay(pdMS_TO_TICKS(10000));
         continue;
 
-        ESP_LOGI(TAG, "Current working mode: %d", usb.getWorkingMode());
-        continue;
+        // ESP_LOGI(TAG, "Current working mode: %d", usb.getWorkingMode());
+        // continue;
 
-        if (usb.getCommandsFromPC() != ESP_OK)
-        {
+        // if (usb.getCommandsFromPC() != ESP_OK)
+        // {
 
-            ESP_LOGE(TAG, "Invalid command. \n"
-                          "'PARAMETER,?' or 'PARAMETER,DEFAULT' or 'PARAMETER,kI,kP,...'\n");
-            UsbPcInterface::printErrorMessageAndRestart("Invalid command. \n"
-                                                        "'PARAMETER,?' or 'PARAMETER,DEFAULT' or 'PARAMETER,kI,kP,...'\n");
+        //     ESP_LOGE(TAG, "Invalid command. \n"
+        //                   "'PARAMETER,?' or 'PARAMETER,DEFAULT' or 'PARAMETER,kI,kP,...'\n");
+        //     UsbPcInterface::printErrorMessageAndRestart("Invalid command. \n"
+        //                                                 "'PARAMETER,?' or 'PARAMETER,DEFAULT' or 'PARAMETER,kI,kP,...'\n");
 
-            vTaskDelay(pdMS_TO_TICKS(1000));
-            esp_restart();
-        }
-        ESP_LOGI(TAG, "AAAAA getWorkingMode %d", usb.getWorkingMode());
+        //     vTaskDelay(pdMS_TO_TICKS(1000));
+        //     esp_restart();
+        // }
+        // ESP_LOGI(TAG, "AAAAA getWorkingMode %d", usb.getWorkingMode());
 
-        if (usb.getWorkingMode() == MODE_RESTART)
-        {
-            ESP_LOGI(TAG, "esp_restart MODE_RESTART");
-            esp_restart();
-        }
+        // if (usb.getWorkingMode() == MODE_RESTART)
+        // {
+        //     ESP_LOGI(TAG, "esp_restart MODE_RESTART");
+        //     esp_restart();
+        // }
 
-        // Process parameters from PC
-        std::string p0 = "", p1 = "";
-        int parameterCount;
+        // // Process parameters from PC
+        // std::string p0 = "", p1 = "";
+        // int parameterCount;
 
-        // Get the first parameter
-        p0 = usb.getParametersFromPc()[0];
+        // // Get the first parameter
+        // p0 = usb.getParametersFromPc()[0];
 
-        // Get the total number of parameters
-        parameterCount = usb.getParametersFromPc().size();
+        // // Get the total number of parameters
+        // parameterCount = usb.getParametersFromPc().size();
 
-        // If there are two parameters, get the second one
-        if (parameterCount == 2)
-        {
-            p1 = usb.getParametersFromPc()[1];
-        }
-        ESP_LOGI(TAG, "Parameter p0: %s", p0.c_str());
-        ESP_LOGI(TAG, "Parameter p1: %s", p1.c_str());
+        // // If there are two parameters, get the second one
+        // if (parameterCount == 2)
+        // {
+        //     p1 = usb.getParametersFromPc()[1];
+        // }
+        // ESP_LOGI(TAG, "Parameter p0: %s", p0.c_str());
+        // ESP_LOGI(TAG, "Parameter p1: %s", p1.c_str());
 
-        // Handle different working modes
-        if (usb.getWorkingMode() == MODE_ADJUST_TEST_TIP)
-        {
-            adjustStart();
-            vTaskDelete(NULL);
-        }
-        else if (usb.getWorkingMode() == MODE_MEASURE)
-        {
-            parameterSetter.getParametersFromFlash(false); // Get measurement parameters from NVS
-            measureStart();
-            vTaskDelete(NULL);
-        }
-        else if (usb.getWorkingMode() != MODE_PARAMETER)
-        {
-            UsbPcInterface::printErrorMessageAndRestart("INVALID Command MODE");
-        }
+        // // Handle different working modes
+        // if (usb.getWorkingMode() == MODE_ADJUST_TEST_TIP)
+        // {
+        //     adjustStart();
+        //     vTaskDelete(NULL);
+        // }
+        // else if (usb.getWorkingMode() == MODE_MEASURE)
+        // {
+        //     parameterSetter.getParametersFromFlash(false); // Get measurement parameters from NVS
+        //     measureStart();
+        //     vTaskDelete(NULL);
+        // }
+        // else if (usb.getWorkingMode() != MODE_PARAMETER)
+        // {
+        //     UsbPcInterface::printErrorMessageAndRestart("INVALID Command MODE");
+        // }
 
-        // PARAMETER,?
-        if (p1.compare("?") == 0)
-        {
+        // // PARAMETER,?
+        // if (p1.compare("?") == 0)
+        // {
 
-            ESP_LOGI(TAG, "AAAAAAA getParametersFromFlash");
-            parameterSetter.getParametersFromFlash(false);
-            ESP_LOGI(TAG, "Stored Parameters:");
-            string storedParameters = parameterSetter.getParameters();
-            ESP_LOGI(TAG, "%s", storedParameters.c_str());
+        //     ESP_LOGI(TAG, "AAAAAAA getParametersFromFlash");
+        //     parameterSetter.getParametersFromFlash(false);
+        //     ESP_LOGI(TAG, "Stored Parameters:");
+        //     string storedParameters = parameterSetter.getParameters();
+        //     ESP_LOGI(TAG, "%s", storedParameters.c_str());
 
-            ESP_LOGI(TAG, "AAAAAAA start acknowledge");
-            vTaskDelay(pdMS_TO_TICKS(200));
+        //     ESP_LOGI(TAG, "AAAAAAA start acknowledge");
+        //     vTaskDelay(pdMS_TO_TICKS(200));
 
-            continue;
-            // esp_restart();
-            // UsbPcInterface::printErrorMessageAndRestart("");
-        }
-        // PARAMETER,DEFAULT
-        else if (p1.compare("DEFAULT") == 0)
-        {
-            esp_err_t err = parameterSetter.putDefaultParametersToFlash();
-            if (err == ESP_OK)
-            {
-                parameterSetter.getParametersFromFlash(false);
-                esp_restart();
-            }
-            else
-            {
-                UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,float,float,...");
-            }
-        }
-        // TODO = size_keys + 1
-        else if (parameterCount == 13)
-        {
-            esp_err_t err = parameterSetter.putParametersToFlash(usb.getParametersFromPc());
-            if (err == ESP_OK)
-            {
-                parameterSetter.getParametersFromFlash(true);
-                esp_restart();
-            }
-            else
-            {
-                UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,p1,p2,...,p9");
-            }
-        }
-        else
-        {
-            UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nInvalid number of parameters");
-        }
+        //     continue;
+        //     // esp_restart();
+        //     // UsbPcInterface::printErrorMessageAndRestart("");
+        // }
+        // // PARAMETER,DEFAULT
+        // else if (p1.compare("DEFAULT") == 0)
+        // {
+        //     esp_err_t err = parameterSetter.putDefaultParametersToFlash();
+        //     if (err == ESP_OK)
+        //     {
+        //         parameterSetter.getParametersFromFlash(false);
+        //         esp_restart();
+        //     }
+        //     else
+        //     {
+        //         UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,float,float,...");
+        //     }
+        // }
+        // // TODO = size_keys + 1
+        // else if (parameterCount == 13)
+        // {
+        //     esp_err_t err = parameterSetter.putParametersToFlash(usb.getParametersFromPc());
+        //     if (err == ESP_OK)
+        //     {
+        //         parameterSetter.getParametersFromFlash(true);
+        //         esp_restart();
+        //     }
+        //     else
+        //     {
+        //         UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nRequired Format is \nPARAMETER,p1,p2,...,p9");
+        //     }
+        // }
+        // else
+        // {
+        //     UsbPcInterface::printErrorMessageAndRestart("PARAMETER SET ERROR\nInvalid number of parameters");
+        // }
 
-        ESP_LOGI(TAG, "--- delete main task\n");
-        vTaskDelete(NULL);
+        // ESP_LOGI(TAG, "--- delete main task\n");
+        // vTaskDelete(NULL);
     }
 }

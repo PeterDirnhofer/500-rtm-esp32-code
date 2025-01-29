@@ -22,6 +22,14 @@ ParameterSetting::ParameterSetting()
 {
     esp_log_level_set(TAG, ESP_LOG_INFO);
     this->begin();
+
+    // Check if parameters in flash are valid
+    if (parametersAreValid() != ESP_OK) {
+        ESP_LOGW(TAG, "Parameters in flash are invalid. Writing default parameters to flash.");
+        putDefaultParametersToFlash();
+    } else {
+        ESP_LOGI(TAG, "Parameters in flash are valid.");
+    }
 }
 
 ParameterSetting::~ParameterSetting()
