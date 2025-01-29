@@ -98,7 +98,7 @@ extern "C" void app_main(void)
     {
 
         ESP_LOGI(TAG, "TICK1 main loop. Brauchts das?");
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(10000));
         continue;
 
         ESP_LOGI(TAG, "Current working mode: %d", usb.getWorkingMode());
