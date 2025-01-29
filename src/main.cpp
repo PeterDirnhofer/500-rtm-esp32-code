@@ -39,7 +39,6 @@ using namespace std;
 extern "C" void app_main(void)
 {
     static const char *TAG = "app_main";
-
     esp_log_level_set("*", ESP_LOG_NONE);
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++++++++++++++++ STARTED");
@@ -59,46 +58,49 @@ extern "C" void app_main(void)
     gpio_set_level(IO_02, 0); // green LED
 
     // USB Interface initialization
-
     UsbPcInterface usb;
     usb.start();
-
+    // Start read from PC and Dispatcher
     dispatcherTaskStart();
-
+   
     // Parameter setting
     ParameterSetting parameterSetter;
-    UsbPcInterface::adjustIsActive = false;
-
-   
     // Check for valid parameters in Flash; set defaults if invalid
+    esp_err_t result = parameterSetter.getParametersFromFlash();
+    if (result != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to get parameters from flash: %s", esp_err_to_name(result));
+    }
+    ESP_LOGI(TAG, "Foo After  getParametersFromFlash");
+
     if (parameterSetter.parametersAreValid() != ESP_OK)
     {
         ESP_LOGW("TAG", "No valid Parameters found. Set to default ... ");
 
-        esp_err_t result = parameterSetter.putDefaultParametersToFlash(); // Capture the result
+        result = parameterSetter.putDefaultParametersToFlash(); // Capture the result
         if (result != ESP_OK)
         {                                                                                            // Check if putting defaults was unsuccessful
             ESP_LOGE(TAG, "Failed to put default parameters to flash: %s", esp_err_to_name(result)); // Log error with message
             UsbPcInterface::printErrorMessageAndRestart("ERROR Failed to put default parameters to flash");
         }
     }
+
+    ESP_LOGI(TAG, "BBBBBBBBBBBBBBBBBBBBBB STARTED");
     parameterSetter.getParametersFromFlash(false);
-
+    ESP_LOGI(TAG, "CCCCCCCCCCCCCCCCCCc STARTED");
     initAdcDac();
-    UsbPcInterface::send("CCCCCCCCCCCCCCCCCCC IDLE\n");
-    
- 
 
-    UsbPcInterface::send("DDDDDDDDDDDDDDDDD IDLE\n");
-
+    ESP_LOGI(TAG, "DDDDDDDDDDDDDD STARTED");
     // ##############################################################
     // SELECT Run Mode
     // Wait for command from PC via USB
     while (true)
     {
 
+        ESP_LOGI(TAG, "TICK1 main loop. Brauchts das?");
         vTaskDelay(pdMS_TO_TICKS(5000));
-        ESP_LOGI(TAG, "TICK1 main loop");
+        continue;
+
         ESP_LOGI(TAG, "Current working mode: %d", usb.getWorkingMode());
         continue;
 

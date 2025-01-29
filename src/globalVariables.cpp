@@ -41,9 +41,8 @@ uint16_t nvs_maxX, nvs_maxY = 0, multiplicatorGridAdc;
 bool direction = 0;
 uint16_t sendDataAfterXDatasets = 100;
 
-
 // Define the queue handle
-QueueHandle_t queueRtos;
+QueueHandle_t queueToPc;
 
 scanGrid rtmGrid(200, 200); // default grid
 bool configNeeded = true;
@@ -61,4 +60,3 @@ uint16_t maxNumberAttemptsSPI = 10;
 intr_handle_t s_timer_handle;
 
 uint16_t modeWorking;
-

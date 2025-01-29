@@ -12,19 +12,18 @@
 #include <algorithm>
 
 // Define the queue handle
-QueueHandle_t uartQueue = NULL;
+QueueHandle_t queueFromPc = NULL;
 
 static const char *TAG = "UsbPcInterface";
 
 static const char *TIP_ERROR_MESSAGE = "Invalid format 'TIP' command. \nSend 'TIP,10000,20000,30000' to set X,Y,Z\n'TIP,?' to see actual X Y Z values\n";
 
 // Declare the queue handle
-extern QueueHandle_t uartQueue;
+extern QueueHandle_t queueFromPc;
 
 UsbPcInterface::UsbPcInterface()
     : mTaskHandle(NULL), mStarted(false)
 {
-    esp_log_level_set("*", ESP_LOG_NONE);
     esp_log_level_set(TAG, ESP_LOG_INFO);
 }
 
@@ -60,9 +59,9 @@ void UsbPcInterface::start()
 extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
 {
 
-    if (uartQueue == NULL)
+    if (queueFromPc == NULL)
     {
-        uartQueue = xQueueCreate(10, sizeof(std::string)); 
+        queueFromPc = xQueueCreate(10, sizeof(std::string));
         ESP_LOGI(TAG, "uartQueue started");
     }
 
@@ -96,11 +95,11 @@ extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
                 std::transform(line.begin(), line.end(), line.begin(), ::toupper);
 
                 // Send the received line to the queue
-                if (xQueueSend(uartQueue, &line, portMAX_DELAY) != pdPASS)
+                if (xQueueSend(queueFromPc, &line, portMAX_DELAY) != pdPASS)
                 {
                     ESP_LOGE(TAG, "Failed to send to queue");
                 }
-                ESP_LOGI(TAG, "From PC: %s", line.c_str());
+                
             }
         }
     }

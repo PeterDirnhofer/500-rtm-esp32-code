@@ -97,7 +97,7 @@ extern bool direction;
 extern uint16_t sendDataAfterXDatasets;
 
 // Declare the queue handle as an extern variable
-extern QueueHandle_t queueRtos;
+extern QueueHandle_t queueToPc;
 
 extern scanGrid rtmGrid;
 

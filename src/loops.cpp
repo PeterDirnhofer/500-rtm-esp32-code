@@ -74,7 +74,7 @@ extern "C" void measureLoop(void *unused)
 
             // Create data element and send to queue
             DataElement dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac);
-            if (xQueueSend(queueRtos, &dataElement, portMAX_DELAY) != pdPASS)
+            if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS)
             {
                 ESP_LOGE("Queue", "Failed to send to queue");
             }
@@ -88,7 +88,7 @@ extern "C" void measureLoop(void *unused)
             {
                 // Signal completion and restart
                 DataElement endSignal(0, 0, 0); // Use a special value to signal completion
-                if (xQueueSend(queueRtos, &endSignal, portMAX_DELAY) != pdPASS)
+                if (xQueueSend(queueToPc, &endSignal, portMAX_DELAY) != pdPASS)
                 {
                     ESP_LOGE("Queue", "Failed to send to queue");
                 }
@@ -120,7 +120,7 @@ extern "C" void dataTransmissionLoop(void *unused)
     {
         DataElement element;
         // Receive data from the queue
-        if (xQueueReceive(queueRtos, &element, portMAX_DELAY) == pdPASS)
+        if (xQueueReceive(queueToPc, &element, portMAX_DELAY) == pdPASS)
         {
             uint16_t X = element.getDataX();
             uint16_t Y = element.getDataY();

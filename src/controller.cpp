@@ -16,39 +16,53 @@
 static const char *TAG = "controller";
 
 // Declare the queue handle
-extern QueueHandle_t uartQueue;
+extern QueueHandle_t queueFromPc;
 
-extern "C" void dispatcherTask(void *unused) {
+extern "C" void dispatcherTask(void *unused)
+{
 
     static const char *TAG = "dispatcherTask";
     esp_log_level_set(TAG, ESP_LOG_INFO);
-    ESP_LOGI(TAG, "dispatcherTask ++ STARTED");
+    ESP_LOGI(TAG, "++ STARTED");
     std::string rcvString;
 
-    while (1) {
+    while (1)
+    {
         // Wait for data to be available in the queue with a timeout of 100 ms
-        if (xQueueReceive(uartQueue, &rcvString, pdMS_TO_TICKS(100)) == pdPASS) {
+        if (xQueueReceive(queueFromPc, &rcvString, pdMS_TO_TICKS(100)) == pdPASS)
+        {
+            ESP_LOGI(TAG, "From PC: %s", rcvString.c_str());
+
+
+            
             std::string part3 = rcvString.substr(0, 3);
             std::string part6 = rcvString.substr(0, 6);
 
-            if (strcmp(part3.c_str(), "TIP") == 0) { // TIP command
+            if (strcmp(part3.c_str(), "TIP") == 0)
+            { // TIP command
                 UsbPcInterface::mUpdateTip(rcvString);
-            } else { // Other commands
+            }
+            else
+            { // Other commands
                 UsbPcInterface::mUsbReceiveString.clear();
                 UsbPcInterface::mUsbReceiveString.append(rcvString);
                 UsbPcInterface::mUsbAvailable = true;
             }
-        } else {
+        }
+        else
+        {
             // No data received, continue to the next iteration
             continue;
         }
     }
 }
 
-extern "C" void dispatcherTaskStart() {
+extern "C" void dispatcherTaskStart()
+{
     // Initialize the queue if it hasn't been initialized
-    if (uartQueue == NULL) {
-        uartQueue = xQueueCreate(10, sizeof(std::string)); // Adjust the size and length as needed
+    if (queueFromPc == NULL)
+    {
+        queueFromPc = xQueueCreate(10, sizeof(std::string)); // Adjust the size and length as needed
     }
 
     // Create the dispatcher task
@@ -82,8 +96,8 @@ extern "C" void measureStart()
     static const char *TAG = "measureStart";
     esp_log_level_set(TAG, ESP_LOG_INFO);
 
-    queueRtos = xQueueCreate(1000, sizeof(DataElement));
-    if (queueRtos == NULL)
+    queueToPc = xQueueCreate(1000, sizeof(DataElement));
+    if (queueToPc == NULL)
     {
         // Handle error
         ESP_LOGE("Queue", "Failed to create queue");
@@ -96,5 +110,3 @@ extern "C" void measureStart()
     xTaskCreatePinnedToCore(measureLoop, "measurementLoop", 10000, NULL, 2, &handleControllerLoop, 1);
     timer_initialize(MODE_MEASURE);
 }
-
-
