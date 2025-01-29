@@ -49,6 +49,12 @@ extern "C" void dispatcherTask(void *unused)
                 UsbPcInterface::mUpdateTip(rcvString);
                 continue;
             }
+            if (!adjustIsActive && rcvString.find("TIP") != std::string::npos)
+            {
+                ESP_LOGI(TAG, "ERROR: Received TIP command while adjust is not active");
+                UsbPcInterface::send("Received TIP command while adjust is not active");
+                continue;
+            }
             
 
         }

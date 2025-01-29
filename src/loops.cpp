@@ -29,7 +29,7 @@ extern "C" void adjustLoop(void *unused)
         // Send data via USB interface
         UsbPcInterface::send("ADJUST,%.3f,%.3f,%d\n", adcInVolt, currentTunnelnA, adcValue);
     }
-    ESP_LOGI(TAG, "Adjust loop stopped");
+    ESP_LOGI(TAG, "Adjust loop stoped");
 }
 
 // Measurement loop task
