@@ -29,7 +29,6 @@ public:
 
   void start();
   static int send(const char *fmt, ...);
-  static int sendParameter(const char *fmt, ...);
   static void printMessageAndRestart(string msg);
   static esp_err_t sendData();
   static const int RX_BUF_SIZE = 200;

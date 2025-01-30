@@ -160,72 +160,49 @@ esp_err_t ParameterSetting::parametersAreValid()
     return ESP_OK;
 }
 
-esp_err_t ParameterSetting::getParametersFromFlash(bool send_usb)
+esp_err_t ParameterSetting::getParametersFromFlash()
 {
     
     ESP_LOGI(TAG, "++++++++ getParametersFromFlash");
 
     kP = (double)getFloat(keys[0], __FLT_MAX__);
-    if (send_usb)
-        UsbPcInterface::sendParameter("kP,%f\n", kP);
-        
+    
 
     kI = (double)getFloat(keys[1], __FLT_MAX__);
-    if (send_usb)
-        UsbPcInterface::sendParameter("kI,%f\n", kI);
+   
 
     kD = (double)getFloat(keys[2], __FLT_MAX__);
-    if (send_usb)
-        UsbPcInterface::sendParameter("kD,%f\n", kD);
+  
 
     targetTunnelnA = (double)getFloat(keys[3], __FLT_MAX__);
-    if (send_usb)
-        UsbPcInterface::sendParameter("targetTunnelCurrentnA,%f\n", targetTunnelnA);
     targetTunnelAdc = calculateAdcFromnA(targetTunnelnA);
 
     toleranceTunnelnA = (double)getFloat(keys[4], __FLT_MAX__);
-    if (send_usb)
-        UsbPcInterface::sendParameter("toleranceTunnelCurrentnA,%f\n", toleranceTunnelnA);
     toleranceTunnelAdc = calculateAdcFromnA(toleranceTunnelnA);
 
     startX = (uint16_t)getFloat(keys[5], __FLT_MAX__);
     rtmGrid.setStartX(startX);
-    if (send_usb)
-        UsbPcInterface::sendParameter("startX,%u\n", startX);
-
+   
     startY = (uint16_t)getFloat(keys[6], __FLT_MAX__);
     rtmGrid.setStartY(startY);
-    if (send_usb)
-        UsbPcInterface::sendParameter("startY,%u\n", startY);
-
+  
     measureMs = (uint16_t)getFloat(keys[7], __FLT_MAX__);
-    if (send_usb)
-        UsbPcInterface::sendParameter("measureMs,%u\n", measureMs);
-
+    
     direction = (bool)getFloat(keys[8], __FLT_MAX__);
-    if (send_usb)
-        UsbPcInterface::sendParameter("direction,%d\n", direction);
 
     uint16_t mMaxX = (uint16_t)getFloat(keys[9], __FLT_MAX__);
     rtmGrid.setMaxX(mMaxX);
     nvs_maxX = mMaxX;
-    if (send_usb)
-        UsbPcInterface::sendParameter("maxX,%d\n", mMaxX);
-
+    
     uint16_t mMaxY = (uint16_t)getFloat(keys[10], __FLT_MAX__);
     nvs_maxY = mMaxY;
     rtmGrid.setMaxY(mMaxY);
-    if (send_usb)
-        UsbPcInterface::sendParameter("maxY,%d\n", mMaxY);
-
+  
     uint16_t mMultiplicator = (uint16_t)getFloat(keys[11], __FLT_MAX__);
     rtmGrid.setMultiplicatorGridAdc(mMultiplicator);
-    if (send_usb)
-        UsbPcInterface::sendParameter("MultiplicatorGridAdc,%d\n", mMultiplicator);
 
     // Create a string to store all parameters
     std::string parameters;
-    // Append each parameter to the string
     parameters += std::string(keys[0]) + "," + std::to_string(kP) + "\n";
     parameters += std::string(keys[1]) + "," + std::to_string(kI) + "\n";
     parameters += std::string(keys[2]) + "," + std::to_string(kD) + "\n";
@@ -246,7 +223,7 @@ esp_err_t ParameterSetting::getParametersFromFlash(bool send_usb)
 }
 
 // Get parameters
-std::string ParameterSetting::getParameters()
+string ParameterSetting::getParameters()
 {
     return this->storedParameters;
 }

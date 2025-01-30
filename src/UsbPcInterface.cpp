@@ -132,25 +132,6 @@ int UsbPcInterface::send(const char *fmt, ...)
     return rc;
 }
 
-int UsbPcInterface::sendParameter(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-
-    char s[100] = {0};
-    vsprintf(s, fmt, ap);
-
-    ESP_LOGD(TAG, "uartsend %s\n", s);
-    std::string s1 = "PARAMETER,";
-
-    int len = strlen(s);
-    s1.append(s, len);
-    len = strlen(s1.c_str());
-    int rc = uart_write_bytes(UART_NUM_1, s1.c_str(), len);
-    va_end(ap);
-    return rc;
-}
-
 int16_t normToMaxMin(long int invalue)
 {
     if (invalue < 0)

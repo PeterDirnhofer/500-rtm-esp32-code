@@ -28,7 +28,7 @@ public:
   ~ParameterSetting(); // Destructor
 
   esp_err_t putParametersToFlash(vector<string> params);
-  esp_err_t getParametersFromFlash(bool send_usb=false);
+  esp_err_t getParametersFromFlash();
 
   esp_err_t putDefaultParametersToFlash();
   esp_err_t parametersAreValid();

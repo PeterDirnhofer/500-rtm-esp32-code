@@ -13,6 +13,7 @@
 #include "ParameterSetter.h"
 #include <string>
 #include <vector>
+#include <sstream>
 
 static const char *TAG = "controller";
 
@@ -68,10 +69,17 @@ extern "C" void commandDispatcherTask(void *unused)
             {
                 ESP_LOGI(TAG, "PARAMETER,? detected");
                 ParameterSetting parameterSetter;
-                parameterSetter.getParametersFromFlash(true);
+                parameterSetter.getParametersFromFlash();
                 std::string storedParameters = parameterSetter.getParameters();
                 ESP_LOGI(TAG, "Stored Parameters: %s", storedParameters.c_str());
-                //UsbPcInterface::send(storedParameters.c_str());
+                std::istringstream stream(storedParameters);
+                std::string line;
+                while (std::getline(stream, line))
+                {
+                    line += "\n";
+                    UsbPcInterface::send(line.c_str());
+                    vTaskDelay(pdMS_TO_TICKS(10));
+                }
                 continue;
             }
         }

@@ -67,7 +67,7 @@ extern "C" void app_main(void)
 
     // Parameter setting
     ParameterSetting parameterSetter;
-    parameterSetter.getParametersFromFlash(false);
+    parameterSetter.getParametersFromFlash();
     
 
     while (true)
