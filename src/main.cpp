@@ -68,7 +68,8 @@ extern "C" void app_main(void)
     // Parameter setting
     ParameterSetting parameterSetter;
     parameterSetter.getParametersFromFlash();
-    
+    // Send "IDLE" message
+    usb.send("IDLE\n");
 
     while (true)
     {

@@ -89,6 +89,9 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
                 // Handle special case: If 0x3 (CTRL C) is received, restart
                 if (line.find('\x03') != std::string::npos)
                 {
+                    ESP_LOGI(TAG, "CTRL+C received, restarting...");
+                    vTaskDelay(pdMS_TO_TICKS(10));
+
                     esp_restart();
                 }
 

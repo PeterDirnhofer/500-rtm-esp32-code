@@ -6,7 +6,7 @@
 #include "driver/gptimer.h"
 #include "globalVariables.h"
 #include "UsbPcInterface.h"
-#include "freertos/semphr.h"
+
 
 // Timer handle
 static gptimer_handle_t gptimer = NULL;

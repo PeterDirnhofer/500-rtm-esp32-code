@@ -37,6 +37,8 @@ extern "C" void commandDispatcherTask(void *unused)
             {
                 adjustIsActive = false;
                 measureIsActive = false;
+                UsbPcInterface::send("STOPPED\n");
+                vTaskDelay(pdMS_TO_TICKS(10));
                 ESP_LOGI(TAG, "adjustIsActive set to false");
                 continue;
             }
@@ -76,6 +78,8 @@ extern "C" void commandDispatcherTask(void *unused)
                 std::string line;
                 while (std::getline(stream, line))
                 {
+
+                    line = "PARAMETER," + line;
                     line += "\n";
                     UsbPcInterface::send(line.c_str());
                     vTaskDelay(pdMS_TO_TICKS(10));
