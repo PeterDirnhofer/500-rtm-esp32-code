@@ -146,5 +146,5 @@ extern "C" void measureStart()
     xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000, NULL, 1, NULL, 0);
 
     xTaskCreatePinnedToCore(measureLoop, "measurementLoop", 10000, NULL, 2, &handleControllerLoop, 1);
-    timer_initialize(MODE_MEASURE);
+    timer_initialize();
 }

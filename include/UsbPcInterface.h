@@ -17,10 +17,7 @@
 
 // static const int RX_BUF_SIZE = 200;
 using namespace std;
-/**
- * @brief Communication with PC via USB
- *
- */
+
 class UsbPcInterface
 {
 public:
@@ -41,7 +38,6 @@ private:
   bool mStarted;
   vector<string> mParametersVector;
   int numberOfValues = 1;
-  inline static int m_workingmode = MODE_IDLE;
 };
 
 #endif // USBPCINTERFACE_H

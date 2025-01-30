@@ -36,7 +36,7 @@ extern "C" void timer_stop()
 }
 
 
-extern "C" void timer_initialize(int mode)
+extern "C" void timer_initialize()
 {
     // Timer configuration
     gptimer_config_t timer_config = {
@@ -56,25 +56,18 @@ extern "C" void timer_initialize(int mode)
     gptimer_alarm_config_t alarm_config = {};
     alarm_config.reload_count = 0;
     alarm_config.flags.auto_reload_on_alarm = true;
-
-    // Set the alarm count based on the mode
-    if (mode == MODE_MEASURE)
-    {
-        alarm_config.alarm_count = 1260 * measureMs; // 1260 us
-    }
-    
-    
+    alarm_config.alarm_count = 1260 * measureMs; // 1260 us
+       
     // Set the alarm action
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
 
     // Event callbacks
     gptimer_event_callbacks_t cbs = {};
 
-    // Set the callback function based on the mode
-    if (mode == MODE_MEASURE)
-    {
-        cbs.on_alarm = tickMeasure;
-    }
+
+    
+    cbs.on_alarm = tickMeasure;
+    
     
     
     // Register the event callbacks and enable the timer

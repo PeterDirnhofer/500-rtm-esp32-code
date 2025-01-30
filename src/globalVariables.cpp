@@ -3,7 +3,6 @@
 #include "driver/spi_master.h"
 #include <string>
 
-int ACTMODE = MODE_IDLE;
 int TUNNEL_REQUEST = 0;
 esp_err_t retVspi;
 spi_transaction_t tVspi;

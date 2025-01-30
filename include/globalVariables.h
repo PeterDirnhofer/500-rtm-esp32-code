@@ -15,7 +15,6 @@ using namespace std;
 
 #include <string>
 
-extern int ACTMODE;
 
 // Additional USB Interface
 #define TXD_PIN (GPIO_NUM_33)
@@ -109,13 +108,6 @@ extern uint16_t maxNumberAttemptsSPI;
 
 extern intr_handle_t s_timer_handle;
 extern uint8_t lastConfigByte;
-
-#define MODE_IDLE 0
-#define MODE_INVALID -1
-#define MODE_ADJUST_TEST_TIP 1
-#define MODE_MEASURE 2
-#define MODE_PARAMETER 3
-#define MODE_RESTART 5 // starts esp_restart();
 
 #define MEASURE_TIMER_MS 1
 
