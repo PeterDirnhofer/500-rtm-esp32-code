@@ -15,7 +15,6 @@ using namespace std;
 
 #include <string>
 
-
 // Additional USB Interface
 #define TXD_PIN (GPIO_NUM_33)
 #define RXD_PIN (GPIO_NUM_32)
@@ -44,7 +43,7 @@ extern TaskHandle_t handleUartRcvLoop;
 
 extern TaskHandle_t handleVspiLoop;
 extern TaskHandle_t handleSendDatasets;
-extern TaskHandle_t handleControllerLoop;
+extern TaskHandle_t handleMeasureLoop;
 extern TaskHandle_t handleAdjustLoop;
 extern TaskHandle_t handleTask;
 
@@ -100,14 +99,12 @@ extern QueueHandle_t queueToPc;
 
 extern scanGrid rtmGrid;
 
-extern bool configNeeded;
 extern uint16_t configExisting; // each bit stands for one config param. specifier 2 will write to second byte
 extern int64_t controller_start_time;
 
 extern uint16_t maxNumberAttemptsSPI;
 
 extern intr_handle_t s_timer_handle;
-extern uint8_t lastConfigByte;
 
 #define MEASURE_TIMER_MS 1
 
@@ -117,7 +114,6 @@ extern uint8_t lastConfigByte;
 #define IO_25 GPIO_NUM_25
 #define IO_17 GPIO_NUM_17
 
-extern SemaphoreHandle_t measureLoopSemaphore;
 // Declare the global adjustIsActive variable
 extern bool adjustIsActive;
 extern bool measureIsActive;

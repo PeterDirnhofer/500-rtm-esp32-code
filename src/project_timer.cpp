@@ -11,17 +11,13 @@
 // Timer handle
 static gptimer_handle_t gptimer = NULL;
 
-SemaphoreHandle_t measureLoopSemaphore = NULL;
-
 // Callback function for MEASURE timer tick
 static bool tickMeasure(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
 
-    vTaskResume(handleControllerLoop);
+    vTaskResume(handleMeasureLoop);
     return true;
 }
-
-
 
 // Start the timer
 extern "C" void timer_start()
@@ -34,7 +30,6 @@ extern "C" void timer_stop()
 {
     ESP_ERROR_CHECK(gptimer_stop(gptimer));
 }
-
 
 extern "C" void timer_initialize()
 {
@@ -57,19 +52,15 @@ extern "C" void timer_initialize()
     alarm_config.reload_count = 0;
     alarm_config.flags.auto_reload_on_alarm = true;
     alarm_config.alarm_count = 1260 * measureMs; // 1260 us
-       
+
     // Set the alarm action
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
 
     // Event callbacks
     gptimer_event_callbacks_t cbs = {};
 
-
-    
     cbs.on_alarm = tickMeasure;
-    
-    
-    
+
     // Register the event callbacks and enable the timer
     ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, NULL));
     ESP_ERROR_CHECK(gptimer_enable(gptimer));

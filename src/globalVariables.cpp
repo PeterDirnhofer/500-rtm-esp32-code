@@ -14,7 +14,7 @@ TaskHandle_t handleUartLoop = NULL;
 TaskHandle_t handleUartRcvLoop = NULL;
 TaskHandle_t handleVspiLoop = NULL;
 TaskHandle_t handleSendDatasets = NULL;
-TaskHandle_t handleControllerLoop = NULL;
+TaskHandle_t handleMeasureLoop = NULL;
 TaskHandle_t handleAdjustLoop = NULL;
 TaskHandle_t handleTask = NULL;
 
@@ -44,9 +44,6 @@ uint16_t sendDataAfterXDatasets = 100;
 QueueHandle_t queueToPc;
 
 scanGrid rtmGrid(200, 200); // default grid
-bool configNeeded = true;
-uint8_t lastConfigByte = 100;
-
 
 uint16_t configExisting = 0;
 uint16_t maxNumberAttemptsSPI = 10;
