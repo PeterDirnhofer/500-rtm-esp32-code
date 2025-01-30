@@ -110,7 +110,7 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params)
 
     return ESP_OK;
 }
-// List of default Paramater
+
 esp_err_t ParameterSetting::putDefaultParametersToFlash()
 {
     vector<string> params = defaultParameters;

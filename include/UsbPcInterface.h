@@ -30,13 +30,10 @@ public:
   void start();
   static int send(const char *fmt, ...);
   static int sendParameter(const char *fmt, ...);
-  static void printErrorMessageAndRestart(string error_string);
   static void printMessageAndRestart(string msg);
   static esp_err_t sendData();
   static const int RX_BUF_SIZE = 200;
-  inline static bool adjustIsActive = false;
   inline static string mUsbReceiveString = "";
-  inline static bool mUsbAvailable = false;
   static esp_err_t mUpdateTip(string);
 
 private:
@@ -46,8 +43,6 @@ private:
   vector<string> mParametersVector;
   int numberOfValues = 1;
   inline static int m_workingmode = MODE_IDLE;
-
-  static void dispatcherTask(void *unused);
 };
 
 #endif // USBPCINTERFACE_H

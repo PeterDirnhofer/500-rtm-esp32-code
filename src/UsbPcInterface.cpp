@@ -56,7 +56,7 @@ void UsbPcInterface::start()
     this->mStarted = true;
 }
 
-extern "C" void UsbPcInterface::mUartRcvLoop(void *unused)
+void UsbPcInterface::mUartRcvLoop(void *unused)
 {
 
     if (queueFromPc == NULL)
@@ -227,24 +227,4 @@ esp_err_t UsbPcInterface::mUpdateTip(std::string s)
     currentZDac = z;
     vTaskResume(handleVspiLoop); // realize X Y Z. Will suspend itself
     return ESP_OK;
-}
-
-std::vector<std::string> s_getParametersFromPC()
-{
-    std::vector<std::string> hs;
-
-    hs.push_back("EINS");
-
-    return hs;
-}
-
-void UsbPcInterface::printErrorMessageAndRestart(std::string error_string)
-{
-
-    send("ERROR %s\n", error_string.c_str());
-    send("Press Ctrl-C to restart\n");
-    while (1)
-    {
-        vTaskDelete(NULL);
-    }
 }

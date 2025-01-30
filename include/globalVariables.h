@@ -103,7 +103,6 @@ extern scanGrid rtmGrid;
 
 extern bool configNeeded;
 extern uint16_t configExisting; // each bit stands for one config param. specifier 2 will write to second byte
-extern uint16_t lastConfigExisting;
 extern int64_t controller_start_time;
 
 extern uint16_t maxNumberAttemptsSPI;
