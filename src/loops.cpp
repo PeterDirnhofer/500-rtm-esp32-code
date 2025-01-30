@@ -14,12 +14,11 @@ extern "C" void adjustLoop(void *unused)
 {
     static const char *TAG = "adjustLoop";
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
+    ESP_LOGI(TAG, "+++++++++++++++++ START ADJUST\n");
    
 
     while (adjustIsActive)
     {
-        vTaskSuspend(NULL); // Sleep, will be retriggered by gptimer
-
         // Read voltage from preamplifier
         int16_t adcValue = readAdc();
         currentTunnelnA = calculateTunnelNa(adcValue);
@@ -29,6 +28,10 @@ extern "C" void adjustLoop(void *unused)
 
         // Send data via USB interface
         UsbPcInterface::send("ADJUST,%.3f,%.3f,%d\n", adcInVolt, currentTunnelnA, adcValue);
+        // Delay for a specified period (e.g., 1000 ms)
+        ESP_LOGI(TAG, "TICK");
+        
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
    
     vTaskDelete(NULL);

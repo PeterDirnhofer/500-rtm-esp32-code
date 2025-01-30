@@ -97,9 +97,11 @@ extern "C" esp_err_t initAdcDac()
 
 extern "C" void adjustStart()
 {
-    adjustIsActive = true;
-    xTaskCreatePinnedToCore(adjustLoop, "adjustLoop", 10000, NULL, 2, &handleAdjustLoop, 1);
-    timer_initialize(MODE_ADJUST_TEST_TIP);
+    if (!adjustIsActive)
+    {
+        adjustIsActive = true;
+        xTaskCreatePinnedToCore(adjustLoop, "adjustLoop", 10000, NULL, 2, &handleAdjustLoop, 1);
+    }
 }
 
 extern "C" void measureStart()

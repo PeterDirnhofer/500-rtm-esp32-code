@@ -21,12 +21,7 @@ static bool tickMeasure(gptimer_handle_t timer, const gptimer_alarm_event_data_t
     return true;
 }
 
-// Callback function for ADJUST_TEST_TIP timer tick
-static bool tickAdjust(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
-{
-    vTaskResume(handleAdjustLoop);
-    return true;
-}
+
 
 // Start the timer
 extern "C" void timer_start()
@@ -68,11 +63,7 @@ extern "C" void timer_initialize(int mode)
         alarm_config.alarm_count = 1260 * measureMs; // 1260 us
     }
     
-    else // mode == MODE_ADJUST_TEST_TIP
-    {
-        alarm_config.alarm_count = 1000 * 1000; // 1 second
-    }
-
+    
     // Set the alarm action
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
 
@@ -85,11 +76,7 @@ extern "C" void timer_initialize(int mode)
         cbs.on_alarm = tickMeasure;
     }
     
-    else // mode == MODE_ADJUST_TEST_TIP
-    {
-        cbs.on_alarm = tickAdjust;
-    }
-
+    
     // Register the event callbacks and enable the timer
     ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, NULL));
     ESP_ERROR_CHECK(gptimer_enable(gptimer));
