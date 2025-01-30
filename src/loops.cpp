@@ -113,6 +113,7 @@ extern "C" void measureLoop(void *unused)
 
         gpio_set_level(IO_04, 0); // blue LED
     }
+    vTaskDelete(NULL);
 }
 
 // Data transmission loop task

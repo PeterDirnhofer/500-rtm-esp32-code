@@ -15,7 +15,7 @@
 
 extern "C" esp_err_t initAdcDac();
 
-extern "C" void dispatcherTask(void *unused);
+extern "C" void commandDispatcherTask(void *unused);
 
 extern "C" void dispatcherTaskStart();
 

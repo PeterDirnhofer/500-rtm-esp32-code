@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "ParameterSetter.h"
 #include <string>
 #include <vector>
 
@@ -18,7 +19,7 @@ static const char *TAG = "controller";
 // Declare the queue handle
 extern QueueHandle_t queueFromPc;
 
-extern "C" void dispatcherTask(void *unused)
+extern "C" void commandDispatcherTask(void *unused)
 {
 
     static const char *TAG = "dispatcherTask";
@@ -39,6 +40,12 @@ extern "C" void dispatcherTask(void *unused)
                 continue;
             }
 
+            if (rcvString == "MEASURE")
+            {
+                measureStart();
+                continue;
+            }
+
             if (rcvString == "ADJUST")
             {
                 adjustStart();
@@ -56,8 +63,17 @@ extern "C" void dispatcherTask(void *unused)
                 UsbPcInterface::send("Received TIP command while adjust is not active");
                 continue;
             }
-            
 
+            if (rcvString == "PARAMETER,?")
+            {
+                ESP_LOGI(TAG, "PARAMETER,? detected");
+                ParameterSetting parameterSetter;
+                parameterSetter.getParametersFromFlash(true);
+                std::string storedParameters = parameterSetter.getParameters();
+                ESP_LOGI(TAG, "Stored Parameters: %s", storedParameters.c_str());
+                //UsbPcInterface::send(storedParameters.c_str());
+                continue;
+            }
         }
         else
         {
@@ -76,7 +92,7 @@ extern "C" void dispatcherTaskStart()
     }
 
     // Create the dispatcher task
-    xTaskCreatePinnedToCore(dispatcherTask, "dispatcherTask", 10000, NULL, 4, NULL, 0);
+    xTaskCreatePinnedToCore(commandDispatcherTask, "dispatcherTask", 10000, NULL, 4, NULL, 0);
 }
 
 extern "C" esp_err_t initAdcDac()

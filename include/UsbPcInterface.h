@@ -33,13 +33,8 @@ public:
   static void printErrorMessageAndRestart(string error_string);
   static void printMessageAndRestart(string msg);
   static esp_err_t sendData();
-  static string toUpper(const char *str);
-  esp_err_t getCommandsFromPC();
-  int getWorkingMode();
-  vector<string> getParametersFromPc();
   static const int RX_BUF_SIZE = 200;
   inline static bool adjustIsActive = false;
-  void setWorkingMode(int workingmode);
   inline static string mUsbReceiveString = "";
   inline static bool mUsbAvailable = false;
   static esp_err_t mUpdateTip(string);
