@@ -35,6 +35,7 @@ extern "C" void dispatcherTask(void *unused)
             {
                 adjustIsActive = false;
                 measureIsActive = false;
+                ESP_LOGI(TAG, "adjustIsActive set to false");
                 continue;
             }
 
