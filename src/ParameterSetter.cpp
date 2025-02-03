@@ -24,11 +24,10 @@ ParameterSetting::ParameterSetting()
     this->begin();
 
     // Check if parameters in flash are valid
-    if (parametersAreValid() != ESP_OK) {
+    if (parametersAreValid() != ESP_OK)
+    {
         ESP_LOGW(TAG, "Parameters in flash are invalid. Writing default parameters to flash.");
         putDefaultParametersToFlash();
-    } else {
-        ESP_LOGI(TAG, "Parameters in flash are valid.");
     }
 }
 
@@ -120,10 +119,6 @@ esp_err_t ParameterSetting::putDefaultParametersToFlash()
     {                                                                                            // Check if the result is not OK
         ESP_LOGE(TAG, "Failed to put default parameters to flash: %s", esp_err_to_name(result)); // Log error with message
     }
-    else
-    {
-        ESP_LOGI(TAG, "Default parameter set to default");
-    }
 
     return result; // Return the result
 }
@@ -162,17 +157,12 @@ esp_err_t ParameterSetting::parametersAreValid()
 
 esp_err_t ParameterSetting::getParametersFromFlash()
 {
-    
-    ESP_LOGI(TAG, "++++++++ getParametersFromFlash");
 
     kP = (double)getFloat(keys[0], __FLT_MAX__);
-    
 
     kI = (double)getFloat(keys[1], __FLT_MAX__);
-   
 
     kD = (double)getFloat(keys[2], __FLT_MAX__);
-  
 
     targetTunnelnA = (double)getFloat(keys[3], __FLT_MAX__);
     targetTunnelAdc = calculateAdcFromnA(targetTunnelnA);
@@ -182,22 +172,22 @@ esp_err_t ParameterSetting::getParametersFromFlash()
 
     startX = (uint16_t)getFloat(keys[5], __FLT_MAX__);
     rtmGrid.setStartX(startX);
-   
+
     startY = (uint16_t)getFloat(keys[6], __FLT_MAX__);
     rtmGrid.setStartY(startY);
-  
+
     measureMs = (uint16_t)getFloat(keys[7], __FLT_MAX__);
-    
+
     direction = (bool)getFloat(keys[8], __FLT_MAX__);
 
     uint16_t mMaxX = (uint16_t)getFloat(keys[9], __FLT_MAX__);
     rtmGrid.setMaxX(mMaxX);
     nvs_maxX = mMaxX;
-    
+
     uint16_t mMaxY = (uint16_t)getFloat(keys[10], __FLT_MAX__);
     nvs_maxY = mMaxY;
     rtmGrid.setMaxY(mMaxY);
-  
+
     uint16_t mMultiplicator = (uint16_t)getFloat(keys[11], __FLT_MAX__);
     rtmGrid.setMultiplicatorGridAdc(mMultiplicator);
 
@@ -216,7 +206,6 @@ esp_err_t ParameterSetting::getParametersFromFlash()
     parameters += std::string(keys[10]) + "," + std::to_string(mMaxY) + "\n";
     parameters += std::string(keys[11]) + "," + std::to_string(mMultiplicator) + "\n";
 
-   
     this->storedParameters = parameters;
 
     return ESP_OK;

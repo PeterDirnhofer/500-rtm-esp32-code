@@ -73,11 +73,13 @@ extern "C" void app_main(void)
 
     while (true)
     {
+        if (!measureIsActive)
+        {
+            // Read voltage from preamplifier
+            int16_t adcValue = readAdc();
+            ledStatusAdc(adcValue, targetTunnelAdc, toleranceTunnelAdc, currentZDac);
+        }
 
-        ESP_LOGI(TAG, "TICK1 main loop. Brauchts das?");
-        vTaskDelay(pdMS_TO_TICKS(30000));
-        continue;
-
-        
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }

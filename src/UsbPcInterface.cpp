@@ -14,11 +14,9 @@
 // Define the queue handle
 QueueHandle_t queueFromPc = NULL;
 
-static char *TAG = "UsbPcInterface";
+static const char *TAG = "UsbPcInterface";
 
 static const char *TIP_ERROR_MESSAGE = "Invalid format 'TIP' command. \nSend 'TIP,10000,20000,30000' to set X,Y,Z\n'TIP,?' to see actual X Y Z values\n";
-
-
 
 UsbPcInterface::UsbPcInterface()
     : mTaskHandle(NULL), mStarted(false)
@@ -53,15 +51,12 @@ void UsbPcInterface::start()
     this->mStarted = true;
 }
 
-
-
 void UsbPcInterface::mUartRcvLoop(void *unused)
 {
     if (queueFromPc == NULL)
     {
         // Create the queue with a size of 10 and a maximum string length of 255 characters
         queueFromPc = xQueueCreate(2, sizeof(char) * 255);
-        ESP_LOGI(TAG, "uartQueue started");
     }
 
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
@@ -70,7 +65,6 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
         ESP_LOGE(TAG, "Failed to allocate memory for data buffer");
         vTaskDelete(NULL);
     }
-    ESP_LOGI(TAG, "Start mUartRcvLoop");
 
     while (1)
     {
@@ -80,7 +74,6 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
         if (rxCount > 0)
         {
             data[rxCount] = 0; // Null-terminate the received data
-            ESP_LOGI(TAG, "AAA");
             // Find the newline character
             char *lineEnd = strchr((char *)data, '\n');
             if (lineEnd != nullptr)
@@ -98,9 +91,6 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
                     data[254] = '\0'; // Ensure null-termination if lineLength is exactly 255
                 }
 
-                ESP_LOGI(TAG, "Received data: %s", data);
-              
-
                 // Copy data to a local buffer before sending to the queue
                 char localBuffer[255];
                 strncpy(localBuffer, (char *)data, 255);
@@ -110,21 +100,15 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
                 {
                     localBuffer[i] = toupper(localBuffer[i]);
                 }
-                ESP_LOGI(TAG, "BBB");
                 // Send the received line to the queue
                 if (xQueueSend(queueFromPc, localBuffer, portMAX_DELAY) != pdPASS)
                 {
                     ESP_LOGE(TAG, "Failed to send to queue");
                 }
-                else
-                {
-                    ESP_LOGI(TAG, "Sent to queue: %s", localBuffer);
-                }
             }
         }
     }
 
-    ESP_LOGI(TAG, "Quit mUartRcvLoop");
     free(data);
     vTaskDelete(NULL);
 }
@@ -164,21 +148,19 @@ int16_t normToMaxMin(long int invalue)
 
 esp_err_t UsbPcInterface::mUpdateTip(std::string s)
 {
-    static char *TAG = "mUpdateTip";
+    static const char *TAG = "mUpdateTip";
     esp_log_level_set(TAG, ESP_LOG_INFO);
-
 
     // Check if the command starts with "TIP,"
     if (s.rfind("TIP,", 0) != 0)
     {
-        
         UsbPcInterface::send("#1 %s", TIP_ERROR_MESSAGE);
         return ESP_ERR_INVALID_ARG;
     }
-    
+
     // Remove "TIP," prefix
     s = s.substr(4);
-    
+
     // Split the remaining string by commas
     std::vector<std::string> tokens;
     std::stringstream ss(s);
@@ -187,8 +169,7 @@ esp_err_t UsbPcInterface::mUpdateTip(std::string s)
     {
         tokens.push_back(token);
     }
-    
-    
+
     // Ensure there are exactly 3 values
     if (tokens.size() != 3)
     {
@@ -196,7 +177,6 @@ esp_err_t UsbPcInterface::mUpdateTip(std::string s)
         return ESP_ERR_INVALID_ARG;
     }
 
-  
     // Convert the values to integers
     char *endPtr;
     long int xl = strtol(tokens[0].c_str(), &endPtr, 10);
@@ -206,7 +186,7 @@ esp_err_t UsbPcInterface::mUpdateTip(std::string s)
         return ESP_ERR_INVALID_ARG;
     }
     uint16_t x = normToMaxMin(xl);
-    
+
     long int yl = strtol(tokens[1].c_str(), &endPtr, 10);
     if (*endPtr != '\0')
     {
@@ -223,16 +203,12 @@ esp_err_t UsbPcInterface::mUpdateTip(std::string s)
     }
     uint16_t z = normToMaxMin(zl);
 
-
-
-
     // Set X Y Z Tip Values
     currentXDac = x;
     currentYDac = y;
     currentZDac = z;
 
-    
     vTaskResume(handleVspiLoop); // realize X Y Z. Will suspend itself
-    
+
     return ESP_OK;
 }
