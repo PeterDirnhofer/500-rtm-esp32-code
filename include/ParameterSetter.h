@@ -29,6 +29,7 @@ public:
 
   esp_err_t putParametersToFlash(vector<string> params);
   esp_err_t getParametersFromFlash();
+  esp_err_t putParametersToFlashFromString(string receive);
 
   esp_err_t putDefaultParametersToFlash();
   esp_err_t parametersAreValid();

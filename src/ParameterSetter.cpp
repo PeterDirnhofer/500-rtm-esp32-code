@@ -8,6 +8,7 @@
 #include "freertos/task.h"
 #include "globalVariables.h"
 #include <array>
+#include <sstream>
 #include "esp_log.h"
 #include "helper_functions.h"
 
@@ -70,6 +71,41 @@ esp_err_t ParameterSetting::putParameterToFlash(string key, string value)
     {
         UsbPcInterface::send("ESP_ERR_NVS_INVALID_LENGTH Error putFloat to nvs %s %f\n", key.c_str(), vFloat);
         return ESP_ERR_NVS_INVALID_LENGTH;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t ParameterSetting::putParametersToFlashFromString(string receive)
+{
+
+    // Example: PARAMETER,10,1000,10.0,0.01,0,0,0,199,199,10
+    
+    // Remove "PARAMETER," prefix
+    string pars1 = receive.substr(10);
+    ESP_LOGI(TAG, "pars1: %s", pars1.c_str());
+
+    // Split the remaining string by commas
+    vector<string> tokens;
+    stringstream ss(pars1);
+    string token;
+    while (getline(ss, token, ','))
+    {
+        tokens.push_back(token);
+    }
+
+    // Check if all parameters are numbers and write them to flash
+    float f = 0;
+    for (size_t i = 0; i < size_keys; i++)
+    {
+        if (convertStoFloat(tokens[i].c_str(), &f) != ESP_OK)
+        {
+            ESP_LOGE(TAG, "Parameter %s is not a number", tokens[i].c_str());
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        // Write the parameter to flash
+        this->putParameterToFlash(keys[i], tokens[i].c_str());
     }
 
     return ESP_OK;

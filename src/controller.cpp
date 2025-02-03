@@ -31,8 +31,6 @@ extern "C" void commandDispatcherTask(void *unused)
         ESP_LOGE(TAG, "queueFromPc not initialized");
         vTaskDelete(NULL); // Delete the task if queue is not initialized
     }
-
-
     while (1)
     {
         // Wait for data to be available in the queue with a timeout of 100 ms
@@ -106,36 +104,25 @@ extern "C" void commandDispatcherTask(void *unused)
                 continue;
             }
 
-            // putDefaultParametersToFlash PARAMETER,0.100000,0.010000,0.001000,1.000000,0.300000,0,0,1,0,199,199,100
-
-            if (receive.rfind("PARAMETER", 0) == 0)
+            if (receive == "PARAMETER,DEFAULT")
             {
-                // Split the parameterString into a vector of strings
-                std::vector<std::string> params;
-                std::istringstream ss(receive);
-                std::string token;
-                while (std::getline(ss, token, ','))
-                {
-                    params.push_back(token);
-                }
+                ESP_LOGI(TAG, "parameter,default ++++");
                 ParameterSetting parameterSetter;
-                // Call the new putParametersToFlash method
-                esp_err_t err = parameterSetter.putParametersToFlash(params);
-                if (err == ESP_OK)
-                {
-                    UsbPcInterface::send("Parameters stored to flash\n");
-                }
-                else
-                {
-                    UsbPcInterface::send("Failed to store parameters to flash\n");
-                }
-                vTaskDelay(pdMS_TO_TICKS(10));
+                parameterSetter.putDefaultParametersToFlash();
+                // putDefaultParametersToFlash PARAMETER,0.100000,0.010000,0.001000,1.000000,0.300000,0,0,1,0,199,199,100
+                continue;
             }
-        }
-        else
-        {
-            // No data received, continue to the next iteration
-            continue;
+
+            
+            if (receive.rfind("PARAMETER,", 0) == 0)
+            {
+                ParameterSetting parameterSetter;
+                parameterSetter.putParametersToFlashFromString(receive);
+                
+               
+                continue;
+            }
+
         }
     }
 }
