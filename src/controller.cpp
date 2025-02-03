@@ -14,11 +14,9 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <algorithm>
 
 static const char *TAG = "controller";
-
-// Declare the queue handle
-extern QueueHandle_t queueFromPc;
 
 extern "C" void commandDispatcherTask(void *unused)
 {
@@ -26,54 +24,75 @@ extern "C" void commandDispatcherTask(void *unused)
     static const char *TAG = "dispatcherTask";
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "++ STARTED");
-    std::string rcvString;
+    char rcvChars[255];
+
+    if (queueFromPc == NULL)
+    {
+        ESP_LOGE(TAG, "queueFromPc not initialized");
+        vTaskDelete(NULL); // Delete the task if queue is not initialized
+    }
+
 
     while (1)
     {
         // Wait for data to be available in the queue with a timeout of 100 ms
-        if (xQueueReceive(queueFromPc, &rcvString, pdMS_TO_TICKS(100)) == pdPASS)
+        if (xQueueReceive(queueFromPc, &rcvChars, pdMS_TO_TICKS(100)) == pdPASS)
         {
-            if (rcvString == "STOP")
+
+            std::string receive(rcvChars);
+            // Remove extra characters (whitespace, newline, etc.)
+            receive.erase(std::remove_if(receive.begin(), receive.end(), ::isspace), receive.end());
+
+            if (receive == "STOP")
             {
                 adjustIsActive = false;
                 measureIsActive = false;
                 UsbPcInterface::send("STOPPED\n");
                 vTaskDelay(pdMS_TO_TICKS(10));
-                ESP_LOGI(TAG, "adjustIsActive set to false");
                 continue;
             }
 
-            if (rcvString == "MEASURE")
+            if (receive == "MEASURE")
             {
                 measureStart();
                 continue;
             }
 
-            if (rcvString == "ADJUST")
+            // Adjust and TIP
+            if (receive == "ADJUST")
             {
                 adjustStart();
                 continue;
             }
 
-            if (adjustIsActive && rcvString.find("TIP") != std::string::npos)
+            if (receive.rfind("TIP,", 0) == 0)
             {
-                UsbPcInterface::mUpdateTip(rcvString);
-                continue;
-            }
-            if (!adjustIsActive && rcvString.find("TIP") != std::string::npos)
-            {
-                ESP_LOGI(TAG, "ERROR: Received TIP command while adjust is not active");
-                UsbPcInterface::send("Received TIP command while adjust is not active");
-                continue;
+                if (adjustIsActive)
+                {
+                    esp_err_t updateSuccess = UsbPcInterface::mUpdateTip(receive);
+                    if (updateSuccess != ESP_OK)
+                    {
+                  
+                        ESP_LOGW(TAG, "ERROR: Failed to update TIP");
+                        UsbPcInterface::send("ERROR: Failed to update TIP");
+                    }
+                   
+                    continue;
+                }
+                else
+                {
+                    ESP_LOGW(TAG, "ERROR: Received TIP command while adjust is not active");
+                    UsbPcInterface::send("Received TIP command while adjust is not active");
+                    continue;
+                }
             }
 
-            if (rcvString == "PARAMETER,?")
+            // Parameter
+            if (receive == "PARAMETER,?")
             {
-                ESP_LOGI(TAG, "PARAMETER,? detected");
                 ParameterSetting parameterSetter;
                 parameterSetter.getParametersFromFlash();
                 std::string storedParameters = parameterSetter.getParameters();
-                ESP_LOGI(TAG, "Stored Parameters: %s", storedParameters.c_str());
                 std::istringstream stream(storedParameters);
                 std::string line;
                 while (std::getline(stream, line))
@@ -86,6 +105,32 @@ extern "C" void commandDispatcherTask(void *unused)
                 }
                 continue;
             }
+
+            // putDefaultParametersToFlash PARAMETER,0.100000,0.010000,0.001000,1.000000,0.300000,0,0,1,0,199,199,100
+
+            if (receive.rfind("PARAMETER", 0) == 0)
+            {
+                // Split the parameterString into a vector of strings
+                std::vector<std::string> params;
+                std::istringstream ss(receive);
+                std::string token;
+                while (std::getline(ss, token, ','))
+                {
+                    params.push_back(token);
+                }
+                ParameterSetting parameterSetter;
+                // Call the new putParametersToFlash method
+                esp_err_t err = parameterSetter.putParametersToFlash(params);
+                if (err == ESP_OK)
+                {
+                    UsbPcInterface::send("Parameters stored to flash\n");
+                }
+                else
+                {
+                    UsbPcInterface::send("Failed to store parameters to flash\n");
+                }
+                vTaskDelay(pdMS_TO_TICKS(10));
+            }
         }
         else
         {
@@ -97,11 +142,9 @@ extern "C" void commandDispatcherTask(void *unused)
 
 extern "C" void dispatcherTaskStart()
 {
-    // Initialize the queue if it hasn't been initialized
-    if (queueFromPc == NULL)
-    {
-        queueFromPc = xQueueCreate(10, sizeof(std::string)); // Adjust the size and length as needed
-    }
+    // // Initialize the queue if it hasn't been initialized
+    // // TODO
+    esp_log_level_set(TAG, ESP_LOG_INFO);
 
     // Create the dispatcher task
     xTaskCreatePinnedToCore(commandDispatcherTask, "dispatcherTask", 10000, NULL, 4, NULL, 0);

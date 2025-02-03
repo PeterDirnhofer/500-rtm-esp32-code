@@ -31,7 +31,7 @@ public:
   static const int RX_BUF_SIZE = 200;
   inline static string mUsbReceiveString = "";
   static esp_err_t mUpdateTip(string);
-
+ 
 private:
   static void mUartRcvLoop(void *unused);
   TaskHandle_t mTaskHandle;

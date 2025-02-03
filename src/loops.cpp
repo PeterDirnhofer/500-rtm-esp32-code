@@ -29,8 +29,7 @@ extern "C" void adjustLoop(void *unused)
         // Send data via USB interface
         UsbPcInterface::send("ADJUST,%.3f,%.3f,%d\n", adcInVolt, currentTunnelnA, adcValue);
         // Delay for a specified period (e.g., 1000 ms)
-        ESP_LOGI(TAG, "TICK");
-        
+    
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
    

@@ -29,7 +29,6 @@ extern "C" void adjustLoop(void *unused);
 
 double calculateTunnelNa(int16_t adcValue);
 
-// Declare the queue handle
-extern QueueHandle_t queueFromPc;
+
 
 #endif // CONTROLLER

@@ -118,4 +118,7 @@ extern intr_handle_t s_timer_handle;
 extern bool adjustIsActive;
 extern bool measureIsActive;
 
-#endif
+// Declare the queue handle
+extern QueueHandle_t queueFromPc;
+
+#endif // GLOBALVARIABLES
