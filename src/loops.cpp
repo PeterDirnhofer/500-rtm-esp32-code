@@ -56,10 +56,9 @@ extern "C" void measureLoop(void *unused)
             ESP_LOGE(TAG, "ERROR: IO_04 level is not 0 before setting it to 1");
             errorBlink();
         }
-        else
-        {
-            gpio_set_level(IO_04, 1); // blue LED
-        }
+        // To signal that measure task is active 
+        gpio_set_level(IO_04, 1); // blue LED
+        
 
         // Read voltage from preamplifier
         int16_t adcValue = readAdc();
@@ -110,7 +109,7 @@ extern "C" void measureLoop(void *unused)
             vTaskResume(handleVspiLoop);
         }
 
-        gpio_set_level(IO_04, 0); // blue LED
+        gpio_set_level(IO_04, 0); // signal, that measure task had finished this iteration
     }
     vTaskDelete(NULL);
 }

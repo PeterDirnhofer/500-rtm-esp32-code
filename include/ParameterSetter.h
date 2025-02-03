@@ -37,7 +37,7 @@ public:
 
 private:
   bool parameterIsValid(string key, float minimum, float maximum);
-  esp_err_t convertStoFloat(string s, float *value);
+  esp_err_t convertStoFloat(const char *s, float *value);
   esp_err_t putParameterToFlash(string key, string value);
 
   std::string storedParameters;

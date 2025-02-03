@@ -18,9 +18,9 @@ extern "C" void errorBlink()
 {
     while (true)
     {
-        gpio_set_level(IO_04, 1);       // Turn on LED
+        gpio_set_level(IO_04, 1);       // Turn on blue LED
         vTaskDelay(pdMS_TO_TICKS(100)); // Delay 100 ms
-        gpio_set_level(IO_04, 0);       // Turn off LED
+        gpio_set_level(IO_04, 0);       // Turn off blue LED
         vTaskDelay(pdMS_TO_TICKS(100)); // Delay 100 ms
     }
 }
