@@ -50,6 +50,13 @@ extern "C" void commandDispatcherTask(void *unused)
                 continue;
             }
 
+            if (receive == "RESTART")
+            {
+                ESP_LOGI(TAG, "System reset initiated");
+                esp_restart();
+                continue;
+            }
+
             if (receive == "MEASURE")
             {
                 measureStart();
