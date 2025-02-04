@@ -110,6 +110,7 @@ extern "C" void commandDispatcherTask(void *unused)
                 ParameterSetting parameterSetter;
                 parameterSetter.putDefaultParametersToFlash();
                 // putDefaultParametersToFlash PARAMETER,0.100000,0.010000,0.001000,1.000000,0.300000,0,0,1,0,199,199,100
+                parameterSetter.getParametersFromFlash();
                 continue;
             }
 
@@ -118,8 +119,7 @@ extern "C" void commandDispatcherTask(void *unused)
             {
                 ParameterSetting parameterSetter;
                 parameterSetter.putParametersToFlashFromString(receive);
-                
-               
+                parameterSetter.getParametersFromFlash();
                 continue;
             }
 
