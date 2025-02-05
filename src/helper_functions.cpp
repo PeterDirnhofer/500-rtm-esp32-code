@@ -16,6 +16,7 @@ static const int integralMaxAdc = 1000;
 
 extern "C" void errorBlink()
 {
+    timer_stop();
     while (true)
     {
         gpio_set_level(IO_04, 1);       // Turn on blue LED

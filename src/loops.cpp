@@ -8,6 +8,9 @@
 #include <mutex>
 #include <sstream>
 #include <string>
+#include "project_timer.h"
+
+static bool isRunning = false;
 
 // Adjust loop task
 extern "C" void adjustLoop(void *unused)
@@ -49,6 +52,15 @@ extern "C" void measureLoop(void *unused)
     while (measureIsActive)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
+
+        // Check if the task is already running
+        if (isRunning)
+        {
+            ESP_LOGE(TAG, "ERROR: measureLoop retriggered before last run was finished");
+            errorBlink();
+        }
+
+        isRunning = true; // Set the flag to indicate the task is running
 
         // Check IO_04 level and set blue LED
         if (gpio_get_level(IO_04) == 1)
@@ -97,7 +109,14 @@ extern "C" void measureLoop(void *unused)
                     ESP_LOGE("Queue", "Failed to send to queue");
                 }
 
-                vTaskDelay(pdMS_TO_TICKS(100));
+                
+                timer_stop();
+                // Wait until the queue is empty
+                while (uxQueueMessagesWaiting(queueToPc) > 0)
+                {
+                    vTaskDelay(pdMS_TO_TICKS(10)); // Delay for a short period
+                }
+
                 esp_restart(); // Restart once all XY positions are complete
             }
         }
@@ -110,6 +129,7 @@ extern "C" void measureLoop(void *unused)
         }
 
         gpio_set_level(IO_04, 0); // signal, that measure task had finished this iteration
+        isRunning = false;
     }
     vTaskDelete(NULL);
 }
