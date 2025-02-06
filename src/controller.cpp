@@ -42,7 +42,14 @@ extern "C" void dispatcherTask(void *unused)
             receive.erase(std::remove_if(receive.begin(), receive.end(), ::isspace), receive.end());
 
             if (receive == "STOP")
-            {
+            {   
+                if (sinusIsActive)
+                {
+                    UsbPcInterface::send("RESTART\n");
+                    vTaskDelay(pdMS_TO_TICKS(10));
+                    esp_restart();
+                }
+
                 adjustIsActive = false;
                 measureIsActive = false;
                 UsbPcInterface::send("STOPPED\n");
@@ -52,7 +59,9 @@ extern "C" void dispatcherTask(void *unused)
 
             if (receive == "RESTART")
             {
-                ESP_LOGI(TAG, "System reset initiated");
+                ESP_LOGI(TAG, "System restart initiated");
+                UsbPcInterface::send("RESTART\n");
+                vTaskDelay(pdMS_TO_TICKS(10));
                 esp_restart();
                 continue;
             }
@@ -67,6 +76,19 @@ extern "C" void dispatcherTask(void *unused)
             if (receive == "ADJUST")
             {
                 adjustStart();
+                continue;
+            }
+
+            // Start testLoop with parameter X, Y, Z
+            if (receive == "SINUS")
+            {
+                // Create the testLoop task
+                if (handleSinusLoop != NULL)
+                {
+                    vTaskDelete(handleSinusLoop);
+                    handleSinusLoop = NULL;
+                }
+                sinusStart();
                 continue;
             }
 
@@ -148,6 +170,18 @@ extern "C" void adjustStart()
     {
         adjustIsActive = true;
         xTaskCreatePinnedToCore(adjustLoop, "adjustLoop", 10000, NULL, 2, &handleAdjustLoop, 1);
+    }
+}
+
+extern "C" void sinusStart()
+{
+    static const char *TAG = "sinusStart";
+    esp_log_level_set(TAG, ESP_LOG_INFO);
+    ESP_LOGI(TAG, "sinusStart initiated");
+    if (!sinusIsActive)
+    {
+        sinusIsActive = true;
+        xTaskCreatePinnedToCore(sinusLoop, "sinusLoop", 10000, NULL, 2, &handleSinusLoop, 1);
     }
 }
 

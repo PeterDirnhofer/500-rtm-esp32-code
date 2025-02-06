@@ -45,6 +45,7 @@ extern TaskHandle_t handleVspiLoop;
 extern TaskHandle_t handleSendDatasets;
 extern TaskHandle_t handleMeasureLoop;
 extern TaskHandle_t handleAdjustLoop;
+extern TaskHandle_t handleSinusLoop;
 extern TaskHandle_t handleTask;
 
 extern spi_device_interface_config_t devcfgDacX;
@@ -117,6 +118,7 @@ extern intr_handle_t s_timer_handle;
 // Declare the global adjustIsActive variable
 extern bool adjustIsActive;
 extern bool measureIsActive;
+extern bool sinusIsActive;
 
 // Declare the queue handle
 extern QueueHandle_t queueFromPc;

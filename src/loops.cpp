@@ -1,8 +1,8 @@
 #include "loops.h"
+#include "helper_functions.h"
 #include "UsbPcInterface.h"
 #include "esp_log.h"
 #include "globalVariables.h"
-#include "helper_functions.h"
 #include <cmath>
 #include <iomanip>
 #include <mutex>
@@ -10,7 +10,54 @@
 #include <string>
 #include "project_timer.h"
 
-static bool isRunning = false;
+static bool isLoopExecution = false;
+static const size_t BUFFER_SIZE = 1024; // Define BUFFER_SIZE
+
+// Function to generate a 1kHz sinusoidal signal at DAC outputs X, Y, and Z
+extern "C" void sinusLoop(void *params)
+{
+    static const char *TAG = "testLoop";
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+    ESP_LOGI(TAG, "+++ START TEST LOOP");
+
+    const uint16_t amplitude = DAC_VALUE_MAX / 2; // Amplitude of the sine wave (half of the DAC range)
+    const uint16_t offset = DAC_VALUE_MAX / 2;    // Offset to center the sine wave in the DAC range
+    const double frequency = 1000.0;              // Frequency of the sine wave in Hz
+    const double increment = (2.0 * M_PI * frequency) / BUFFER_SIZE;
+    double phase = 0.0;
+    std::unique_ptr<uint16_t[]> buffer(new uint16_t[BUFFER_SIZE]);
+    ESP_LOGD(TAG, "Foo 1");
+    // Precompute the buffer values
+    for (size_t i = 0; i < BUFFER_SIZE; ++i)
+    {
+        buffer[i] = static_cast<uint16_t>(amplitude * sin(phase) + offset);
+        phase += increment;
+        if (phase >= 2.0 * M_PI)
+        {
+            phase -= 2.0 * M_PI;
+        }
+    }
+    ESP_LOGD(TAG, "Foo 2");
+    while (sinusIsActive)
+    {
+
+        // ESP_LOGI(TAG, ".");
+        //  Send the precomputed buffer values to the DAC
+        for (size_t i = 0; i < BUFFER_SIZE; ++i)
+        {
+            if (!sinusIsActive)
+                break;
+            vspiSendDac(buffer[i], buffer.get(), handleDacX);
+            vspiSendDac(buffer[i], buffer.get(), handleDacY);
+            vspiSendDac(buffer[i], buffer.get(), handleDacZ);
+
+            // Delay to achieve the desired sample rate
+            vTaskDelay(pdMS_TO_TICKS(1)); // Adjust delay as needed for the desired sample rate
+        }
+    }
+    ESP_LOGD(TAG, "stop and vTaskDelete");
+    vTaskDelete(NULL);
+}
 
 // Adjust loop task
 extern "C" void adjustLoop(void *unused)
@@ -18,7 +65,6 @@ extern "C" void adjustLoop(void *unused)
     static const char *TAG = "adjustLoop";
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
     ESP_LOGI(TAG, "+++ START ADJUST\n");
-   
 
     while (adjustIsActive)
     {
@@ -32,10 +78,10 @@ extern "C" void adjustLoop(void *unused)
         // Send data via USB interface
         UsbPcInterface::send("ADJUST,%.3f,%.3f,%d\n", adcInVolt, currentTunnelnA, adcValue);
         // Delay for a specified period (e.g., 1000 ms)
-    
+
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
-   
+
     vTaskDelete(NULL);
 }
 
@@ -51,16 +97,16 @@ extern "C" void measureLoop(void *unused)
 
     while (measureIsActive)
     {
+        isLoopExecution = false;
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
 
         // Check if the task is already running
-        if (isRunning)
+        if (isLoopExecution)
         {
             ESP_LOGE(TAG, "ERROR: measureLoop retriggered before last run was finished");
             errorBlink();
         }
-
-        isRunning = true; // Set the flag to indicate the task is running
+        isLoopExecution = true; // Set the flag to indicate the task is running
 
         // Check IO_04 level and set blue LED
         if (gpio_get_level(IO_04) == 1)
@@ -68,9 +114,8 @@ extern "C" void measureLoop(void *unused)
             ESP_LOGE(TAG, "ERROR: IO_04 level is not 0 before setting it to 1");
             errorBlink();
         }
-        // To signal that measure task is active 
+        // To signal that measure task is active
         gpio_set_level(IO_04, 1); // blue LED
-        
 
         // Read voltage from preamplifier
         int16_t adcValue = readAdc();
@@ -109,15 +154,14 @@ extern "C" void measureLoop(void *unused)
                     ESP_LOGE("Queue", "Failed to send to queue");
                 }
 
-                
                 timer_stop();
-                // Wait until the queue is empty
+                // Wait until complete queue was sent to PC
                 while (uxQueueMessagesWaiting(queueToPc) > 0)
                 {
                     vTaskDelay(pdMS_TO_TICKS(10)); // Delay for a short period
                 }
 
-                esp_restart(); // Restart once all XY positions are complete
+                esp_restart(); // Restart
             }
         }
         else
@@ -129,7 +173,6 @@ extern "C" void measureLoop(void *unused)
         }
 
         gpio_set_level(IO_04, 0); // signal, that measure task had finished this iteration
-        isRunning = false;
     }
     vTaskDelete(NULL);
 }
