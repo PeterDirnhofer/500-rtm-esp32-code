@@ -12,8 +12,7 @@
 #include "dataStoring.h"
 
 // Function prototypes
-
-extern "C" esp_err_t initAdcDac();
+extern "C" void setupError(const char *errormessage);
 
 extern "C" void commandDispatcherTask(void *unused);
 
@@ -28,7 +27,5 @@ extern "C" void adjustStart();
 extern "C" void adjustLoop(void *unused);
 
 double calculateTunnelNa(int16_t adcValue);
-
-
 
 #endif // CONTROLLER

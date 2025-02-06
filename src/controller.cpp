@@ -18,6 +18,16 @@
 
 static const char *TAG = "controller";
 
+// Function to set up error message loop
+extern "C" void setupError(const char* errormessage)
+{
+    while (true)
+    {
+        ESP_LOGE(TAG, "%s", errormessage);
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Delay for 1 second
+    }
+}
+
 extern "C" void commandDispatcherTask(void *unused)
 {
 
@@ -144,21 +154,6 @@ extern "C" void dispatcherTaskStart()
     xTaskCreatePinnedToCore(commandDispatcherTask, "dispatcherTask", 10000, NULL, 4, NULL, 0);
 }
 
-extern "C" esp_err_t initAdcDac()
-{
-    esp_err_t errTemp = i2cAdcInit(); // Init I2C for ADC
-
-    if (errTemp != ESP_OK)
-    {
-        ESP_LOGE(TAG, "ERROR: Cannot init I2C. Return code: %d\n", errTemp);
-        esp_restart(); // Restart on failure
-    }
-
-    // Init DACs
-    vspiDacStart(); // Init and loop for DACs
-
-    return ESP_OK;
-}
 
 extern "C" void adjustStart()
 {
@@ -189,3 +184,5 @@ extern "C" void measureStart()
     xTaskCreatePinnedToCore(measureLoop, "measurementLoop", 10000, NULL, 2, &handleMeasureLoop, 1);
     timer_initialize();
 }
+
+

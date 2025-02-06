@@ -3,8 +3,10 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "globalVariables.h"
+#include "controller.h"
 
 i2c_master_dev_handle_t dev_handle;
+esp_err_t result;
 
 /// @brief Read ADC on ADC 8 click with singned integer.  Voltage +- 2.048
 /// @return 16-bit signed ADC value. -32768 .. 0 .. +32767
@@ -63,7 +65,7 @@ esp_err_t i2cAdcInit()
   };
 
   i2c_master_bus_handle_t bus_handle;
-
+  ESP_LOGI(TAG, "CHK i2c_new_master_bus");
   // Create I2C master bus
   ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
@@ -75,6 +77,7 @@ esp_err_t i2cAdcInit()
                                  .flags = {.disable_ack_check = false}};
 
   // Add device to I2C master bus
+  ESP_LOGI(TAG, "CHK i2c_master_bus_add_device");
   ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
   // Set Configuration Register of ADS1115
@@ -85,6 +88,12 @@ esp_err_t i2cAdcInit()
   data_wr[1] = 0x74;
   data_wr[2] = 0xE3;
 
+  ESP_LOGI(TAG, "CHK i2c_master_transmit");
+  result = i2c_master_transmit(dev_handle, data_wr, 3, -1);
+  if (result!=ESP_OK){
+    setupError("i2c_master_transmit");
+  }
+
   ESP_ERROR_CHECK(i2c_master_transmit(dev_handle, data_wr, 3, -1));
 
   // Set low threshold Register of ADS1115
@@ -92,6 +101,7 @@ esp_err_t i2cAdcInit()
   data_wr[1] = 0x00; // bits 15 to 8
   data_wr[2] = 0x00; // bits 7 to 0
 
+  
   ESP_ERROR_CHECK(i2c_master_transmit(dev_handle, data_wr, 3, -1));
 
   // Set high threshold Register of ADS1115
@@ -99,9 +109,11 @@ esp_err_t i2cAdcInit()
   data_wr[1] = 0x8F; // bits 15 to 8
   data_wr[2] = 0xFF; // bits 7 to 0
 
+  
   ESP_ERROR_CHECK(i2c_master_transmit(dev_handle, data_wr, 3, -1));
 
   // Set CONVERSION_REGISTER of ADS1115
+  
   data_wr[0] = CONVERSION_REGISTER;
   ESP_ERROR_CHECK(i2c_master_transmit(dev_handle, data_wr, 1, -1));
 

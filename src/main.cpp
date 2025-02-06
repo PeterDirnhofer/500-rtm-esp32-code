@@ -60,11 +60,16 @@ extern "C" void app_main(void)
     // USB Interface initialization
     UsbPcInterface usb;
     usb.start();
+
+    // initAdc();
+    i2cAdcInit();
+    vspiDacStart();
+
     // Start read from PC and Start Dispatcher
     dispatcherTaskStart();
 
-    initAdcDac();
-
+    
+  
     // Parameter setting
     ParameterSetting parameterSetter;
     parameterSetter.getParametersFromFlash();
