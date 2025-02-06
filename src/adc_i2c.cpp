@@ -3,7 +3,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "globalVariables.h"
-#include "controller.h"
+#include "helper_functions.h"
 
 i2c_master_dev_handle_t dev_handle;
 esp_err_t result;
@@ -13,7 +13,7 @@ esp_err_t result;
 uint16_t readAdc()
 {
   static const char *TAG = "readAdc";
-  esp_log_level_set(TAG, ESP_LOG_DEBUG);
+  esp_log_level_set(TAG, ESP_LOG_INFO);
 
   uint8_t data_rd[2];
   ESP_ERROR_CHECK(
@@ -50,7 +50,7 @@ esp_err_t i2cAdcInit()
   //                           1  1  Disable comparator
 
   static const char *TAG = "i2cAdcInit";
-  esp_log_level_set(TAG, ESP_LOG_DEBUG);
+  esp_log_level_set(TAG, ESP_LOG_INFO);
 
   // Define I2C master bus configuration
   i2c_master_bus_config_t i2c_mst_config = {
@@ -65,7 +65,7 @@ esp_err_t i2cAdcInit()
   };
 
   i2c_master_bus_handle_t bus_handle;
-  ESP_LOGI(TAG, "CHK i2c_new_master_bus");
+ 
   // Create I2C master bus
   ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
@@ -77,7 +77,6 @@ esp_err_t i2cAdcInit()
                                  .flags = {.disable_ack_check = false}};
 
   // Add device to I2C master bus
-  ESP_LOGI(TAG, "CHK i2c_master_bus_add_device");
   ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
   // Set Configuration Register of ADS1115
@@ -88,13 +87,14 @@ esp_err_t i2cAdcInit()
   data_wr[1] = 0x74;
   data_wr[2] = 0xE3;
 
-  ESP_LOGI(TAG, "CHK i2c_master_transmit");
+  
   result = i2c_master_transmit(dev_handle, data_wr, 3, -1);
   if (result!=ESP_OK){
-    setupError("i2c_master_transmit");
+    ESP_LOGW(TAG, "CHK i2c_master_transmit");
+    setupError("Cannot Init ADC");
   }
 
-  ESP_ERROR_CHECK(i2c_master_transmit(dev_handle, data_wr, 3, -1));
+  
 
   // Set low threshold Register of ADS1115
   data_wr[0] = THRESHOLD_LO_REGISTER;
@@ -116,6 +116,6 @@ esp_err_t i2cAdcInit()
   
   data_wr[0] = CONVERSION_REGISTER;
   ESP_ERROR_CHECK(i2c_master_transmit(dev_handle, data_wr, 1, -1));
-
+  ESP_LOGI(TAG, "ADC init ok");
   return ESP_OK;
 }

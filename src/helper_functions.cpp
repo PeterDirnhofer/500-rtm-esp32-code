@@ -14,11 +14,20 @@
 static int integralErrorAdc = 0;
 static const int32_t MAX_PROPORTIONAL = DAC_VALUE_MAX / 10;
 static const int32_t MAX_INTEGRAL = DAC_VALUE_MAX / 10;
+static const char *TAG = "helper_functions.cpp";
+
+// Function to set up error message loop
+extern "C" void setupError(const char *errormessage)
+{
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+    ESP_LOGE(TAG, "%s", errormessage);
+    UsbPcInterface::send(errormessage);
+    errorBlink();
+}
 
 // Error blink function
 extern "C" void errorBlink()
 {
-    timer_stop();
     while (true)
     {
         gpio_set_level(IO_04, 1);       // Turn on blue LED

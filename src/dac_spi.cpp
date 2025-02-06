@@ -45,6 +45,9 @@ void vspiDacStart()
  */
 void vspiDacInit()
 {
+
+    static const char *TAG = "vspiDacInit";
+    esp_log_level_set(TAG, ESP_LOG_INFO);
     // Connection to DACs
     // Configuration for the SPI bus
     spi_bus_config_t buscfg = {
@@ -142,12 +145,13 @@ void vspiDacInit()
     memset(recvbufferVspi, 0, 3);
 
     memset(&tVspi, 0, sizeof(tVspi));
+    ESP_LOGI(TAG, "DAC X Y Z init ok");
 }
 
 void vspiDacLoop(void *unused)
 {
 
-    ESP_LOGD(TAG, "+++ vspiDacLoop started\n");
+    ESP_LOGD(TAG, "vspiDacLoop started\n");
 
     unique_ptr<uint16_t> buffer = make_unique<uint16_t>();
 

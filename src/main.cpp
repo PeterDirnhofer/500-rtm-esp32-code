@@ -38,10 +38,13 @@ using namespace std;
 
 extern "C" void app_main(void)
 {
+
+    
+    esp_log_level_set("*", ESP_LOG_WARN);
+    
     static const char *TAG = "app_main";
-    esp_log_level_set("*", ESP_LOG_NONE);
     esp_log_level_set(TAG, ESP_LOG_INFO);
-    ESP_LOGI(TAG, "+++++++++++++++++ STARTED");
+    ESP_LOGI(TAG, "++++++++++++++++ MAIN STARTED +++++++++++++++");
 
     // GPIO configuration for Monitoring on Jumper J3 GPIO_RESERVE
     gpio_set_direction(IO_17, GPIO_MODE_OUTPUT);
@@ -65,14 +68,16 @@ extern "C" void app_main(void)
     i2cAdcInit();
     vspiDacStart();
 
-    // Start read from PC and Start Dispatcher
-    dispatcherTaskStart();
-
-    
-  
     // Parameter setting
     ParameterSetting parameterSetter;
-    parameterSetter.getParametersFromFlash();
+   
+
+  
+
+    // Start read from PC and Start Dispatcher
+    dispatcherTaskStart();
+  
+   
     // Send "IDLE" message
     usb.send("IDLE\n");
 

@@ -18,22 +18,12 @@
 
 static const char *TAG = "controller";
 
-// Function to set up error message loop
-extern "C" void setupError(const char* errormessage)
-{
-    while (true)
-    {
-        ESP_LOGE(TAG, "%s", errormessage);
-        vTaskDelay(pdMS_TO_TICKS(1000)); // Delay for 1 second
-    }
-}
-
-extern "C" void commandDispatcherTask(void *unused)
+extern "C" void dispatcherTask(void *unused)
 {
 
     static const char *TAG = "dispatcherTask";
     esp_log_level_set(TAG, ESP_LOG_INFO);
-    ESP_LOGI(TAG, "++ STARTED");
+    ESP_LOGI(TAG, "STARTED");
     char rcvChars[255];
 
     if (queueFromPc == NULL)
@@ -87,11 +77,11 @@ extern "C" void commandDispatcherTask(void *unused)
                     esp_err_t updateSuccess = UsbPcInterface::mUpdateTip(receive);
                     if (updateSuccess != ESP_OK)
                     {
-                  
+
                         ESP_LOGW(TAG, "ERROR: Failed to update TIP");
                         UsbPcInterface::send("ERROR: Failed to update TIP");
                     }
-                   
+
                     continue;
                 }
                 else
@@ -131,7 +121,6 @@ extern "C" void commandDispatcherTask(void *unused)
                 continue;
             }
 
-            
             if (receive.rfind("PARAMETER,", 0) == 0)
             {
                 ParameterSetting parameterSetter;
@@ -139,7 +128,6 @@ extern "C" void commandDispatcherTask(void *unused)
                 parameterSetter.getParametersFromFlash();
                 continue;
             }
-
         }
     }
 }
@@ -151,7 +139,7 @@ extern "C" void dispatcherTaskStart()
     esp_log_level_set(TAG, ESP_LOG_INFO);
 
     // Create the dispatcher task
-    xTaskCreatePinnedToCore(commandDispatcherTask, "dispatcherTask", 10000, NULL, 4, NULL, 0);
+    xTaskCreatePinnedToCore(dispatcherTask, "dispatcherTask", 10000, NULL, 4, NULL, 0);
 }
 
 extern "C" void adjustStart()
@@ -183,5 +171,3 @@ extern "C" void measureStart()
     xTaskCreatePinnedToCore(measureLoop, "measurementLoop", 10000, NULL, 2, &handleMeasureLoop, 1);
     timer_initialize();
 }
-
-

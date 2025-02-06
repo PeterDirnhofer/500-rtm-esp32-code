@@ -32,6 +32,11 @@ ParameterSetting::ParameterSetting()
         ESP_LOGW(TAG, "Parameters in flash are invalid. Writing default parameters to flash.");
         putDefaultParametersToFlash();
     }
+    esp_err_t err = this->getParametersFromFlash();
+    if (err != ESP_OK || this->getParameters().empty()) {
+        setupError("Failed to get parameters from flash or parameters are empty");
+    }
+    ESP_LOGI(TAG, "Parameter ok");
 }
 
 ParameterSetting::~ParameterSetting()
@@ -63,7 +68,7 @@ esp_err_t ParameterSetting::convertStoFloat(const char *s, float *value)
 // Write a parameter to flash memory
 esp_err_t ParameterSetting::putParameterToFlash(std::string key, std::string value)
 {
-    ESP_LOGW("putParameterToFlash", "%s: %s\n", key.c_str(), value.c_str());
+    ESP_LOGD("putParameterToFlash", "%s: %s\n", key.c_str(), value.c_str());
 
     float vFloat = 0;
     esp_err_t err = convertStoFloat(value.c_str(), &vFloat);
@@ -76,6 +81,7 @@ esp_err_t ParameterSetting::putParameterToFlash(std::string key, std::string val
     if (resultF != sizeof(float))
     {
         UsbPcInterface::send("ESP_ERR_NVS_INVALID_LENGTH Error putFloat to nvs %s %f\n", key.c_str(), vFloat);
+        ESP_LOGW(TAG, "ESP_ERR_NVS_INVALID_LENGTH Error putFloat to nvs");
         return ESP_ERR_NVS_INVALID_LENGTH;
     }
 
@@ -253,5 +259,17 @@ esp_err_t ParameterSetting::getParametersFromFlash()
 // Get parameters as a string
 string ParameterSetting::getParameters()
 {
+    // Check if storedParameters is a valid CSV string
+    std::stringstream ss(this->storedParameters);
+    std::string line;
+    while (std::getline(ss, line))
+    {
+        if (line.find(',') == std::string::npos)
+        {
+            ESP_LOGE(TAG, "storedParameters is not a valid CSV string");
+            return "";
+        }
+    }
+
     return this->storedParameters;
 }

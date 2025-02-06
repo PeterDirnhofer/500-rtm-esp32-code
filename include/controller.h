@@ -12,9 +12,8 @@
 #include "dataStoring.h"
 
 // Function prototypes
-extern "C" void setupError(const char *errormessage);
 
-extern "C" void commandDispatcherTask(void *unused);
+extern "C" void dispatcherTask(void *unused);
 
 extern "C" void dispatcherTaskStart();
 

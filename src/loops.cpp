@@ -17,7 +17,7 @@ extern "C" void adjustLoop(void *unused)
 {
     static const char *TAG = "adjustLoop";
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
-    ESP_LOGI(TAG, "+++++++++++++++++ START ADJUST\n");
+    ESP_LOGI(TAG, "+++ START ADJUST\n");
    
 
     while (adjustIsActive)
@@ -44,7 +44,7 @@ extern "C" void measureLoop(void *unused)
 {
     static const char *TAG = "measureLoop";
     esp_log_level_set(TAG, ESP_LOG_INFO);
-    ESP_LOGI(TAG, "+++++++++++++++++ STARTED\n");
+    ESP_LOGI(TAG, "+++ STARTED");
 
     uint16_t newDacZ = 0;
     std::string dataBuffer;

@@ -432,6 +432,8 @@ bool NvsStorageClass::isKey(const char *key)
 
 int8_t NvsStorageClass::getChar(const char *key, const int8_t defaultValue)
 {
+    static const char *TAG = "getChar";
+    esp_log_level_set(TAG, ESP_LOG_INFO);
     int8_t value = defaultValue;
     if (!mStarted || !key)
     {
