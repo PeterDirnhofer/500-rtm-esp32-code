@@ -26,6 +26,6 @@ extern "C" void adjustStart();
 
 extern "C" void adjustLoop(void *unused);
 
-double calculateTunnelNa(int16_t adcValue);
+// double calculateTunnelNa(int16_t adcValue);
 
 #endif // CONTROLLER

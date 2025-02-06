@@ -1,5 +1,4 @@
 #include "helper_functions.h"
-
 #include "globalVariables.h"
 #include "UsbPcInterface.h"
 #include "project_timer.h"
@@ -9,11 +8,14 @@
 #include <queue>
 #include <sstream>
 #include <iomanip>
+#include <cstdint>
 
-const double integralMax = 5000.0; // Maximum value for integral term
+// Constants
 static int integralErrorAdc = 0;
-static const int integralMaxAdc = 1000;
+static const int32_t MAX_PROPORTIONAL = DAC_VALUE_MAX / 10;
+static const int32_t MAX_INTEGRAL = DAC_VALUE_MAX / 10;
 
+// Error blink function
 extern "C" void errorBlink()
 {
     timer_stop();
@@ -26,6 +28,7 @@ extern "C" void errorBlink()
     }
 }
 
+// LED status function based on ADC value
 void ledStatusAdc(int16_t adcValue, uint16_t targetAdc, uint16_t toleranceAdc, uint16_t dac)
 {
     static std::string last_limit = "INIT";
@@ -64,11 +67,11 @@ void ledStatusAdc(int16_t adcValue, uint16_t targetAdc, uint16_t toleranceAdc, u
     }
 }
 
-static std::string last_limit = "INIT";
-
+// Set GPIO levels function
 void setGpioLevels()
 {
     static const char *TAG = "setGpioLevels";
+    static std::string last_limit = "INIT"; // Declare last_limit here
     gpio_set_level(IO_25, 0); // Red LED
     gpio_set_level(IO_27, 0); // Yellow LED
     gpio_set_level(IO_02, 1); // Green LED
@@ -76,6 +79,7 @@ void setGpioLevels()
     last_limit = "LO";
 }
 
+// Calculate ADC value from nA
 uint16_t calculateAdcFromnA(double targetNa)
 {
     // Calculate ADC value based on target current and voltage divider
@@ -83,6 +87,7 @@ uint16_t calculateAdcFromnA(double targetNa)
     return static_cast<uint16_t>(std::round(adcValue));
 }
 
+// Calculate tunnel current from ADC value
 double calculateTunnelNa(int16_t adcValue)
 {
     // Calculate current based on ADC value and voltage divider
@@ -91,6 +96,7 @@ double calculateTunnelNa(int16_t adcValue)
     return currentTunnelnA;
 }
 
+// Compute PI DAC value
 uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
 {
     static const char *TAG = "computePiDac";
@@ -101,24 +107,44 @@ uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
     integralErrorAdc += error;
 
     // Proportional term
-    int16_t proportional = kP * error;
+    int32_t proportional = kP * error; // Use int32_t to handle potential overflow and negative values
+
+    // Clamp the proportional term to a smaller range
+    if (proportional < -MAX_PROPORTIONAL)
+    {
+        proportional = -MAX_PROPORTIONAL;
+    }
+    if (proportional > MAX_PROPORTIONAL)
+    {
+        proportional = MAX_PROPORTIONAL;
+    }
 
     // Integral term
-    int16_t integral = kI * integralErrorAdc;
+    int32_t integral = kI * integralErrorAdc; // Use int32_t to handle potential overflow
+
+    // Clamp the integral term to a smaller range
+    if (integral < -MAX_INTEGRAL)
+    {
+        integral = -MAX_INTEGRAL;
+    }
+    if (integral > MAX_INTEGRAL)
+    {
+        integral = MAX_INTEGRAL;
+    }
 
     // Compute the DAC value
-    int16_t dacValue = proportional + integral;
+    int32_t dacValue = proportional + integral; // Use int32_t to handle potential overflow
 
     // Clamp the DAC value to the valid range
     if (dacValue < 0)
     {
         dacValue = 0;
     }
-    else if (dacValue > DAC_VALUE_MAX)
+    if (dacValue > DAC_VALUE_MAX)
     {
         dacValue = DAC_VALUE_MAX;
     }
 
-    ESP_LOGI(TAG, "Computed DAC value: %d", dacValue);
+    //ESP_LOGI(TAG, "Computed DAC value: %d", dacValue);
     return static_cast<uint16_t>(dacValue);
 }

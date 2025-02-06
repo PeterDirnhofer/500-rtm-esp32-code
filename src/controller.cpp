@@ -154,7 +154,6 @@ extern "C" void dispatcherTaskStart()
     xTaskCreatePinnedToCore(commandDispatcherTask, "dispatcherTask", 10000, NULL, 4, NULL, 0);
 }
 
-
 extern "C" void adjustStart()
 {
     if (!adjustIsActive)
