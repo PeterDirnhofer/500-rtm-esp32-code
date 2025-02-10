@@ -18,7 +18,7 @@ using namespace std;
 // Additional USB Interface
 #define TXD_PIN (GPIO_NUM_33)
 #define RXD_PIN (GPIO_NUM_32)
-#define BAUDRATE 115200 // 115200 // 460800 // 115200 * 4
+#define BAUDRATE 115200*1 // 115200 // 460800 // 115200 * 4
 
 // SPI for DAC X Y Z
 #define GPIO_MOSI_VSPI 23
@@ -44,6 +44,8 @@ extern TaskHandle_t handleUartRcvLoop;
 extern TaskHandle_t handleVspiLoop;
 extern TaskHandle_t handleSendDatasets;
 extern TaskHandle_t handleMeasureLoop;
+extern TaskHandle_t handleTunnelLoop;
+extern TaskHandle_t handleDataTransmissionLoop;
 extern TaskHandle_t handleAdjustLoop;
 extern TaskHandle_t handleSinusLoop;
 extern TaskHandle_t handleTask;
@@ -118,7 +120,9 @@ extern intr_handle_t s_timer_handle;
 // Declare the global adjustIsActive variable
 extern bool adjustIsActive;
 extern bool measureIsActive;
+extern bool tunnelIsActive;
 extern bool sinusIsActive;
+extern bool dataTransmissionIsActive;
 
 // Declare the queue handle
 extern QueueHandle_t queueFromPc;

@@ -14,8 +14,13 @@ static gptimer_handle_t gptimer = NULL;
 // Callback function for MEASURE timer tick
 static bool tickMeasure(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
-
-    vTaskResume(handleMeasureLoop);
+   
+    if (handleMeasureLoop != NULL) {
+        vTaskResume(handleMeasureLoop);
+    }
+    if (handleTunnelLoop != NULL) {
+        vTaskResume(handleTunnelLoop);
+    }
     return true;
 }
 

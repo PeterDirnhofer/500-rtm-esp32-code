@@ -17,7 +17,9 @@ TaskHandle_t handleSendDatasets = NULL;
 TaskHandle_t handleMeasureLoop = NULL;
 TaskHandle_t handleAdjustLoop = NULL;
 TaskHandle_t handleSinusLoop = NULL;
+TaskHandle_t handleDataTransmissionLoop = NULL;
 TaskHandle_t handleTask = NULL;
+TaskHandle_t handleTunnelLoop = NULL;
 
 spi_device_interface_config_t devcfgDacX;
 spi_device_interface_config_t devcfgDacY;
@@ -53,6 +55,8 @@ intr_handle_t s_timer_handle;
 // Define the global adjustIsActive variable
 bool adjustIsActive = false;
 bool measureIsActive = false;
+bool tunnelIsActive = false;
 bool sinusIsActive = false;
+bool dataTransmissionIsActive = false;
 
 uint16_t modeWorking;

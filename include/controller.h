@@ -21,6 +21,10 @@ extern "C" void measureStart();
 
 extern "C" void measureLoop(void *unused);
 
+extern "C" void tunnelStart();
+
+extern "C" void tunnelLoop(void *unused);
+
 extern "C" void adjustStart();
 
 extern "C" void sinusStart();

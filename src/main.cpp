@@ -70,14 +70,9 @@ extern "C" void app_main(void)
 
     // Parameter setting
     ParameterSetting parameterSetter;
-   
-
-  
-
     // Start read from PC and Start Dispatcher
     dispatcherTaskStart();
   
-   
     // Send "IDLE" message
     usb.send("IDLE\n");
 

@@ -177,14 +177,75 @@ extern "C" void measureLoop(void *unused)
     vTaskDelete(NULL);
 }
 
+// Tunnel loop task
+extern "C" void tunnelLoop(void *unused)
+{
+    static const char *TAG = "tunnelLoop";
+    esp_log_level_set(TAG, ESP_LOG_INFO);
+    ESP_LOGI(TAG, "+++ STARTED");
+
+    uint16_t newDacZ = 0;
+
+    while (tunnelIsActive)
+    {
+        vTaskSuspend(NULL); // Sleep, will be restarted by the timer
+      
+        gpio_set_level(IO_04, 1); // blue LED
+
+        // Read voltage from preamplifier
+        int16_t adcValue = readAdc();
+        ledStatusAdc(adcValue, targetTunnelAdc, toleranceTunnelAdc, currentZDac);
+
+        // Calculate error
+        int16_t errorAdc = targetTunnelAdc - adcValue;
+
+        // Check if current is within limit
+        if (abs(errorAdc) <= toleranceTunnelAdc)
+        {
+            
+            // Create data element and send to queue
+            DataElement dataElement(1,adcValue , currentZDac);
+            if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS)
+            {
+                ESP_LOGE("Queue", "Failed to send to queue");
+            }
+
+                        
+        }
+        else
+        {
+            // Create data element and send to queue
+            DataElement dataElement(0, adcValue, currentZDac);
+            if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS)
+            {
+                ESP_LOGE("Queue", "Failed to send to queue");
+            }
+
+            // Compute new DAC value and resume VSPI loop
+            newDacZ = computePiDac(adcValue, targetTunnelAdc);
+            currentZDac = newDacZ;
+            vTaskResume(handleVspiLoop);
+        }
+
+        gpio_set_level(IO_04, 0); // signal, that tunnel task had finished this iteration
+    }
+    vTaskDelete(NULL);
+}
+
 // Data transmission loop task
-extern "C" void dataTransmissionLoop(void *unused)
+extern "C" void dataTransmissionLoop(void *params)
 {
     static const char *TAG = "dataTransmissionTask";
     esp_log_level_set(TAG, ESP_LOG_INFO);
-    bool break_loop = false;
 
-    while (!break_loop)
+    // Cast the parameter to a string
+    const char *prefix = static_cast<const char *>(params);
+    if (prefix == nullptr || strlen(prefix) == 0) {
+        prefix = "DATA";
+    }
+    dataTransmissionIsActive = true;
+
+    while (dataTransmissionIsActive)
     {
         DataElement element;
         // Receive data from the queue
@@ -197,13 +258,13 @@ extern "C" void dataTransmissionLoop(void *unused)
             if (X == 0 && Y == 0 && Z == 0)
             {
                 UsbPcInterface::send("DATA,DONE\n");
-                break_loop = true;
+                dataTransmissionIsActive = false;
             }
             else
             {
                 // Process the data element
                 std::ostringstream oss;
-                oss << "DATA," << X << "," << Y << "," << Z << "\n";
+                oss << prefix << "," << X << "," << Y << "," << Z << "\n";
                 UsbPcInterface::send(oss.str().c_str());
                 // Add a delay to wait until send is done
                 vTaskDelay(pdMS_TO_TICKS(1)); // 1 millisecond delay
@@ -214,4 +275,5 @@ extern "C" void dataTransmissionLoop(void *unused)
             ESP_LOGE(TAG, "Failed to receive from queue");
         }
     }
+    vTaskDelete(NULL);
 }

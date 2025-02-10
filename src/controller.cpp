@@ -42,33 +42,41 @@ extern "C" void dispatcherTask(void *unused)
             receive.erase(std::remove_if(receive.begin(), receive.end(), ::isspace), receive.end());
 
             if (receive == "STOP")
-            {   
-                if (sinusIsActive)
-                {
-                    UsbPcInterface::send("RESTART\n");
-                    vTaskDelay(pdMS_TO_TICKS(10));
-                    esp_restart();
-                }
-
-                adjustIsActive = false;
-                measureIsActive = false;
-                UsbPcInterface::send("STOPPED\n");
-                vTaskDelay(pdMS_TO_TICKS(10));
-                continue;
-            }
-
-            if (receive == "RESTART")
             {
                 ESP_LOGI(TAG, "System restart initiated");
-                UsbPcInterface::send("RESTART\n");
-                vTaskDelay(pdMS_TO_TICKS(10));
+
+                // Stop all loops but not dataTransmissionLoop
+                measureIsActive = false;
+                tunnelIsActive = false;
+                sinusIsActive = true;
+                adjustIsActive = true;
+
+                // Send rest of data before stop
+                if (queueToPc != NULL)
+                {
+                    while (uxQueueMessagesWaiting(queueToPc) > 0)
+                    {
+                        vTaskDelay(pdMS_TO_TICKS(10));
+                    }
+                }
+
+                UsbPcInterface::send("STOP\n");
+                ESP_LOGI(TAG, "STOP");
+                vTaskDelay(pdMS_TO_TICKS(1));
+
+                // stop esp
                 esp_restart();
-                continue;
             }
 
             if (receive == "MEASURE")
             {
                 measureStart();
+                continue;
+            }
+
+            if (receive == "TUNNEL")
+            {
+                tunnelStart();
                 continue;
             }
 
@@ -199,9 +207,39 @@ extern "C" void measureStart()
         vTaskDelay(pdMS_TO_TICKS(100));
         esp_restart();
     }
-    // Create the data transmission task
-    xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000, NULL, 1, NULL, 0);
+
+    if (handleDataTransmissionLoop == NULL)
+    {
+        xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000, NULL, 1, &handleDataTransmissionLoop, 0);
+    }
 
     xTaskCreatePinnedToCore(measureLoop, "measurementLoop", 10000, NULL, 2, &handleMeasureLoop, 1);
+    timer_initialize();
+}
+
+extern "C" void tunnelStart()
+{
+    tunnelIsActive = true;
+    static const char *TAG = "tunnelStart";
+    esp_log_level_set(TAG, ESP_LOG_INFO);
+    ESP_LOGI(TAG, "tunnelStart initiated");
+
+    queueToPc = xQueueCreate(1000, sizeof(DataElement));
+    if (queueToPc == NULL)
+    {
+        // Handle error
+        ESP_LOGE("Queue", "Failed to create queue");
+        vTaskDelay(pdMS_TO_TICKS(100));
+        esp_restart();
+    }
+    ESP_LOGI(TAG, "FOO 1");
+    if (handleDataTransmissionLoop == NULL)
+    {
+
+        const char *prefix = "TUNNEL";
+        xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000, (void *)prefix, 1, &handleDataTransmissionLoop, 0);
+    }
+    ESP_LOGI(TAG, "FOO 2");
+    xTaskCreatePinnedToCore(tunnelLoop, "tunnelLoop", 10000, NULL, 2, &handleTunnelLoop, 1);
     timer_initialize();
 }
