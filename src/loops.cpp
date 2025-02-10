@@ -183,13 +183,30 @@ extern "C" void tunnelLoop(void *unused)
     static const char *TAG = "tunnelLoop";
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++ STARTED");
+    int counter = 0;
 
     uint16_t newDacZ = 0;
 
     while (tunnelIsActive)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
-      
+        counter++;
+        if (counter % 100 == 0)
+            {
+                ESP_LOGI(TAG, "Counter: %d", counter);
+            }
+        if (counter > 5000)
+        {
+           
+            tunnelIsActive = false;
+            ESP_LOGI(TAG, "Restarting system...");
+            // Wait until complete queue was sent to PC
+            timer_stop();
+            vTaskDelay(pdMS_TO_TICKS(1000)); // Delay for a short period
+           
+            esp_restart();
+        }
+        
         gpio_set_level(IO_04, 1); // blue LED
 
         // Read voltage from preamplifier
