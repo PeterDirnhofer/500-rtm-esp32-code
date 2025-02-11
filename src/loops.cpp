@@ -92,6 +92,8 @@ extern "C" void measureLoop(void *unused)
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++ STARTED");
 
+
+    ESP_LOGI(TAG, "Target Tunnel ADC: %d, Tolerance Tunnel ADC: %d", targetTunnelAdc, toleranceTunnelAdc);
     uint16_t newDacZ = 0;
     std::string dataBuffer;
 

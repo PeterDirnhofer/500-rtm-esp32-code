@@ -18,7 +18,7 @@ using namespace std;
 // Additional USB Interface
 #define TXD_PIN (GPIO_NUM_33)
 #define RXD_PIN (GPIO_NUM_32)
-#define BAUDRATE 115200*1 // 115200 // 460800 // 115200 * 4
+#define BAUDRATE 115200 * 4 // 115200 // 460800 // 115200 * 4
 
 // SPI for DAC X Y Z
 #define GPIO_MOSI_VSPI 23

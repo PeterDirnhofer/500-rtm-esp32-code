@@ -81,9 +81,9 @@ void setGpioLevels()
 {
     static const char *TAG = "setGpioLevels";
     static std::string last_limit = "INIT"; // Declare last_limit here
-    gpio_set_level(IO_25, 0); // Red LED
-    gpio_set_level(IO_27, 0); // Yellow LED
-    gpio_set_level(IO_02, 1); // Green LED
+    gpio_set_level(IO_25, 0);               // Red LED
+    gpio_set_level(IO_27, 0);               // Yellow LED
+    gpio_set_level(IO_02, 1);               // Green LED
     ESP_LOGI(TAG, "%s > LO", last_limit.c_str());
     last_limit = "LO";
 }
@@ -142,7 +142,10 @@ uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
     }
 
     // Compute the DAC value
-    int32_t dacValue = proportional + integral; // Use int32_t to handle potential overflow
+    int32_t dacValue = currentZDac + proportional + integral; // Accumulate the DAC value
+    // Log the values
+    ESP_LOGD(TAG, "ADC Value: %d, Target ADC: %d, Proportional: %" PRId32 ", Integral: %" PRId32 ", DAC Value: %" PRId32,
+             adcValue, targetAdc, proportional, integral, dacValue);
 
     // Clamp the DAC value to the valid range
     if (dacValue < 0)
@@ -154,6 +157,7 @@ uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
         dacValue = DAC_VALUE_MAX;
     }
 
-    //ESP_LOGI(TAG, "Computed DAC value: %d", dacValue);
+   
+
     return static_cast<uint16_t>(dacValue);
 }

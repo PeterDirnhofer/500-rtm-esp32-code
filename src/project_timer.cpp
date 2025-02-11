@@ -17,9 +17,11 @@ static bool tickMeasure(gptimer_handle_t timer, const gptimer_alarm_event_data_t
    
     if (handleMeasureLoop != NULL) {
         vTaskResume(handleMeasureLoop);
+        return true;
     }
     if (handleTunnelLoop != NULL) {
         vTaskResume(handleTunnelLoop);
+        return true;
     }
     return true;
 }
