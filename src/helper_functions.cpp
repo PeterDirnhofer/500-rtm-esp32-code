@@ -91,8 +91,12 @@ void setGpioLevels()
 // Calculate ADC value from nA
 uint16_t calculateAdcFromnA(double targetNa)
 {
+
+    static const char *TAG = "calculateAdcFromnA";
+    esp_log_level_set(TAG, ESP_LOG_INFO);
     // Calculate ADC value based on target current and voltage divider
     double adcValue = (targetNa / ADC_VOLTAGE_DIVIDER) * (ADC_VALUE_MAX / ADC_VOLTAGE_MAX);
+    ESP_LOGI(TAG, "Target nA: %f, Calculated ADC Value: %f", targetNa, adcValue);
     return static_cast<uint16_t>(std::round(adcValue));
 }
 
