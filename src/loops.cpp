@@ -182,11 +182,25 @@ extern "C" void measureLoop(void *unused)
 // Tunnel loop task
 extern "C" void tunnelLoop(void *params)
 {
-    static const char *TAG = "tunnelLoop";
+
+    static const char *TAG = "tunnelLoop/main";
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++ STARTED");
-    const int maxLoops = *static_cast<int *>(params);
+    // Cast the parameter to a string
+    const char *loops = static_cast<const char *>(params);
+    if (loops == nullptr || strlen(loops) == 0)
+    {
+        loops = "1000";
+    }
+
+    ESP_LOGI(TAG, "FOO Starting tunnel loop with max loops: %s", loops);
+
+    const int maxLoops = atoi(loops);
+
     ESP_LOGI(TAG, "FOO 3 Max loops: %d", maxLoops);
+    // int maxLoops = *loops1;
+
+   
     int counter = 0;
 
     uint16_t newDacZ = 0;

@@ -253,8 +253,9 @@ extern "C" void tunnelStart(int loops)
     }
     ESP_LOGI(TAG, "FOO 2");
 
-    int testvalue = 33;
-    // xTaskCreatePinnedToCore(tunnelLoop, "tunnelLoop", 10000, NULL, 2, &handleTunnelLoop, 1);
-    xTaskCreatePinnedToCore(tunnelLoop, "tunnelLoop", 10000, &testvalue, 2, &handleTunnelLoop, 1);
+
+    std::string loops_str = std::to_string(loops);
+  
+    xTaskCreatePinnedToCore(tunnelLoop, "tunnelLoop", 10000, (void *)loops_str.c_str(), 2, &handleTunnelLoop, 1);
     timer_initialize();
 }
