@@ -77,6 +77,7 @@ extern "C" void dispatcherTask(void *unused)
             if (receive.rfind("TUNNEL", 0) == 0)
             {
                 // Parse the number of loops from the command
+                const char* loops_str = "1000";
                 int loops = 5000; // Default value
                 if (receive.length() > 7)
                 {
