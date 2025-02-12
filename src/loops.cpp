@@ -92,7 +92,6 @@ extern "C" void measureLoop(void *unused)
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++ STARTED");
 
-
     ESP_LOGI(TAG, "Target Tunnel ADC: %d, Tolerance Tunnel ADC: %d", targetTunnelAdc, toleranceTunnelAdc);
     uint16_t newDacZ = 0;
     std::string dataBuffer;
@@ -182,49 +181,28 @@ extern "C" void measureLoop(void *unused)
 // Tunnel loop task
 extern "C" void tunnelLoop(void *params)
 {
-
     static const char *TAG = "tunnelLoop/main";
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++ STARTED");
-    // Cast the parameter to a string
-    const char *loops = static_cast<const char *>(params);
-    if (loops == nullptr || strlen(loops) == 0)
+
+    // Cast the parameter to an int* and log the dereferenced value
+    int *loopsPtr = static_cast<int *>(params);
+    if (loopsPtr == nullptr)
     {
-        loops = "1000";
+        ESP_LOGE(TAG, "Invalid parameter pointer");
+        vTaskDelete(NULL);
+        return;
     }
+    int maxLoops = *loopsPtr;
+    ESP_LOGI(TAG, "Max loops: %d", maxLoops);
 
-    ESP_LOGI(TAG, "FOO Starting tunnel loop with max loops: %s", loops);
-
-    const int maxLoops = atoi(loops);
-
-    ESP_LOGI(TAG, "FOO 3 Max loops: %d", maxLoops);
-    // int maxLoops = *loops1;
-
-   
     int counter = 0;
-
     uint16_t newDacZ = 0;
 
     while (tunnelIsActive && counter < maxLoops)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
-        counter++;
-        if (counter % 100 == 0)
-            {
-                ESP_LOGI(TAG, "Counter: %d", counter);
-            }
-        if (counter > 5000)
-        {
-           
-            tunnelIsActive = false;
-            ESP_LOGI(TAG, "Restarting system...");
-            // Wait until complete queue was sent to PC
-            timer_stop();
-            vTaskDelay(pdMS_TO_TICKS(1000)); // Delay for a short period
-           
-            esp_restart();
-        }
-        
+
         gpio_set_level(IO_04, 1); // blue LED
 
         // Read voltage from preamplifier
@@ -237,15 +215,13 @@ extern "C" void tunnelLoop(void *params)
         // Check if current is within limit
         if (abs(errorAdc) <= toleranceTunnelAdc)
         {
-            
+
             // Create data element and send to queue
-            DataElement dataElement(1,adcValue , currentZDac);
+            DataElement dataElement(1, adcValue, currentZDac);
             if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS)
             {
                 ESP_LOGE("Queue", "Failed to send to queue");
             }
-
-                        
         }
         else
         {
@@ -263,7 +239,21 @@ extern "C" void tunnelLoop(void *params)
         }
 
         gpio_set_level(IO_04, 0); // signal, that tunnel task had finished this iteration
+
+        counter++; // Increment the counter
+
+        // Check if the maximum number of loops has been reached
+        if (counter >= maxLoops)
+        {
+            ESP_LOGI(TAG, "Maximum loops reached, stopping loop");
+            tunnelIsActive = false;
+        }
+
+        // Log the counter value
+        ESP_LOGI(TAG, "Counter: %d", counter);
     }
+    esp_restart();
+
     currentXDac = 0;
     currentYDac = 0;
     currentZDac = 0;
@@ -279,7 +269,8 @@ extern "C" void dataTransmissionLoop(void *params)
 
     // Cast the parameter to a string
     const char *prefix = static_cast<const char *>(params);
-    if (prefix == nullptr || strlen(prefix) == 0) {
+    if (prefix == nullptr || strlen(prefix) == 0)
+    {
         prefix = "DATA";
     }
     dataTransmissionIsActive = true;

@@ -21,7 +21,7 @@ extern "C" void measureStart();
 
 extern "C" void measureLoop(void *unused);
 
-extern "C" void tunnelStart(int loops);
+extern "C" void tunnelStart(const std::string &receive);
 
 extern "C" void tunnelLoop(void *params);
 

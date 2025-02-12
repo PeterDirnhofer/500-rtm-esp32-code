@@ -20,7 +20,6 @@ static const char *TAG = "controller";
 
 extern "C" void dispatcherTask(void *unused)
 {
-
     static const char *TAG = "dispatcherTask";
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "STARTED");
@@ -36,7 +35,6 @@ extern "C" void dispatcherTask(void *unused)
         // Wait for data to be available in the queue with a timeout of 100 ms
         if (xQueueReceive(queueFromPc, &rcvChars, pdMS_TO_TICKS(100)) == pdPASS)
         {
-
             std::string receive(rcvChars);
             // Remove extra characters (whitespace, newline, etc.)
             receive.erase(std::remove_if(receive.begin(), receive.end(), ::isspace), receive.end());
@@ -77,21 +75,20 @@ extern "C" void dispatcherTask(void *unused)
             if (receive.rfind("TUNNEL", 0) == 0)
             {
                 // Parse the number of loops from the command
-                const char* loops_str = "1000";
-                int loops = 5000; // Default value
+                std::string loops_str = "1000"; // Default value
                 if (receive.length() > 7)
                 {
                     std::string loopsStr = receive.substr(7);
                     if (!loopsStr.empty() && std::all_of(loopsStr.begin(), loopsStr.end(), ::isdigit))
                     {
-                        loops = std::stoi(loopsStr);
+                        loops_str = loopsStr;
                     }
                     else
                     {
                         ESP_LOGE(TAG, "Invalid number of loops, using default value");
                     }
                 }
-                tunnelStart(loops);
+                tunnelStart(loops_str);
                 continue;
             }
 
@@ -122,7 +119,6 @@ extern "C" void dispatcherTask(void *unused)
                     esp_err_t updateSuccess = UsbPcInterface::mUpdateTip(receive);
                     if (updateSuccess != ESP_OK)
                     {
-
                         ESP_LOGW(TAG, "ERROR: Failed to update TIP");
                         UsbPcInterface::send("ERROR: Failed to update TIP");
                     }
@@ -147,7 +143,6 @@ extern "C" void dispatcherTask(void *unused)
                 std::string line;
                 while (std::getline(stream, line))
                 {
-
                     line = "PARAMETER," + line;
                     line += "\n";
                     UsbPcInterface::send(line.c_str());
@@ -232,12 +227,13 @@ extern "C" void measureStart()
     timer_initialize();
 }
 
-extern "C" void tunnelStart(int loops)
+extern "C" void tunnelStart(const std::string &loops_str)
 {
     tunnelIsActive = true;
     static const char *TAG = "tunnelStart";
     esp_log_level_set(TAG, ESP_LOG_INFO);
-    ESP_LOGI(TAG, "tunnelStart initiated with %d loops", loops);
+    ESP_LOGI(TAG, "tunnelStart initiated with %s loops", loops_str.c_str());
+
     queueToPc = xQueueCreate(1000, sizeof(DataElement));
     if (queueToPc == NULL)
     {
@@ -254,9 +250,19 @@ extern "C" void tunnelStart(int loops)
     }
     ESP_LOGI(TAG, "FOO 2");
 
+    // Convert the string to an integer
+    int maxLoops = 1000; // Default value
+    if (!loops_str.empty() && std::all_of(loops_str.begin(), loops_str.end(), ::isdigit))
+    {
+        maxLoops = std::stoi(loops_str);
+    }
+    else
+    {
+        ESP_LOGE(TAG, "Invalid number of loops, using default value");
+    }
 
-    std::string loops_str = std::to_string(loops);
-  
-    xTaskCreatePinnedToCore(tunnelLoop, "tunnelLoop", 10000, (void *)loops_str.c_str(), 2, &handleTunnelLoop, 1);
+    // Pass the integer value as a pointer
+    int *maxLoopsPtr = new int(maxLoops);
+    xTaskCreatePinnedToCore(tunnelLoop, "tunnelLoop", 10000, maxLoopsPtr, 2, &handleTunnelLoop, 1);
     timer_initialize();
 }

@@ -14,6 +14,6 @@ extern "C" void dataTransmissionLoop(void *params);
 extern "C" void adjustLoop(void *unused);
 extern "C" void sinusLoop(void *unused);
 extern "C" void measureLoop(void *unused);
-extern "C" void tunnelLoop(void *unused);
+extern "C" void tunnelLoop(void *params);
 
 #endif // LOOPS_H
