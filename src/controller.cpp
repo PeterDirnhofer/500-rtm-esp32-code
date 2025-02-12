@@ -74,9 +74,23 @@ extern "C" void dispatcherTask(void *unused)
                 continue;
             }
 
-            if (receive == "TUNNEL")
+            if (receive.rfind("TUNNEL", 0) == 0)
             {
-                tunnelStart();
+                // Parse the number of loops from the command
+                int loops = 5000; // Default value
+                if (receive.length() > 7)
+                {
+                    std::string loopsStr = receive.substr(7);
+                    if (!loopsStr.empty() && std::all_of(loopsStr.begin(), loopsStr.end(), ::isdigit))
+                    {
+                        loops = std::stoi(loopsStr);
+                    }
+                    else
+                    {
+                        ESP_LOGE(TAG, "Invalid number of loops, using default value");
+                    }
+                }
+                tunnelStart(loops);
                 continue;
             }
 
@@ -217,13 +231,12 @@ extern "C" void measureStart()
     timer_initialize();
 }
 
-extern "C" void tunnelStart()
+extern "C" void tunnelStart(int loops)
 {
     tunnelIsActive = true;
     static const char *TAG = "tunnelStart";
     esp_log_level_set(TAG, ESP_LOG_INFO);
-    ESP_LOGI(TAG, "tunnelStart initiated");
-
+    ESP_LOGI(TAG, "tunnelStart initiated with %d loops", loops);
     queueToPc = xQueueCreate(1000, sizeof(DataElement));
     if (queueToPc == NULL)
     {
@@ -235,11 +248,13 @@ extern "C" void tunnelStart()
     ESP_LOGI(TAG, "FOO 1");
     if (handleDataTransmissionLoop == NULL)
     {
-
         const char *prefix = "TUNNEL";
         xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000, (void *)prefix, 1, &handleDataTransmissionLoop, 0);
     }
     ESP_LOGI(TAG, "FOO 2");
-    xTaskCreatePinnedToCore(tunnelLoop, "tunnelLoop", 10000, NULL, 2, &handleTunnelLoop, 1);
+
+    int testvalue = 33;
+    // xTaskCreatePinnedToCore(tunnelLoop, "tunnelLoop", 10000, NULL, 2, &handleTunnelLoop, 1);
+    xTaskCreatePinnedToCore(tunnelLoop, "tunnelLoop", 10000, &testvalue, 2, &handleTunnelLoop, 1);
     timer_initialize();
 }

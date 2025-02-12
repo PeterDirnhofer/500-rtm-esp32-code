@@ -180,16 +180,18 @@ extern "C" void measureLoop(void *unused)
 }
 
 // Tunnel loop task
-extern "C" void tunnelLoop(void *unused)
+extern "C" void tunnelLoop(void *params)
 {
     static const char *TAG = "tunnelLoop";
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++ STARTED");
+    const int maxLoops = *static_cast<int *>(params);
+    ESP_LOGI(TAG, "FOO 3 Max loops: %d", maxLoops);
     int counter = 0;
 
     uint16_t newDacZ = 0;
 
-    while (tunnelIsActive)
+    while (tunnelIsActive && counter < maxLoops)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
         counter++;
@@ -248,6 +250,10 @@ extern "C" void tunnelLoop(void *unused)
 
         gpio_set_level(IO_04, 0); // signal, that tunnel task had finished this iteration
     }
+    currentXDac = 0;
+    currentYDac = 0;
+    currentZDac = 0;
+    vTaskResume(handleVspiLoop);
     vTaskDelete(NULL);
 }
 
