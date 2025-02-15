@@ -222,7 +222,8 @@ extern "C" void measureStart()
     {
         xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000, NULL, 1, &handleDataTransmissionLoop, 0);
     }
-
+        
+    setPrefix("DATA");
     xTaskCreatePinnedToCore(measureLoop, "measurementLoop", 10000, NULL, 2, &handleMeasureLoop, 1);
     timer_initialize();
 }
@@ -246,6 +247,8 @@ extern "C" void tunnelStart(const std::string &loops_str)
     if (handleDataTransmissionLoop == NULL)
     {
         const char *prefix = "TUNNEL";
+
+        setPrefix("TUNNEL");
         xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000, (void *)prefix, 1, &handleDataTransmissionLoop, 0);
     }
     ESP_LOGI(TAG, "FOO 2");

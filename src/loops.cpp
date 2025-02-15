@@ -12,6 +12,8 @@
 
 static bool isLoopExecution = false;
 static const size_t BUFFER_SIZE = 1024; // Define BUFFER_SIZE
+static bool tunnel_found = false;
+static const char *prefix_global = "";
 
 // Function to generate a 1kHz sinusoidal signal at DAC outputs X, Y, and Z
 extern "C" void sinusLoop(void *params)
@@ -96,6 +98,8 @@ extern "C" void measureLoop(void *unused)
     uint16_t newDacZ = 0;
     std::string dataBuffer;
 
+    setPrefix("FIND");
+
     while (measureIsActive)
     {
         isLoopExecution = false;
@@ -128,6 +132,13 @@ extern "C" void measureLoop(void *unused)
         // Check if current is within limit
         if (abs(errorAdc) <= toleranceTunnelAdc)
         {
+            if (!tunnel_found)
+            {
+                tunnel_found = true;
+                queueToPcClear();
+                setPrefix("DATA");
+            }
+            
             if (rtmGrid.getCurrentX() == 0)
             {
 
@@ -170,6 +181,16 @@ extern "C" void measureLoop(void *unused)
             // Compute new DAC value and resume VSPI loop
             newDacZ = computePiDac(adcValue, targetTunnelAdc);
             currentZDac = newDacZ;
+
+            if (!tunnel_found)
+            {
+                DataElement dataElement(0, adcValue, currentZDac);
+                if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGE("Queue", "Failed to send to queue");
+                }
+            }
+
             vTaskResume(handleVspiLoop);
         }
 
@@ -261,6 +282,23 @@ extern "C" void tunnelLoop(void *params)
     vTaskDelete(NULL);
 }
 
+extern "C" void setPrefix(const char *prefix)
+{
+    if (prefix != nullptr)
+    {
+        prefix_global = prefix;
+    }
+}
+
+extern "C" void queueToPcClear()
+{
+    DataElement element;
+    while (xQueueReceive(queueToPc, &element, 0) == pdPASS)
+    {
+        // Clear all elements from the queue
+    }
+}
+
 // Data transmission loop task
 extern "C" void dataTransmissionLoop(void *params)
 {
@@ -294,7 +332,7 @@ extern "C" void dataTransmissionLoop(void *params)
             {
                 // Process the data element
                 std::ostringstream oss;
-                oss << prefix << "," << X << "," << Y << "," << Z << "\n";
+                oss << prefix_global << "," << X << "," << Y << "," << Z << "\n";
                 UsbPcInterface::send(oss.str().c_str());
                 // Add a delay to wait until send is done
                 vTaskDelay(pdMS_TO_TICKS(1)); // 1 millisecond delay
