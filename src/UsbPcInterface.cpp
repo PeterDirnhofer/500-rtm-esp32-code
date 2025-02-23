@@ -66,6 +66,8 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
         vTaskDelete(NULL);
     }
 
+    std::string receivedString;
+
     while (1)
     {
         // Read data from UART
@@ -73,37 +75,31 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
 
         if (rxCount > 0)
         {
-            data[rxCount] = 0; // Null-terminate the received data
-            // Find the newline character
-            char *lineEnd = strchr((char *)data, '\n');
-            if (lineEnd != nullptr)
+            for (int i = 0; i < rxCount; ++i)
             {
-                // Calculate the length of the line
-                size_t lineLength = lineEnd - (char *)data + 1; // Include the LF character
-
-                // Ensure the string is null-terminated
-                if (lineLength < 255)
+                char receivedChar = static_cast<char>(data[i]);
+                if (receivedChar == '\n')
                 {
-                    data[lineLength] = '\0';
+                    // Null-terminate the received string
+                    receivedString += '\0';
+
+
+                    // Convert receivedString to uppercase
+                    std::transform(receivedString.begin(), receivedString.end(), receivedString.begin(), ::toupper);
+
+                    // Send the received string to the queue
+                    if (xQueueSend(queueFromPc, receivedString.c_str(), portMAX_DELAY) != pdPASS)
+                    {
+                        ESP_LOGE(TAG, "Failed to send to queue");
+                    }
+
+                    // Clear the received string for the next message
+                    receivedString.clear();
                 }
                 else
                 {
-                    data[254] = '\0'; // Ensure null-termination if lineLength is exactly 255
-                }
-
-                // Copy data to a local buffer before sending to the queue
-                char localBuffer[255];
-                strncpy(localBuffer, (char *)data, 255);
-                localBuffer[254] = '\0'; // Ensure null-termination
-                // Convert localBuffer to uppercase
-                for (int i = 0; localBuffer[i] != '\0'; i++)
-                {
-                    localBuffer[i] = toupper(localBuffer[i]);
-                }
-                // Send the received line to the queue
-                if (xQueueSend(queueFromPc, localBuffer, portMAX_DELAY) != pdPASS)
-                {
-                    ESP_LOGE(TAG, "Failed to send to queue");
+                    // Append the received character to the string
+                    receivedString += receivedChar;
                 }
             }
         }

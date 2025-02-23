@@ -246,10 +246,8 @@ extern "C" void tunnelStart(const std::string &loops_str)
     ESP_LOGI(TAG, "FOO 1");
     if (handleDataTransmissionLoop == NULL)
     {
-        const char *prefix = "TUNNEL";
-
         setPrefix("TUNNEL");
-        xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000, (void *)prefix, 1, &handleDataTransmissionLoop, 0);
+        xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000, NULL, 1, &handleDataTransmissionLoop, 0);
     }
     ESP_LOGI(TAG, "FOO 2");
 

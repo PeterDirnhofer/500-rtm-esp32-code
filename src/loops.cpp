@@ -13,7 +13,7 @@
 static bool isLoopExecution = false;
 static const size_t BUFFER_SIZE = 1024; // Define BUFFER_SIZE
 static bool tunnel_found = false;
-static const char *prefix_global = "";
+static const char *prefix = "";
 
 // Function to generate a 1kHz sinusoidal signal at DAC outputs X, Y, and Z
 extern "C" void sinusLoop(void *params)
@@ -184,7 +184,7 @@ extern "C" void measureLoop(void *unused)
 
             if (!tunnel_found)
             {
-                DataElement dataElement(0, adcValue, currentZDac);
+                DataElement dataElement(targetTunnelAdc, adcValue, currentZDac);
                 if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS)
                 {
                     ESP_LOGE("Queue", "Failed to send to queue");
@@ -282,11 +282,11 @@ extern "C" void tunnelLoop(void *params)
     vTaskDelete(NULL);
 }
 
-extern "C" void setPrefix(const char *prefix)
+extern "C" void setPrefix(const char *_prefix)
 {
-    if (prefix != nullptr)
+    if (_prefix != nullptr)
     {
-        prefix_global = prefix;
+        prefix = _prefix;
     }
 }
 
@@ -305,12 +305,12 @@ extern "C" void dataTransmissionLoop(void *params)
     static const char *TAG = "dataTransmissionTask";
     esp_log_level_set(TAG, ESP_LOG_INFO);
 
-    // Cast the parameter to a string
-    const char *prefix = static_cast<const char *>(params);
-    if (prefix == nullptr || strlen(prefix) == 0)
-    {
-        prefix = "DATA";
-    }
+    // // Cast the parameter to a string
+    // const char *prefix = static_cast<const char *>(params);
+    // if (prefix == nullptr || strlen(prefix) == 0)
+    // {
+    //     prefix = "DATA";
+    // }
     dataTransmissionIsActive = true;
 
     while (dataTransmissionIsActive)
@@ -332,7 +332,7 @@ extern "C" void dataTransmissionLoop(void *params)
             {
                 // Process the data element
                 std::ostringstream oss;
-                oss << prefix_global << "," << X << "," << Y << "," << Z << "\n";
+                oss << prefix << "," << X << "," << Y << "," << Z << "\n";
                 UsbPcInterface::send(oss.str().c_str());
                 // Add a delay to wait until send is done
                 vTaskDelay(pdMS_TO_TICKS(1)); // 1 millisecond delay
