@@ -1,14 +1,16 @@
-#include "helper_functions.h"
-#include "globalVariables.h"
-#include "UsbPcInterface.h"
-#include "project_timer.h"
-#include "esp_log.h"
+
+#include <esp_log.h>
 #include <cmath>
 #include <string>
 #include <queue>
 #include <sstream>
 #include <iomanip>
 #include <cstdint>
+
+#include "helper_functions.h"
+#include "globalVariables.h"
+#include "UsbPcInterface.h"
+#include "project_timer.h"
 
 // Constants
 static int integralErrorAdc = 0;

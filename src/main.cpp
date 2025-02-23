@@ -4,24 +4,24 @@
 #include <string.h>
 #include <string>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "freertos/queue.h"
-#include "lwip/sockets.h"
-#include "lwip/dns.h"
-#include "lwip/netdb.h"
-#include "lwip/igmp.h"
-#include "esp_wifi.h"
-#include "esp_system.h"
-#include "esp_event.h"
-#include "soc/rtc_periph.h"
-#include "driver/spi_slave.h"
-#include "esp_log.h"
-#include "spi_flash_mmap.h"
-#include "driver/gpio.h"
-#include "nvs_flash.h"
-#include "nvs.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/semphr.h>
+#include <freertos/queue.h>
+#include <lwip/sockets.h>
+#include <lwip/dns.h>
+#include <lwip/netdb.h>
+#include <lwip/igmp.h>
+#include <esp_wifi.h>
+#include <esp_system.h>
+#include <esp_event.h>
+#include <soc/rtc_periph.h>
+#include <driver/spi_slave.h>
+#include <esp_log.h>
+#include <spi_flash_mmap.h>
+#include <driver/gpio.h>
+#include <nvs_flash.h>
+#include <nvs.h>
 
 #include "globalVariables.h"
 #include "dac_spi.h"
@@ -30,8 +30,6 @@
 #include "dataStoring.h"
 #include "UsbPcInterface.h"
 #include "ParameterSetter.h"
-#include "esp_log.h"
-#include <esp_log.h>
 #include "helper_functions.h"
 
 extern "C" void app_main(void)

@@ -1,6 +1,6 @@
 #include "movementXY.h"
 #include "globalVariables.h"
-#include "stdio.h"
+#include <stdio.h>
 
 static const char *TAG = "UsbPcInterface";
 
@@ -21,104 +21,75 @@ scanGrid::scanGrid(uint16_t maxX, uint16_t maxY, uint16_t startX, uint16_t start
  */
 bool scanGrid::moveOn()
 {
-    // get global parameter direction
-    /* Scanpattern
-     *
-     * Y=000    X=000 +++ X=199    Line 00,001 -  00,200
-     * Y=001    X=199 --- X=000    Line 00,201 -  00,400
-     * Y=002    X=000 +++ X=199    Line 00,401 -  00,600
-     * Y=003    X=199 --- X=000    Line 00,601 -  00,800
-     * ...
-     * ...
-     * Y=196    x=000 +++ X=199    Line 39,201 -  39,400
-     * Y=197    X=199 --- X=000    Line 39,401 -  39,600
-     * Y=198    x=000 +++ X=199    Line 39,601 -  39,800
-     * Y=199    X=199 --- X=000    Line 39,801 -  40,000
-     */
+    bool bidirectional = (direction != 0);
 
-    bool bidirectional;
-
-    if (direction == 0)
-        bidirectional = false;
-    else
-        bidirectional = true;
-
-    if (bidirectional == false)
+    if (!bidirectional)
     {
         if (currentX < maxX)
         {
-            currentX++; // rightwise
+            currentX++; // Move right
             currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
         }
         else
         {
-            // TODO currentX = startX. before currentX = 0
             currentX = startX;
             currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
 
             if (currentY != maxY)
             {
-
-                currentY++; // next row
+                currentY++; // Move to next row
                 currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
             }
             else
             {
-                return true; // all points scanned
+                return true; // All points scanned
             }
         }
         return false;
     }
 
-    switch ((int)currentDirection)
+    switch (static_cast<int>(currentDirection))
     {
     case false:
-
         if (currentX < maxX)
         {
-            currentX++; // rightwise
+            currentX++; // Move right
             currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
         }
         else
         {
-
             if (currentY != maxY)
             {
-
-                currentY++; // next row
+                currentY++; // Move to next row
                 currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
-                currentDirection = true; // direction change
+                currentDirection = true; // Change direction
             }
             else
             {
-                return true; // all points scanned
+                return true; // All points scanned
             }
         }
         return false;
-        break;
     case true:
-
         if (currentX > 0)
         {
-            currentX--; // leftwise
+            currentX--; // Move left
             currentXDac = gridToDacValue(currentX, this->getMaxX(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
         }
         else
         {
             if (currentY != maxY)
             {
-
-                currentY++; // next row
+                currentY++; // Move to next row
                 currentYDac = gridToDacValue(currentY, this->getMaxY(), DAC_VALUE_MAX, this->getMultiplicatorGridAdc());
-                currentDirection = false; // direction change
+                currentDirection = false; // Change direction
             }
             else
             {
-                return true; // all points scanned
+                return true; // All points scanned
             }
         }
         return false;
-        break;
     default:
         ESP_LOGE(TAG, "error move \n");
         return false;

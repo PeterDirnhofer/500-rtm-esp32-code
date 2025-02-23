@@ -1,20 +1,23 @@
 // controller.cpp
 
-#include "controller.h"
-#include "project_timer.h"
-#include "globalVariables.h"
-#include "UsbPcInterface.h"
-#include "esp_log.h"
-#include "loops.h"
-#include "helper_functions.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "ParameterSetter.h"
 #include <string>
 #include <vector>
 #include <sstream>
 #include <algorithm>
+
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/queue.h>
+#include <esp_log.h>
+#include <esp_err.h>
+
+#include "controller.h"
+#include "project_timer.h"
+#include "globalVariables.h"
+#include "UsbPcInterface.h"
+#include "loops.h"
+#include "helper_functions.h"
+#include "ParameterSetter.h"
 
 static const char *TAG = "controller";
 
@@ -222,7 +225,7 @@ extern "C" void measureStart()
     {
         xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000, NULL, 1, &handleDataTransmissionLoop, 0);
     }
-        
+
     setPrefix("DATA");
     xTaskCreatePinnedToCore(measureLoop, "measurementLoop", 10000, NULL, 2, &handleMeasureLoop, 1);
     timer_initialize();

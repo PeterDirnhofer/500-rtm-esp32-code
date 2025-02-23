@@ -1,7 +1,7 @@
 #include <queue>
-#include "globalVariables.h"
-#include "driver/spi_master.h"
 #include <string>
+#include <driver/spi_master.h>
+#include "globalVariables.h"
 
 int TUNNEL_REQUEST = 0;
 esp_err_t retVspi;
