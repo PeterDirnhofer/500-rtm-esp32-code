@@ -25,7 +25,6 @@
 #include "nvs.h"
 #include "UsbPcInterface.h"
 
-using namespace std;
 // Copy from
 // https://github.com/espressif/arduino-esp32/tree/master/libraries/Preferences/src
 typedef enum

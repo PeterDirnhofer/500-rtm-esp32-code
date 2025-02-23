@@ -34,14 +34,10 @@
 #include <esp_log.h>
 #include "helper_functions.h"
 
-using namespace std;
-
 extern "C" void app_main(void)
 {
-
-    
     esp_log_level_set("*", ESP_LOG_WARN);
-    
+
     static const char *TAG = "app_main";
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "++++++++++++++++ MAIN STARTED +++++++++++++++");
@@ -72,7 +68,7 @@ extern "C" void app_main(void)
     ParameterSetting parameterSetter;
     // Start read from PC and Start Dispatcher
     dispatcherTaskStart();
-  
+
     // Send "IDLE" message
     usb.send("IDLE\n");
 

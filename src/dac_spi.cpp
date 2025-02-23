@@ -28,7 +28,6 @@
 #include "controller.h"
 
 static const char *TAG = "spi.cpp";
-using namespace std;
 
 /**@brief Start Init spi for DACs and run one vspiDacLoop
  *

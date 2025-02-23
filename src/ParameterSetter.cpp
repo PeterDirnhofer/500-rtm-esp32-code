@@ -12,8 +12,6 @@
 #include "esp_log.h"
 #include "helper_functions.h"
 
-using namespace std;
-
 static const char *TAG = "ParameterSetting";
 
 // Define the keys for the parameters
