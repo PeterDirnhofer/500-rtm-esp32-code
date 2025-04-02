@@ -18,10 +18,8 @@ uint16_t readAdc()
   uint8_t data_rd[2];
   ESP_ERROR_CHECK(
       i2c_master_receive(dev_handle, data_rd, 2, 1000 / portTICK_PERIOD_MS));
-  // Log the value of adcValue
-  // Combine the bytes into a 16-bit signed integer
-  uint16_t raw_adc = (data_rd[0] << 8) | data_rd[1];
-  return raw_adc;
+  int16_t adc_value = (int16_t)((data_rd[0] << 8) | data_rd[1]); 
+  return adc_value; 
 }
 
 /// @brief Initialize ADC 8 click with ADS 1115 on I2C bus

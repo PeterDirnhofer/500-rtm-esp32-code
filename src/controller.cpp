@@ -239,6 +239,8 @@ extern "C" void tunnelStart(const std::string &loops_str)
     ESP_LOGI(TAG, "tunnelStart initiated with %s loops", loops_str.c_str());
 
     queueToPc = xQueueCreate(1000, sizeof(DataElement));
+   
+
     if (queueToPc == NULL)
     {
         // Handle error

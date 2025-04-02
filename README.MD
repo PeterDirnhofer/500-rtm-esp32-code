@@ -21,13 +21,23 @@ Strings are terminated with Linefeed \n = LF = 0x0A
 - Case computer sends **MEASURE**  
   ESP starts one measure cycle for max 200 x 200 grid points.  
   ESP sends results in two pakets to computer during measuring.  
+  Send to PC:   
+  DATA, rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac if valid   
+  DATA, targetTunnelAdc, adcValue, currentZDac if not in Tunnel current
+
+
+  1, adcValue, currentZDac if in Tunnel current limits    
+
   ESP sends "DONE" when measure cycle if finished.
 
 - Case computer sends **ADJUST**:  
   ESP starts infinite setup loop to send cyclic actual tunnel-current to Computer. Terminate with CTRL-C.
   
 - Case computer sends **TUNNEL**:  
-  ESP starts infinite tunnel loop. Used for setup and diagnostics to adjust tip near of tunnel contact. 
+  ESP starts infinite tunnel loop. Used for setup and diagnostics to adjust tip near of tunnel contact.  
+  Send to PC:   
+  TUNNEL, 0, adcValue, currentZDac if out of limits   
+  TUNNEL, 1, adcValue, currentZDac if in Tunnel current limits    
   Terminate with CTRL-C.
 
 - Case computer sends **PARAMETER**:  

@@ -17,6 +17,7 @@
 # Ignore PlatformIO project environment directories
 /firmware
 /platformio.ini
+platformio.ini
 
 # Ignore backup files
 *.bak

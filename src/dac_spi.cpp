@@ -142,12 +142,14 @@ void vspiDacInit()
 // VSPI DAC loop task
 void vspiDacLoop(void *unused)
 {
-    ESP_LOGD(TAG, "vspiDacLoop started\n");
+    esp_log_level_set(TAG, ESP_LOG_INFO);
+    ESP_LOGD(TAG, "+++ vspiDacLoop started\n");
 
     std::unique_ptr<uint16_t> buffer = std::make_unique<uint16_t>();
 
-    uint16_t lastXDac = currentXDac;
-    uint16_t lastYDac = currentYDac;
+    uint16_t lastXDac = DAC_VALUE_MAX;
+    uint16_t lastYDac = DAC_VALUE_MAX;
+    uint16_t lastZDac = DAC_VALUE_MAX;
 
     vspiSendDac(0, buffer.get(), handleDacZ);
 
@@ -167,19 +169,31 @@ void vspiDacLoop(void *unused)
             vspiSendDac(currentYDac, buffer.get(), handleDacY);
             lastYDac = currentYDac;
         }
-
-        vspiSendDac(currentZDac, buffer.get(), handleDacZ);
-
-        // Set White LED
-        if (currentZDac == 0)
+        if (currentZDac != lastZDac)
         {
-            gpio_set_level(IO_17, 1);
-        }
-        else
-        {
-            gpio_set_level(IO_17, 0);
-        }
+            vspiSendDac(currentZDac, buffer.get(), handleDacZ);
+            lastZDac = currentZDac;
 
+            ESP_LOGI(TAG, "FOO currentZDac: %d", currentZDac);
+            // Set LED
+            if (currentZDac == 0)
+            {
+                gpio_set_level(IO_17_DAC_NULL, 1);
+            }
+            else
+            {
+                gpio_set_level(IO_17_DAC_NULL, 0);
+            }
+
+            if (currentZDac >= DAC_VALUE_MAX)
+            {
+                gpio_set_level(IO_04_DAC_MAX, 1);
+            }
+            else
+            {
+                gpio_set_level(IO_04_DAC_MAX, 0);
+            }
+        }
         vTaskSuspend(NULL);
     }
 }

@@ -111,11 +111,11 @@ extern intr_handle_t s_timer_handle;
 
 #define MEASURE_TIMER_MS 1
 
-#define IO_02 GPIO_NUM_2
-#define IO_04 GPIO_NUM_4
-#define IO_27 GPIO_NUM_27
-#define IO_25 GPIO_NUM_25
-#define IO_17 GPIO_NUM_17
+#define IO_02_GREEN GPIO_NUM_2
+#define IO_04_DAC_MAX GPIO_NUM_4
+#define IO_27_YELLOW GPIO_NUM_27
+#define IO_25_RED GPIO_NUM_25
+#define IO_17_DAC_NULL GPIO_NUM_17
 
 // Declare the global adjustIsActive variable
 extern bool adjustIsActive;

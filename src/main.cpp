@@ -35,24 +35,26 @@
 extern "C" void app_main(void)
 {
     esp_log_level_set("*", ESP_LOG_WARN);
+    esp_log_level_set("efuse", ESP_LOG_WARN);     // Suppress efuse logs
+    esp_log_level_set("heap_init", ESP_LOG_WARN); // Suppress heap logs
 
     static const char *TAG = "app_main";
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "++++++++++++++++ MAIN STARTED +++++++++++++++");
 
     // GPIO configuration for Monitoring on Jumper J3 GPIO_RESERVE
-    gpio_set_direction(IO_17, GPIO_MODE_OUTPUT);
-    gpio_set_direction(IO_04, GPIO_MODE_OUTPUT);
-    gpio_set_direction(IO_25, GPIO_MODE_OUTPUT);
-    gpio_set_direction(IO_27, GPIO_MODE_OUTPUT);
-    gpio_set_direction(IO_02, GPIO_MODE_OUTPUT);
+    gpio_set_direction(IO_17_DAC_NULL, GPIO_MODE_OUTPUT);
+    gpio_set_direction(IO_04_DAC_MAX, GPIO_MODE_OUTPUT);
+    gpio_set_direction(IO_25_RED, GPIO_MODE_OUTPUT);
+    gpio_set_direction(IO_27_YELLOW, GPIO_MODE_OUTPUT);
+    gpio_set_direction(IO_02_GREEN, GPIO_MODE_OUTPUT);
 
     // Initialize GPIO levels
-    gpio_set_level(IO_17, 0); // white LED
-    gpio_set_level(IO_04, 0); // blue LED
-    gpio_set_level(IO_25, 0); // red LED
-    gpio_set_level(IO_27, 0); // yellow LED
-    gpio_set_level(IO_02, 0); // green LED
+    gpio_set_level(IO_17_DAC_NULL, 0); // white LED
+    gpio_set_level(IO_04_DAC_MAX, 0);  // blue LED
+    gpio_set_level(IO_25_RED, 0);      // red LED
+    gpio_set_level(IO_27_YELLOW, 0);   // yellow LED
+    gpio_set_level(IO_02_GREEN, 0);    // green LED
 
     // USB Interface initialization
     UsbPcInterface usb;

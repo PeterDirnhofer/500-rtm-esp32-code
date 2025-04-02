@@ -32,10 +32,10 @@ extern "C" void errorBlink()
 {
     while (true)
     {
-        gpio_set_level(IO_04, 1);       // Turn on blue LED
-        vTaskDelay(pdMS_TO_TICKS(100)); // Delay 100 ms
-        gpio_set_level(IO_04, 0);       // Turn off blue LED
-        vTaskDelay(pdMS_TO_TICKS(100)); // Delay 100 ms
+        gpio_set_level(IO_04_DAC_MAX, 1); // Turn on blue LED
+        vTaskDelay(pdMS_TO_TICKS(100));   // Delay 100 ms
+        gpio_set_level(IO_04_DAC_MAX, 0); // Turn off blue LED
+        vTaskDelay(pdMS_TO_TICKS(100));   // Delay 100 ms
     }
 }
 
@@ -50,9 +50,9 @@ void ledStatusAdc(int16_t adcValue, uint16_t targetAdc, uint16_t toleranceAdc, u
     {
         if (last_limit != "LIMIT")
         {
-            gpio_set_level(IO_25, 0); // red LED
-            gpio_set_level(IO_27, 1); // yellow LED
-            gpio_set_level(IO_02, 0); // green LED
+            gpio_set_level(IO_25_RED, 0);    // red LED
+            gpio_set_level(IO_27_YELLOW, 1); // yellow LED
+            gpio_set_level(IO_02_GREEN, 0);  // green LED
             last_limit = "LIMIT";
         }
     }
@@ -60,9 +60,9 @@ void ledStatusAdc(int16_t adcValue, uint16_t targetAdc, uint16_t toleranceAdc, u
     {
         if (last_limit != "HI")
         {
-            gpio_set_level(IO_25, 1); // red LED
-            gpio_set_level(IO_27, 0); // yellow LED
-            gpio_set_level(IO_02, 0); // green LED
+            gpio_set_level(IO_25_RED, 1);    // red LED
+            gpio_set_level(IO_27_YELLOW, 0); // yellow LED
+            gpio_set_level(IO_02_GREEN, 0);  // green LED
             last_limit = "HI";
         }
     }
@@ -70,9 +70,9 @@ void ledStatusAdc(int16_t adcValue, uint16_t targetAdc, uint16_t toleranceAdc, u
     {
         if (last_limit != "LO")
         {
-            gpio_set_level(IO_25, 0); // red LED
-            gpio_set_level(IO_27, 0); // yellow LED
-            gpio_set_level(IO_02, 1); // green LED
+            gpio_set_level(IO_25_RED, 0);    // red LED
+            gpio_set_level(IO_27_YELLOW, 0); // yellow LED
+            gpio_set_level(IO_02_GREEN, 1);  // green LED
             last_limit = "LO";
         }
     }
@@ -83,9 +83,9 @@ void setGpioLevels()
 {
     static const char *TAG = "setGpioLevels";
     static std::string last_limit = "INIT"; // Declare last_limit here
-    gpio_set_level(IO_25, 0);               // Red LED
-    gpio_set_level(IO_27, 0);               // Yellow LED
-    gpio_set_level(IO_02, 1);               // Green LED
+    gpio_set_level(IO_25_RED, 0);           // Red LED
+    gpio_set_level(IO_27_YELLOW, 0);        // Yellow LED
+    gpio_set_level(IO_02_GREEN, 1);         // Green LED
     ESP_LOGI(TAG, "%s > LO", last_limit.c_str());
     last_limit = "LO";
 }
@@ -162,8 +162,6 @@ uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
     {
         dacValue = DAC_VALUE_MAX;
     }
-
-   
 
     return static_cast<uint16_t>(dacValue);
 }

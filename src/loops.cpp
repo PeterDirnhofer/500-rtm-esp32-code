@@ -113,15 +113,6 @@ extern "C" void measureLoop(void *unused)
         }
         isLoopExecution = true; // Set the flag to indicate the task is running
 
-        // Check IO_04 level and set blue LED
-        if (gpio_get_level(IO_04) == 1)
-        {
-            ESP_LOGE(TAG, "ERROR: IO_04 level is not 0 before setting it to 1");
-            errorBlink();
-        }
-        // To signal that measure task is active
-        gpio_set_level(IO_04, 1); // blue LED
-
         // Read voltage from preamplifier
         int16_t adcValue = readAdc();
         ledStatusAdc(adcValue, targetTunnelAdc, toleranceTunnelAdc, currentZDac);
@@ -138,7 +129,7 @@ extern "C" void measureLoop(void *unused)
                 queueToPcClear();
                 setPrefix("DATA");
             }
-            
+
             if (rtmGrid.getCurrentX() == 0)
             {
 
@@ -193,8 +184,6 @@ extern "C" void measureLoop(void *unused)
 
             vTaskResume(handleVspiLoop);
         }
-
-        gpio_set_level(IO_04, 0); // signal, that measure task had finished this iteration
     }
     vTaskDelete(NULL);
 }
@@ -202,9 +191,14 @@ extern "C" void measureLoop(void *unused)
 // Tunnel loop task
 extern "C" void tunnelLoop(void *params)
 {
+
+    uint16_t newDacZ = 0;
+    currentXDac = 0;
+    currentYDac = 0;
+    currentZDac = 0;
+    vTaskResume(handleVspiLoop);
     static const char *TAG = "tunnelLoop/main";
     esp_log_level_set(TAG, ESP_LOG_INFO);
-    ESP_LOGI(TAG, "+++ STARTED");
 
     // Cast the parameter to an int* and log the dereferenced value
     int *loopsPtr = static_cast<int *>(params);
@@ -218,18 +212,16 @@ extern "C" void tunnelLoop(void *params)
     ESP_LOGI(TAG, "Max loops: %d", maxLoops);
 
     int counter = 0;
-    uint16_t newDacZ = 0;
+    ESP_LOGI(TAG, "+++ STARTED maxLoops: %d", maxLoops);
 
-    while (tunnelIsActive && counter < maxLoops)
+    while (tunnelIsActive && counter <  maxLoops)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
-
-        gpio_set_level(IO_04, 1); // blue LED
 
         // Read voltage from preamplifier
         int16_t adcValue = readAdc();
         ledStatusAdc(adcValue, targetTunnelAdc, toleranceTunnelAdc, currentZDac);
-
+        ESP_LOGI(TAG, "FOO adcValue: %d", adcValue); // Log adcValue
         // Calculate error
         int16_t errorAdc = targetTunnelAdc - adcValue;
 
@@ -237,8 +229,11 @@ extern "C" void tunnelLoop(void *params)
         if (abs(errorAdc) <= toleranceTunnelAdc)
         {
 
+            gpio_set_level(IO_17_DAC_NULL, 0);
             // Create data element and send to queue
             DataElement dataElement(1, adcValue, currentZDac);
+            
+
             if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS)
             {
                 ESP_LOGE("Queue", "Failed to send to queue");
@@ -246,6 +241,7 @@ extern "C" void tunnelLoop(void *params)
         }
         else
         {
+            gpio_set_level(IO_17_DAC_NULL, 1);
             // Create data element and send to queue
             DataElement dataElement(0, adcValue, currentZDac);
             if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS)
@@ -259,8 +255,6 @@ extern "C" void tunnelLoop(void *params)
             vTaskResume(handleVspiLoop);
         }
 
-        gpio_set_level(IO_04, 0); // signal, that tunnel task had finished this iteration
-
         counter++; // Increment the counter
 
         // Check if the maximum number of loops has been reached
@@ -273,6 +267,15 @@ extern "C" void tunnelLoop(void *params)
         // Log the counter value
         ESP_LOGI(TAG, "Counter: %d", counter);
     }
+
+    // Send -1 to indicate tunnel complete complete
+    DataElement dataElement(-1, 0, 0);
+    if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS)
+    {
+        ESP_LOGE("Queue", "Failed to send to queue");
+    }
+   
+
     esp_restart();
 
     currentXDac = 0;
