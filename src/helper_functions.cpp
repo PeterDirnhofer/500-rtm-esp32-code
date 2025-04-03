@@ -148,7 +148,7 @@ uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
     }
 
     // Compute the DAC value
-    int32_t dacValue = currentZDac + proportional + integral; // Accumulate the DAC value
+    int32_t dacValue = currentZDac - proportional - integral; // Accumulate the DAC value
     // Log the values
     ESP_LOGD(TAG, "ADC Value: %d, Target ADC: %d, Proportional: %" PRId32 ", Integral: %" PRId32 ", DAC Value: %" PRId32,
              adcValue, targetAdc, proportional, integral, dacValue);

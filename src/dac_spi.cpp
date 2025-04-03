@@ -149,14 +149,12 @@ void vspiDacLoop(void *unused)
 
     uint16_t lastXDac = DAC_VALUE_MAX;
     uint16_t lastYDac = DAC_VALUE_MAX;
-    uint16_t lastZDac = DAC_VALUE_MAX;
+    uint16_t lastZDac = 0;
 
-    vspiSendDac(0, buffer.get(), handleDacZ);
-
-    vspiSendDac(currentXDac, buffer.get(), handleDacX);
-    vspiSendDac(currentYDac, buffer.get(), handleDacY);
-    vTaskSuspend(NULL);
-
+    currentXDac = 0;
+    currentYDac = 0;
+    currentZDac = DAC_VALUE_MAX;
+        
     while (1)
     {
         if (currentXDac != lastXDac)

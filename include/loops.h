@@ -17,5 +17,5 @@ extern "C" void measureLoop(void *unused);
 extern "C" void tunnelLoop(void *params);
 extern "C" void setPrefix(const char *prefix);
 extern "C" void queueToPcClear();
-
+extern "C" void resetDac();
 #endif // LOOPS_H

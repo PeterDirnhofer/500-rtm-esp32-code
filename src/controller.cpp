@@ -248,13 +248,11 @@ extern "C" void tunnelStart(const std::string &loops_str)
         vTaskDelay(pdMS_TO_TICKS(100));
         esp_restart();
     }
-    ESP_LOGI(TAG, "FOO 1");
     if (handleDataTransmissionLoop == NULL)
     {
         setPrefix("TUNNEL");
         xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000, NULL, 1, &handleDataTransmissionLoop, 0);
     }
-    ESP_LOGI(TAG, "FOO 2");
 
     // Convert the string to an integer
     int maxLoops = 1000; // Default value

@@ -28,7 +28,7 @@ extern "C" void sinusLoop(void *params)
     const double increment = (2.0 * M_PI * frequency) / BUFFER_SIZE;
     double phase = 0.0;
     std::unique_ptr<uint16_t[]> buffer(new uint16_t[BUFFER_SIZE]);
-    ESP_LOGD(TAG, "Foo 1");
+
     // Precompute the buffer values
     for (size_t i = 0; i < BUFFER_SIZE; ++i)
     {
@@ -39,25 +39,39 @@ extern "C" void sinusLoop(void *params)
             phase -= 2.0 * M_PI;
         }
     }
-    ESP_LOGD(TAG, "Foo 2");
+
+    // Precompute the buffer values
+    for (size_t i = 0; i < BUFFER_SIZE; ++i)
+    {
+        buffer[i] = static_cast<uint16_t>(i * increment);
+    }
+
+    // Precompute the buffer values
+    for (size_t i = 0; i < BUFFER_SIZE; ++i)
+    {
+        buffer[i] = static_cast<uint16_t>(DAC_VALUE_MAX - (i * (DAC_VALUE_MAX / BUFFER_SIZE)));
+    }
+    ESP_LOGI(TAG, "FOO: Sinus loop is running");
     while (sinusIsActive)
     {
-
+        ESP_LOGI(TAG, "FOO one loop");
         // ESP_LOGI(TAG, ".");
         //  Send the precomputed buffer values to the DAC
         for (size_t i = 0; i < BUFFER_SIZE; ++i)
         {
             if (!sinusIsActive)
                 break;
-            vspiSendDac(buffer[i], buffer.get(), handleDacX);
-            vspiSendDac(buffer[i], buffer.get(), handleDacY);
+            // vspiSendDac(buffer[i], buffer.get(), handleDacX);
+            // vspiSendDac(buffer[i], buffer.get(), handleDacY);
             vspiSendDac(buffer[i], buffer.get(), handleDacZ);
 
             // Delay to achieve the desired sample rate
             vTaskDelay(pdMS_TO_TICKS(1)); // Adjust delay as needed for the desired sample rate
         }
     }
-    ESP_LOGD(TAG, "stop and vTaskDelete");
+    resetDac();
+    ESP_LOGI(TAG, "stop sinus loop");
+
     vTaskDelete(NULL);
 }
 
@@ -83,7 +97,7 @@ extern "C" void adjustLoop(void *unused)
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
-
+    resetDac();
     vTaskDelete(NULL);
 }
 
@@ -193,10 +207,7 @@ extern "C" void tunnelLoop(void *params)
 {
 
     uint16_t newDacZ = 0;
-    currentXDac = 0;
-    currentYDac = 0;
-    currentZDac = 0;
-    vTaskResume(handleVspiLoop);
+    resetDac();
     static const char *TAG = "tunnelLoop/main";
     esp_log_level_set(TAG, ESP_LOG_INFO);
 
@@ -214,14 +225,13 @@ extern "C" void tunnelLoop(void *params)
     int counter = 0;
     ESP_LOGI(TAG, "+++ STARTED maxLoops: %d", maxLoops);
 
-    while (tunnelIsActive && counter <  maxLoops)
+    while (tunnelIsActive && counter < maxLoops)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
 
         // Read voltage from preamplifier
         int16_t adcValue = readAdc();
         ledStatusAdc(adcValue, targetTunnelAdc, toleranceTunnelAdc, currentZDac);
-        ESP_LOGI(TAG, "FOO adcValue: %d", adcValue); // Log adcValue
         // Calculate error
         int16_t errorAdc = targetTunnelAdc - adcValue;
 
@@ -232,7 +242,6 @@ extern "C" void tunnelLoop(void *params)
             gpio_set_level(IO_17_DAC_NULL, 0);
             // Create data element and send to queue
             DataElement dataElement(1, adcValue, currentZDac);
-            
 
             if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS)
             {
@@ -274,15 +283,10 @@ extern "C" void tunnelLoop(void *params)
     {
         ESP_LOGE("Queue", "Failed to send to queue");
     }
-   
-
+    //resetDac();
+    vTaskDelay(pdMS_TO_TICKS(100)); // Delay for 100 milliseconds to send rest of data
     esp_restart();
 
-    currentXDac = 0;
-    currentYDac = 0;
-    currentZDac = 0;
-    vTaskResume(handleVspiLoop);
-    vTaskDelete(NULL);
 }
 
 extern "C" void setPrefix(const char *_prefix)
@@ -347,4 +351,12 @@ extern "C" void dataTransmissionLoop(void *params)
         }
     }
     vTaskDelete(NULL);
+}
+
+extern "C" void resetDac()
+{
+    currentXDac = 0;
+    currentYDac = 0;
+    currentZDac = DAC_VALUE_MAX;
+    vTaskResume(handleVspiLoop);
 }
