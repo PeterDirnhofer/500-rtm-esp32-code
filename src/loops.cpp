@@ -46,11 +46,17 @@ extern "C" void sinusLoop(void *params)
         buffer[i] = static_cast<uint16_t>(i * increment);
     }
 
-    // Precompute the buffer values
+    // // Precompute the buffer values
+    // for (size_t i = 0; i < BUFFER_SIZE; ++i)
+    // {
+    //     buffer[i] = static_cast<uint16_t>(DAC_VALUE_MAX - (i * (DAC_VALUE_MAX / BUFFER_SIZE)));
+    // }
+    // Precompute the buffer values for a sinusoidal wave between DAC_VALUE_MAX and 0
     for (size_t i = 0; i < BUFFER_SIZE; ++i)
     {
-        buffer[i] = static_cast<uint16_t>(DAC_VALUE_MAX - (i * (DAC_VALUE_MAX / BUFFER_SIZE)));
+        buffer[i] = static_cast<uint16_t>((DAC_VALUE_MAX / 2) * (1 + sin(2.0 * M_PI * i / BUFFER_SIZE)));
     }
+
     ESP_LOGI(TAG, "FOO: Sinus loop is running");
     while (sinusIsActive)
     {
@@ -283,8 +289,13 @@ extern "C" void tunnelLoop(void *params)
     {
         ESP_LOGE("Queue", "Failed to send to queue");
     }
+    while (uxQueueMessagesWaiting(queueToPc) > 0)
+    {
+        vTaskDelay(pdMS_TO_TICKS(10)); // Delay for 10 milliseconds to avoid busy-waiting
+    }
+    vTaskDelay(pdMS_TO_TICKS(1));
+
     //resetDac();
-    vTaskDelay(pdMS_TO_TICKS(100)); // Delay for 100 milliseconds to send rest of data
     esp_restart();
 
 }

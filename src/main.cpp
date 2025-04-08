@@ -64,7 +64,7 @@ extern "C" void app_main(void)
     i2cAdcInit();
     vspiDacStart();
 
-    // Parameter setting
+    // Parameter settings
     ParameterSetting parameterSetter;
     // Start read from PC and Start Dispatcher
     dispatcherTaskStart();

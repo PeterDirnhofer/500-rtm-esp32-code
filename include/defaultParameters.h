@@ -6,8 +6,8 @@
 
 const std::vector<std::string> defaultParameters = {
     "PARAMETER",
-    "0.1",   // kP 5000
-    "0.01",  // kI
+    "0.15",   // kP 5000
+    "0.0001", // kI
     "0.001", // kD
     "1.00",  // targetTunnelCurrentnA
     "0.3",   // toleranceTunnelCurrentnA
