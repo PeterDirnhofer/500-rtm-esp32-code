@@ -49,28 +49,38 @@ extern "C" void app_main(void)
     gpio_set_direction(IO_27_YELLOW, GPIO_MODE_OUTPUT);
     gpio_set_direction(IO_02_GREEN, GPIO_MODE_OUTPUT);
 
+    
+
+    // USB Interface initialization
+    UsbPcInterface usb;
+    usb.start();
+
+    gpio_set_level(IO_25_RED, 1);
+    // initAdc();
+    i2cAdcInit();
+    gpio_set_level(IO_27_YELLOW, 1);
+
+    vspiDacStart();
+    // Turn on the green LED to indicate system is ready
+    gpio_set_level(IO_02_GREEN, 1);
+
+    // Parameter settings
+    ParameterSetting parameterSetter;
+    gpio_set_level(IO_04_DAC_MAX, 1);
+    // Start read from PC and Start Dispatcher
+    dispatcherTaskStart();
+    gpio_set_level(IO_04_DAC_MAX, 1);
+    gpio_set_level(IO_17_DAC_NULL, 1);
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    // Send "IDLE" message
+    usb.send("IDLE\n");
     // Initialize GPIO levels
     gpio_set_level(IO_17_DAC_NULL, 0); // white LED
     gpio_set_level(IO_04_DAC_MAX, 0);  // blue LED
     gpio_set_level(IO_25_RED, 0);      // red LED
     gpio_set_level(IO_27_YELLOW, 0);   // yellow LED
     gpio_set_level(IO_02_GREEN, 0);    // green LED
-
-    // USB Interface initialization
-    UsbPcInterface usb;
-    usb.start();
-
-    // initAdc();
-    i2cAdcInit();
-    vspiDacStart();
-
-    // Parameter settings
-    ParameterSetting parameterSetter;
-    // Start read from PC and Start Dispatcher
-    dispatcherTaskStart();
-
-    // Send "IDLE" message
-    usb.send("IDLE\n");
 
     while (true)
     {
