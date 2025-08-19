@@ -16,7 +16,7 @@ The 500 EUR Raster Tunnel Microscope is controlled by a ESP32. The ESP32 has an 
 
 2. **Clone this repository**  
    ```
-   git clone <your-repo-url>
+   git clone https://github.com/PeterDirnhofer/500-rtm-esp32-code.git
    cd 500-rtm-esp32-code
    ```
 
