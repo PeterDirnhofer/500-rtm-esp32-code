@@ -6,7 +6,6 @@ The 500 EUR Raster Tunnel Microscope is controlled by a ESP32. The ESP32 has an 
 
 ## Installation
 
-> **Note:** This project is intended to be built and flashed using [PlatformIO](https://platformio.org/) only. ESP-IDF is not supported directly.
 
 ### Using PlatformIO
 
