@@ -1,4 +1,3 @@
-
 #include <esp_log.h>
 #include <cmath>
 #include <string>
@@ -13,7 +12,7 @@
 #include "project_timer.h"
 
 // Constants
-static int integralErrorAdc = 0;
+static int integralError = 0;
 static const int32_t MAX_PROPORTIONAL = DAC_VALUE_MAX / 10;
 static const int32_t MAX_INTEGRAL = DAC_VALUE_MAX / 10;
 static const char *TAG = "helper_functions.cpp";
@@ -78,17 +77,6 @@ void ledStatusAdc(int16_t adcValue, uint16_t targetAdc, uint16_t toleranceAdc, u
     }
 }
 
-// Set GPIO levels function
-void setGpioLevels()
-{
-    static const char *TAG = "setGpioLevels";
-    static std::string last_limit = "INIT"; // Declare last_limit here
-    gpio_set_level(IO_25_RED, 0);           // Red LED
-    gpio_set_level(IO_27_YELLOW, 0);        // Yellow LED
-    gpio_set_level(IO_02_GREEN, 1);         // Green LED
-    ESP_LOGI(TAG, "%s > LO", last_limit.c_str());
-    last_limit = "LO";
-}
 
 // Calculate ADC value from nA
 uint16_t calculateAdcFromnA(double targetNa)
@@ -111,15 +99,23 @@ double calculateTunnelNa(int16_t adcValue)
     return currentTunnelnA;
 }
 
-// Compute PI DAC value
+// Compute DAC value (Proportional/Integral)
+// error = targetAdc - adcValue
+// proportional = kP * error
+// integralError += error
+// integral = kI * integralError
+// dacValue = currentZDac - proportional - integral
+// ----------------------------
 uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
 {
     static const char *TAG = "computePiDac";
     esp_log_level_set(TAG, ESP_LOG_INFO);
 
+    // TODO Handle simulation with wired  DAC_Z to ADC inverted 
+    
     // Calculate the error
     int error = targetAdc - adcValue;
-    integralErrorAdc += error;
+    integralError += error;
 
     // Proportional term
     int32_t proportional = kP * error; // Use int32_t to handle potential overflow and negative values
@@ -135,7 +131,7 @@ uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
     }
 
     // Integral term
-    int32_t integral = kI * integralErrorAdc; // Use int32_t to handle potential overflow
+    int32_t integral = kI * integralError; // Use int32_t to handle potential overflow
 
     // Clamp the integral term to a smaller range
     if (integral < -MAX_INTEGRAL)
