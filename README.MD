@@ -6,7 +6,6 @@ The 500 EUR Raster Tunnel Microscope is controlled by a ESP32. The ESP32 has an 
 
 ## Installation
 
-
 ### Using PlatformIO
 
 1. **Install PlatformIO**  
@@ -28,20 +27,6 @@ The 500 EUR Raster Tunnel Microscope is controlled by a ESP32. The ESP32 has an 
 
 5. **Monitor serial output**  
    - Click the "Monitor" button (plug icon) or use the PlatformIO Serial Monitor.
-
-#### Python requirements
-
-If you need to install Python dependencies manually (for PlatformIO or related tooling), use:
-
-```
-pip install -r requirements.txt
-```
-
-You can also list all installed Python packages with:
-
-```
-pip freeze
-```
 
 ---
 
@@ -130,6 +115,21 @@ Strings are terminated with Linefeed \n = LF = 0x0A
     kI = 10  
     kP = 1000
     targetTunnelCurrentnA = 10.0  
+    toleranceTunnelCurrentnA = 0.01  
+    startX = 0  
+    startY = 0  
+    direction = 0  
+    maxX = 199  
+    maxY = 199  
+    multiplicator = 10
+
+- Case computer sends **PARAMETER,?**:  
+  ESP sends actual parameters to computer
+
+---
+
+- **Stop ESP programm** execution and restart ESP:  
+  Computer sends **CTRL-C** respectively **Strg-C** to stop ESP and force a restart. CTRL-C can be sent any time.
     toleranceTunnelCurrentnA = 0.01  
     startX = 0  
     startY = 0  
