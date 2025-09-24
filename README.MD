@@ -13,14 +13,18 @@ The 500 EUR Raster Tunnel Microscope is controlled by a ESP32. The ESP32 has an 
    - Install [VS Code](https://code.visualstudio.com/)  
    - Install the [PlatformIO extension](https://platformio.org/install/ide?install=vscode)
 
+
 2. **Clone this repository**  
    ```
+   cd C:\your\desired\installation\path
    git clone https://github.com/PeterDirnhofer/500-rtm-esp32-code.git
    cd 500-rtm-esp32-code
    ```
-
-3. **Open the project in VS Code**  
-   - Use "File > Open Folder..." and select the project directory.
+  3. **Open the project in VS Code using the command line**  
+    - Run the following command in your project directory:
+      ```
+      code .
+      ```
 
 4. **Build and upload**  
    - Click the PlatformIO "Build" button (checkmark icon) in the status bar.
