@@ -86,14 +86,10 @@ extern "C" void dispatcherTask(void *unused)
                 if (receive.find("SIMULATE") != std::string::npos)
                 {
                     INVERT_MODE = 1;
-                    ESP_LOGI(TAG, "TUNNEL with SIMULATE - INVERT_MODE set to -1");
-                    UsbPcInterface::send("INVERT_MODE set to -1 (SIMULATE mode)\n");
                 }
                 else
                 {
                     INVERT_MODE = -1;
-                    ESP_LOGI(TAG, "TUNNEL without SIMULATE - INVERT_MODE set to 1");
-                    UsbPcInterface::send("INVERT_MODE set to 1 (NORMAL mode)\n");
                 }
 
                 measureStart();
@@ -106,14 +102,10 @@ extern "C" void dispatcherTask(void *unused)
                 if (receive.find("SIMULATE") != std::string::npos)
                 {
                     INVERT_MODE = -1;
-                    ESP_LOGI(TAG, "TUNNEL with SIMULATE - INVERT_MODE set to -1");
-                    UsbPcInterface::send("INVERT_MODE set to -1 (SIMULATE mode)\n");
                 }
                 else
                 {
                     INVERT_MODE = 1;
-                    ESP_LOGI(TAG, "TUNNEL without SIMULATE - INVERT_MODE set to 1");
-                    UsbPcInterface::send("INVERT_MODE set to 1 (NORMAL mode)\n");
                 }
 
                 // Parse the number of loops from the command
