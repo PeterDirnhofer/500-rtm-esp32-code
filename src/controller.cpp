@@ -87,19 +87,30 @@ extern "C" void dispatcherTask(void *unused)
 
             if (receive.rfind("TUNNEL", 0) == 0)
             {
+                // Check if SIMULATE is present in the command and set INVERT_MODE accordingly
+                if (receive.find("SIMULATE") != std::string::npos)
+                {
+                    INVERT_MODE = -1;
+                    ESP_LOGI(TAG, "TUNNEL with SIMULATE - INVERT_MODE set to -1");
+                    UsbPcInterface::send("INVERT_MODE set to -1 (SIMULATE mode)\n");
+                }
+                else
+                {
+                    INVERT_MODE = 1;
+                    ESP_LOGI(TAG, "TUNNEL without SIMULATE - INVERT_MODE set to 1");
+                    UsbPcInterface::send("INVERT_MODE set to 1 (NORMAL mode)\n");
+                }
+
                 // Parse the number of loops from the command
                 std::string loops_str = "1000"; // Default value
-                if (receive.length() > 7)
+
+                // Look for comma to extract loops parameter
+                size_t commaPos = receive.find(',');
+                if (commaPos != std::string::npos)
                 {
-                    std::string loopsStr = receive.substr(7);
-                    if (!loopsStr.empty() && std::all_of(loopsStr.begin(), loopsStr.end(), ::isdigit))
-                    {
-                        loops_str = loopsStr;
-                    }
-                    else
-                    {
-                        ESP_LOGE(TAG, "Invalid number of loops, using default value");
-                    }
+                    // Use string after the comma as loops_str
+                    loops_str = receive.substr(commaPos + 1);
+                    ESP_LOGI(TAG, "Using loops from comma: %s", loops_str.c_str());
                 }
                 tunnelStart(loops_str);
                 continue;
