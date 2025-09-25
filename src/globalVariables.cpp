@@ -60,3 +60,6 @@ bool sinusIsActive = false;
 bool dataTransmissionIsActive = false;
 
 uint16_t modeWorking;
+
+// Global invert mode variable: 1 = normal, -1 = inverted
+int INVERT_MODE = -1; // Default to normal mode

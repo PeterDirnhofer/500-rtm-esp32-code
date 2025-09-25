@@ -67,8 +67,8 @@ extern "C" void sinusLoop(void *params)
         {
             if (!sinusIsActive)
                 break;
-            // vspiSendDac(buffer[i], buffer.get(), handleDacX);
-            // vspiSendDac(buffer[i], buffer.get(), handleDacY);
+            vspiSendDac(buffer[i], buffer.get(), handleDacX);
+            vspiSendDac(buffer[i], buffer.get(), handleDacY);
             vspiSendDac(buffer[i], buffer.get(), handleDacZ);
 
             // Delay to achieve the desired sample rate
@@ -139,7 +139,7 @@ extern "C" void measureLoop(void *unused)
 
         // Calculate error
         int16_t errorAdc = targetTunnelAdc - adcValue;
-
+     
         // Check if current is within limit
         if (abs(errorAdc) <= toleranceTunnelAdc)
         {
@@ -192,6 +192,7 @@ extern "C" void measureLoop(void *unused)
             // Compute new DAC value and resume VSPI loop
             newDacZ = computePiDac(adcValue, targetTunnelAdc);
             currentZDac = newDacZ;
+            // ESP_LOGW(TAG, "currentZDac set to: %d", currentZDac);
 
             if (!tunnel_found)
             {
@@ -211,7 +212,6 @@ extern "C" void measureLoop(void *unused)
 // Tunnel loop task
 extern "C" void tunnelLoop(void *params)
 {
-
     uint16_t newDacZ = 0;
     resetDac();
     static const char *TAG = "tunnelLoop/main";
@@ -231,7 +231,7 @@ extern "C" void tunnelLoop(void *params)
     int counter = 0;
     ESP_LOGI(TAG, "+++ STARTED maxLoops: %d", maxLoops);
 
-    while (tunnelIsActive && counter < maxLoops)
+       while (tunnelIsActive && counter < maxLoops)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
 
@@ -240,6 +240,9 @@ extern "C" void tunnelLoop(void *params)
         ledStatusAdc(adcValue, targetTunnelAdc, toleranceTunnelAdc, currentZDac);
         // Calculate error
         int16_t errorAdc = targetTunnelAdc - adcValue;
+
+        // Log debug values
+        ESP_LOGW(TAG, "adc: %d, error: %d, tolerance: %d, target: %d ZDac: %d", adcValue, errorAdc, toleranceTunnelAdc, targetTunnelAdc, currentZDac);
 
         // Check if current is within limit
         if (abs(errorAdc) <= toleranceTunnelAdc)
@@ -267,6 +270,7 @@ extern "C" void tunnelLoop(void *params)
             // Compute new DAC value and resume VSPI loop
             newDacZ = computePiDac(adcValue, targetTunnelAdc);
             currentZDac = newDacZ;
+            // ESP_LOGW(TAG, "currentZDac set to: %d", currentZDac);
             vTaskResume(handleVspiLoop);
         }
 
@@ -295,9 +299,8 @@ extern "C" void tunnelLoop(void *params)
     }
     vTaskDelay(pdMS_TO_TICKS(1));
 
-    //resetDac();
+    // resetDac();
     esp_restart();
-
 }
 
 extern "C" void setPrefix(const char *_prefix)
@@ -323,12 +326,7 @@ extern "C" void dataTransmissionLoop(void *params)
     static const char *TAG = "dataTransmissionTask";
     esp_log_level_set(TAG, ESP_LOG_INFO);
 
-    // // Cast the parameter to a string
-    // const char *prefix = static_cast<const char *>(params);
-    // if (prefix == nullptr || strlen(prefix) == 0)
-    // {
-    //     prefix = "DATA";
-    // }
+  
     dataTransmissionIsActive = true;
 
     while (dataTransmissionIsActive)
@@ -368,6 +366,9 @@ extern "C" void resetDac()
 {
     currentXDac = 0;
     currentYDac = 0;
-    currentZDac = DAC_VALUE_MAX;
+    
+    currentZDac =  DAC_VALUE_MAX /2;
+    // ESP_LOGW("resetDac", "currentZDac set to: %d", currentZDac);
+
     vTaskResume(handleVspiLoop);
 }

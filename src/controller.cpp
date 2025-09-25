@@ -35,12 +35,22 @@ extern "C" void dispatcherTask(void *unused)
     }
     while (1)
     {
+        std::string receive; // Declare receive outside the if-block
         // Wait for data to be available in the queue with a timeout of 100 ms
         if (xQueueReceive(queueFromPc, &rcvChars, pdMS_TO_TICKS(100)) == pdPASS)
         {
-            std::string receive(rcvChars);
+            receive = std::string(rcvChars);
             // Remove extra characters (whitespace, newline, etc.)
             receive.erase(std::remove_if(receive.begin(), receive.end(), ::isspace), receive.end());
+
+            // Only proceed if we received a complete string (not empty)
+            if (receive.empty())
+            {
+
+                continue; // Skip processing and check queue again
+            }
+
+            ESP_LOGI(TAG, "Processing command: %s", receive.c_str());
 
             if (receive == "STOP")
             {
@@ -171,7 +181,12 @@ extern "C" void dispatcherTask(void *unused)
                 parameterSetter.getParametersFromFlash();
                 continue;
             }
+
+            // If none of the commands matched, send an error message
+            std::string errorMsg = "ERROR: Unknown command: " + receive + "\n";
+            UsbPcInterface::send(errorMsg.c_str());
         }
+        // If no data received (timeout), just continue the loop without error message
     }
 }
 
@@ -239,7 +254,6 @@ extern "C" void tunnelStart(const std::string &loops_str)
     ESP_LOGI(TAG, "tunnelStart initiated with %s loops", loops_str.c_str());
 
     queueToPc = xQueueCreate(1000, sizeof(DataElement));
-   
 
     if (queueToPc == NULL)
     {

@@ -127,4 +127,7 @@ extern bool dataTransmissionIsActive;
 // Declare the queue handle
 extern QueueHandle_t queueFromPc;
 
+// Global invert mode variable: 1 = normal, -1 = inverted
+extern int INVERT_MODE;
+
 #endif // GLOBALVARIABLES

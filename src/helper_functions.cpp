@@ -10,6 +10,7 @@
 #include "globalVariables.h"
 #include "UsbPcInterface.h"
 #include "project_timer.h"
+#include "globalVariables.h"
 
 // Constants
 static int integralError = 0;
@@ -77,7 +78,6 @@ void ledStatusAdc(int16_t adcValue, uint16_t targetAdc, uint16_t toleranceAdc, u
     }
 }
 
-
 // Calculate ADC value from nA
 uint16_t calculateAdcFromnA(double targetNa)
 {
@@ -111,10 +111,12 @@ uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
     static const char *TAG = "computePiDac";
     esp_log_level_set(TAG, ESP_LOG_INFO);
 
-    // TODO Handle simulation with wired  DAC_Z to ADC inverted 
-    
+    // TODO Handle simulation with wired  DAC_Z to ADC inverted
+
     // Calculate the error
     int error = targetAdc - adcValue;
+    error *= INVERT_MODE;
+
     integralError += error;
 
     // Proportional term

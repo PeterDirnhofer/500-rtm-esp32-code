@@ -78,19 +78,28 @@ void UsbPcInterface::mUartRcvLoop(void *unused)
             for (int i = 0; i < rxCount; ++i)
             {
                 char receivedChar = static_cast<char>(data[i]);
+                
+                               
                 if (receivedChar == '\n')
                 {
-                    // Null-terminate the received string
-                    receivedString += '\0';
-
-
-                    // Convert receivedString to uppercase
-                    std::transform(receivedString.begin(), receivedString.end(), receivedString.begin(), ::toupper);
-
-                    // Send the received string to the queue
-                    if (xQueueSend(queueFromPc, receivedString.c_str(), portMAX_DELAY) != pdPASS)
+                    // Only process if received string is not empty
+                    if (!receivedString.empty())
                     {
-                        ESP_LOGE(TAG, "Failed to send to queue");
+                        // Null-terminate the received string
+                        receivedString += '\0';
+
+                        // Convert receivedString to uppercase
+                        std::transform(receivedString.begin(), receivedString.end(), receivedString.begin(), ::toupper);
+
+                        // Send the received string to the queue
+                        if (xQueueSend(queueFromPc, receivedString.c_str(), portMAX_DELAY) != pdPASS)
+                        {
+                            ESP_LOGE(TAG, "Failed to send to queue");
+                        }
+                    }
+                    else
+                    {
+                        ESP_LOGI(TAG, "Ignoring empty string");
                     }
 
                     // Clear the received string for the next message
@@ -118,6 +127,14 @@ int UsbPcInterface::send(const char *fmt, ...)
     vsprintf(s, fmt, ap);
 
     const int len = strlen(s);
+    
+    // Debug: Print each character being sent with its ASCII value
+    // ESP_LOGI(TAG, "TX String: %s", s);
+    // for (int i = 0; i < len; i++)
+    // {
+    //     ESP_LOGI(TAG, "TX: '%c' (ASCII: %d)", s[i], (int)s[i]);
+    // }
+    
     int rc = uart_write_bytes(UART_NUM_1, s, len);
 
     va_end(ap);
