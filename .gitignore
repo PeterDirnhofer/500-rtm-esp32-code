@@ -1,5 +1,7 @@
 # Ignore the build directories
 /.pio
+# But track the firmware.bin file
+!/.pio/build/esp32dev/firmware.bin
 /.build
 /.vscode
 /build
@@ -46,8 +48,9 @@ Desktop.ini
 *.pyo
 __pycache__
 
-# Ignore the ESP32 flash image (if you're not tracking it)
+# Ignore the ESP32 flash image (except firmware.bin)
 *.bin
+!firmware.bin
 *.elf
 *.map
 
