@@ -172,7 +172,7 @@ void vspiDacLoop(void *unused)
             vspiSendDac(currentZDac, buffer.get(), handleDacZ);
             lastZDac = currentZDac;
 
-            ESP_LOGI(TAG, "FOO currentZDac: %d", currentZDac);
+            // ESP_LOGI(TAG, "FOO currentZDac: %d", currentZDac);
             // Set LED
             if (currentZDac == 0)
             {

@@ -10,6 +10,16 @@
 #include <string>
 #include "project_timer.h"
 
+//=============================================================================
+// Constants
+//=============================================================================
+static const int LIMIT = 1;
+static const int OFF_LIMITS = 0;
+static const int DATA_COMPLETE = 0xFFFF;
+
+//=============================================================================
+// Static Variables
+//=============================================================================
 static bool isLoopExecution = false;
 static const size_t BUFFER_SIZE = 1024; // Define BUFFER_SIZE
 static bool tunnel_found = false;
@@ -114,7 +124,7 @@ extern "C" void measureLoop(void *unused)
     esp_log_level_set(TAG, ESP_LOG_INFO);
     ESP_LOGI(TAG, "+++ STARTED");
 
-    ESP_LOGI(TAG, "Target Tunnel ADC: %d, Tolerance Tunnel ADC: %d", targetTunnelAdc, toleranceTunnelAdc);
+    // ESP_LOGI(TAG, "Target Tunnel ADC: %d, Tolerance Tunnel ADC: %d", targetTunnelAdc, toleranceTunnelAdc);
     uint16_t newDacZ = 0;
     std::string dataBuffer;
 
@@ -139,7 +149,7 @@ extern "C" void measureLoop(void *unused)
 
         // Calculate error
         int16_t errorAdc = targetTunnelAdc - adcValue;
-     
+
         // Check if current is within limit
         if (abs(errorAdc) <= toleranceTunnelAdc)
         {
@@ -150,11 +160,11 @@ extern "C" void measureLoop(void *unused)
                 setPrefix("DATA");
             }
 
-            if (rtmGrid.getCurrentX() == 0)
-            {
+            // if (rtmGrid.getCurrentX() == 0)
+            // {
 
-                ESP_LOGI(TAG, "Current Y position: %d", rtmGrid.getCurrentY());
-            }
+            //     ESP_LOGI(TAG, "Current Y position: %d", rtmGrid.getCurrentY());
+            // }
 
             // Create data element and send to queue
             DataElement dataElement(rtmGrid.getCurrentX(), rtmGrid.getCurrentY(), currentZDac);
@@ -171,7 +181,7 @@ extern "C" void measureLoop(void *unused)
             else
             {
                 // Signal completion and restart
-                DataElement endSignal(0, 0, 0); // Use a special value to signal completion
+                DataElement endSignal(DATA_COMPLETE, 0, 0); // Use a special value to signal completion
                 if (xQueueSend(queueToPc, &endSignal, portMAX_DELAY) != pdPASS)
                 {
                     ESP_LOGE("Queue", "Failed to send to queue");
@@ -226,12 +236,12 @@ extern "C" void tunnelLoop(void *params)
         return;
     }
     int maxLoops = *loopsPtr;
-    ESP_LOGI(TAG, "Max loops: %d", maxLoops);
+    // ESP_LOGI(TAG, "Max loops: %d", maxLoops);
 
     int counter = 0;
-    ESP_LOGI(TAG, "+++ STARTED maxLoops: %d", maxLoops);
+    // ESP_LOGI(TAG, "+++ STARTED maxLoops: %d", maxLoops);
 
-       while (tunnelIsActive && counter < maxLoops)
+    while (tunnelIsActive && counter < maxLoops)
     {
         vTaskSuspend(NULL); // Sleep, will be restarted by the timer
 
@@ -242,7 +252,7 @@ extern "C" void tunnelLoop(void *params)
         int16_t errorAdc = targetTunnelAdc - adcValue;
 
         // Log debug values
-        ESP_LOGW(TAG, "adc: %d, error: %d, tolerance: %d, target: %d ZDac: %d", adcValue, errorAdc, toleranceTunnelAdc, targetTunnelAdc, currentZDac);
+        // ESP_LOGW(TAG, "adc: %d, error: %d, tolerance: %d, target: %d ZDac: %d", adcValue, errorAdc, toleranceTunnelAdc, targetTunnelAdc, currentZDac);
 
         // Check if current is within limit
         if (abs(errorAdc) <= toleranceTunnelAdc)
@@ -250,7 +260,7 @@ extern "C" void tunnelLoop(void *params)
 
             gpio_set_level(IO_17_DAC_NULL, 0);
             // Create data element and send to queue
-            DataElement dataElement(1, adcValue, currentZDac);
+            DataElement dataElement(LIMIT, adcValue, currentZDac);
 
             if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS)
             {
@@ -261,7 +271,7 @@ extern "C" void tunnelLoop(void *params)
         {
             gpio_set_level(IO_17_DAC_NULL, 1);
             // Create data element and send to queue
-            DataElement dataElement(0, adcValue, currentZDac);
+            DataElement dataElement(OFF_LIMITS, adcValue, currentZDac);
             if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS)
             {
                 ESP_LOGE("Queue", "Failed to send to queue");
@@ -279,16 +289,16 @@ extern "C" void tunnelLoop(void *params)
         // Check if the maximum number of loops has been reached
         if (counter >= maxLoops)
         {
-            ESP_LOGI(TAG, "Maximum loops reached, stopping loop");
+            // ESP_LOGI(TAG, "Maximum loops reached, stopping loop");
             tunnelIsActive = false;
         }
 
         // Log the counter value
-        ESP_LOGI(TAG, "Counter: %d", counter);
+        // ESP_LOGI(TAG, "Counter: %d", counter);
     }
 
     // Send -1 to indicate tunnel complete complete
-    DataElement dataElement(-1, 0, 0);
+    DataElement dataElement(DATA_COMPLETE, 0, 0);
     if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS)
     {
         ESP_LOGE("Queue", "Failed to send to queue");
@@ -326,7 +336,6 @@ extern "C" void dataTransmissionLoop(void *params)
     static const char *TAG = "dataTransmissionTask";
     esp_log_level_set(TAG, ESP_LOG_INFO);
 
-  
     dataTransmissionIsActive = true;
 
     while (dataTransmissionIsActive)
@@ -339,9 +348,9 @@ extern "C" void dataTransmissionLoop(void *params)
             uint16_t Y = element.getDataY();
             uint16_t Z = element.getDataZ();
 
-            if (X == 0 && Y == 0 && Z == 0)
+            if (X == DATA_COMPLETE)
             {
-                UsbPcInterface::send("DATA,DONE\n");
+                UsbPcInterface::send("%s,DONE\n", prefix);
                 dataTransmissionIsActive = false;
             }
             else
@@ -366,8 +375,8 @@ extern "C" void resetDac()
 {
     currentXDac = 0;
     currentYDac = 0;
-    
-    currentZDac =  DAC_VALUE_MAX /2;
+
+    currentZDac = DAC_VALUE_MAX / 2;
     // ESP_LOGW("resetDac", "currentZDac set to: %d", currentZDac);
 
     vTaskResume(handleVspiLoop);

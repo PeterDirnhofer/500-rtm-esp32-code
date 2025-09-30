@@ -79,17 +79,17 @@ extern "C" void dispatcherTask(void *unused)
                 esp_restart();
             }
 
-            if (receive == "MEASURE")
+            if (receive.rfind("MEASURE", 0) == 0)
             {
 
                 // Check if SIMULATE is present in the command and set INVERT_MODE accordingly
                 if (receive.find("SIMULATE") != std::string::npos)
                 {
-                    INVERT_MODE = 1;
+                    INVERT_MODE = -1;
                 }
                 else
                 {
-                    INVERT_MODE = -1;
+                    INVERT_MODE = 1;
                 }
 
                 measureStart();
@@ -269,7 +269,7 @@ extern "C" void tunnelStart(const std::string &loops_str)
     tunnelIsActive = true;
     static const char *TAG = "tunnelStart";
     esp_log_level_set(TAG, ESP_LOG_INFO);
-    ESP_LOGI(TAG, "tunnelStart initiated with %s loops", loops_str.c_str());
+    // ESP_LOGI(TAG, "tunnelStart initiated with %s loops", loops_str.c_str());
 
     queueToPc = xQueueCreate(1000, sizeof(DataElement));
 

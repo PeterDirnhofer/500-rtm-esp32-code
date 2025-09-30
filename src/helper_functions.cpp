@@ -10,15 +10,23 @@
 #include "globalVariables.h"
 #include "UsbPcInterface.h"
 #include "project_timer.h"
-#include "globalVariables.h"
 
-// Constants
+//=============================================================================
+// Constants and Static Variables
+//=============================================================================
 static int integralError = 0;
 static const int32_t MAX_PROPORTIONAL = DAC_VALUE_MAX / 10;
 static const int32_t MAX_INTEGRAL = DAC_VALUE_MAX / 10;
 static const char *TAG = "helper_functions.cpp";
 
-// Function to set up error message loop
+//=============================================================================
+// Error Handling Functions
+//=============================================================================
+
+/**
+ * @brief Set up error message loop and display error
+ * @param errormessage Error message to display
+ */
 extern "C" void setupError(const char *errormessage)
 {
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
@@ -27,7 +35,9 @@ extern "C" void setupError(const char *errormessage)
     errorBlink();
 }
 
-// Error blink function
+/**
+ * @brief Infinite error blink loop - blinks blue LED
+ */
 extern "C" void errorBlink()
 {
     while (true)
@@ -39,58 +49,85 @@ extern "C" void errorBlink()
     }
 }
 
-// LED status function based on ADC value
+//=============================================================================
+// LED Status Functions
+//=============================================================================
+
+/**
+ * @brief Control LED status based on ADC value relative to target
+ * @param adcValue Current ADC reading
+ * @param targetAdc Target ADC value
+ * @param toleranceAdc Tolerance range for target
+ * @param dac Current DAC value (unused but kept for interface compatibility)
+ */
 void ledStatusAdc(int16_t adcValue, uint16_t targetAdc, uint16_t toleranceAdc, uint16_t dac)
 {
-    static std::string last_limit = "INIT";
+    static std::string lastLimit = "INIT";
     static const char *TAG = "ledStatus";
     esp_log_level_set(TAG, ESP_LOG_INFO);
 
+    // Within tolerance - Yellow LED
     if (abs(targetAdc - adcValue) <= toleranceAdc)
     {
-        if (last_limit != "LIMIT")
+        if (lastLimit != "LIMIT")
         {
-            gpio_set_level(IO_25_RED, 0);    // red LED
-            gpio_set_level(IO_27_YELLOW, 1); // yellow LED
-            gpio_set_level(IO_02_GREEN, 0);  // green LED
-            last_limit = "LIMIT";
+            gpio_set_level(IO_25_RED, 0);    // Red LED off
+            gpio_set_level(IO_27_YELLOW, 1); // Yellow LED on
+            gpio_set_level(IO_02_GREEN, 0);  // Green LED off
+            lastLimit = "LIMIT";
         }
     }
+    // Above target - Red LED
     else if (adcValue > targetAdc)
     {
-        if (last_limit != "HI")
+        if (lastLimit != "HI")
         {
-            gpio_set_level(IO_25_RED, 1);    // red LED
-            gpio_set_level(IO_27_YELLOW, 0); // yellow LED
-            gpio_set_level(IO_02_GREEN, 0);  // green LED
-            last_limit = "HI";
+            gpio_set_level(IO_25_RED, 1);    // Red LED on
+            gpio_set_level(IO_27_YELLOW, 0); // Yellow LED off
+            gpio_set_level(IO_02_GREEN, 0);  // Green LED off
+            lastLimit = "HI";
         }
     }
+    // Below target - Green LED
     else
     {
-        if (last_limit != "LO")
+        if (lastLimit != "LO")
         {
-            gpio_set_level(IO_25_RED, 0);    // red LED
-            gpio_set_level(IO_27_YELLOW, 0); // yellow LED
-            gpio_set_level(IO_02_GREEN, 1);  // green LED
-            last_limit = "LO";
+            gpio_set_level(IO_25_RED, 0);    // Red LED off
+            gpio_set_level(IO_27_YELLOW, 0); // Yellow LED off
+            gpio_set_level(IO_02_GREEN, 1);  // Green LED on
+            lastLimit = "LO";
         }
     }
 }
 
-// Calculate ADC value from nA
+//=============================================================================
+// ADC/Current Calculation Functions
+//=============================================================================
+
+/**
+ * @brief Calculate ADC value from target current in nanoamperes
+ * @param targetNa Target current in nA
+ * @return Calculated ADC value (16-bit)
+ */
 uint16_t calculateAdcFromnA(double targetNa)
 {
-
     static const char *TAG = "calculateAdcFromnA";
     esp_log_level_set(TAG, ESP_LOG_INFO);
+
     // Calculate ADC value based on target current and voltage divider
-    double adcValue = (targetNa / ADC_VOLTAGE_DIVIDER) * (ADC_VALUE_MAX / ADC_VOLTAGE_MAX);
-    ESP_LOGI(TAG, "Target nA: %f, Calculated ADC Value: %f", targetNa, adcValue);
-    return static_cast<uint16_t>(std::round(adcValue));
+    double adcValueD = (targetNa / ADC_VOLTAGE_DIVIDER) * (ADC_VALUE_MAX / ADC_VOLTAGE_MAX);
+    uint16_t adcValue = static_cast<uint16_t>(std::round(adcValueD));
+
+    // ESP_LOGI(TAG, "Target nA: %f, Calculated ADC Value: %d", targetNa, adcValue);
+    return adcValue;
 }
 
-// Calculate tunnel current from ADC value
+/**
+ * @brief Calculate tunnel current from ADC value
+ * @param adcValue ADC reading value
+ * @return Current in nanoamperes
+ */
 double calculateTunnelNa(int16_t adcValue)
 {
     // Calculate current based on ADC value and voltage divider
@@ -99,19 +136,30 @@ double calculateTunnelNa(int16_t adcValue)
     return currentTunnelnA;
 }
 
-// Compute DAC value (Proportional/Integral)
-// error = targetAdc - adcValue
-// proportional = kP * error
-// integralError += error
-// integral = kI * integralError
-// dacValue = currentZDac - proportional - integral
-// ----------------------------
+//=============================================================================
+// PID Control Functions
+//=============================================================================
+
+/**
+ * @brief Compute DAC value using Proportional-Integral control
+ *
+ * Algorithm:
+ * - error = targetAdc - adcValue
+ * - proportional = kP * error
+ * - integralError += error
+ * - integral = kI * integralError
+ * - dacValue = currentZDac - proportional - integral
+ *
+ * @param adcValue Current ADC reading
+ * @param targetAdc Target ADC value
+ * @return Computed DAC value (16-bit)
+ */
 uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
 {
     static const char *TAG = "computePiDac";
     esp_log_level_set(TAG, ESP_LOG_INFO);
 
-    // TODO Handle simulation with wired  DAC_Z to ADC inverted
+    // TODO: Handle simulation with wired DAC_Z to ADC inverted
 
     // Calculate the error
     int error = targetAdc - adcValue;
@@ -119,10 +167,8 @@ uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
 
     integralError += error;
 
-    // Proportional term
-    int32_t proportional = kP * error; // Use int32_t to handle potential overflow and negative values
-
-    // Clamp the proportional term to a smaller range
+    // Proportional term with clamping
+    int32_t proportional = kP * error;
     if (proportional < -MAX_PROPORTIONAL)
     {
         proportional = -MAX_PROPORTIONAL;
@@ -132,10 +178,8 @@ uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
         proportional = MAX_PROPORTIONAL;
     }
 
-    // Integral term
-    int32_t integral = kI * integralError; // Use int32_t to handle potential overflow
-
-    // Clamp the integral term to a smaller range
+    // Integral term with clamping
+    int32_t integral = kI * integralError;
     if (integral < -MAX_INTEGRAL)
     {
         integral = -MAX_INTEGRAL;
@@ -146,12 +190,13 @@ uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
     }
 
     // Compute the DAC value
-    int32_t dacValue = currentZDac - proportional - integral; // Accumulate the DAC value
-    // Log the values
+    int32_t dacValue = currentZDac - proportional - integral;
+
+    // Log the calculation details
     ESP_LOGD(TAG, "ADC Value: %d, Target ADC: %d, Proportional: %" PRId32 ", Integral: %" PRId32 ", DAC Value: %" PRId32,
              adcValue, targetAdc, proportional, integral, dacValue);
 
-    // Clamp the DAC value to the valid range
+    // Clamp the DAC value to valid range
     if (dacValue < 0)
     {
         dacValue = 0;
