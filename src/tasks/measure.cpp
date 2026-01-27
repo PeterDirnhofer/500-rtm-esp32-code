@@ -1,11 +1,10 @@
 #include "UsbPcInterface.h"
 #include "helper_functions.h"
-#include "loops.h"
-#include "loops_common.h"
 #include "project_timer.h"
+#include "tasks.h"
+#include "tasks_common.h"
 #include <esp_log.h>
 #include <string>
-
 
 extern "C" void measureLoop(void *unused) {
   static const char *TAG = "measureLoop";

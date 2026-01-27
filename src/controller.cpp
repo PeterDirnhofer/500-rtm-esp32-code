@@ -16,8 +16,8 @@
 #include "controller.h"
 #include "globalVariables.h"
 #include "helper_functions.h"
-#include "loops.h"
 #include "project_timer.h"
+#include "tasks.h"
 
 static const char *TAG = "controller";
 

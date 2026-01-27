@@ -1,9 +1,8 @@
 #include "UsbPcInterface.h"
-#include "loops.h"
-#include "loops_common.h"
+#include "tasks.h"
+#include "tasks_common.h"
 #include <esp_log.h>
 #include <sstream>
-
 
 extern "C" void dataTransmissionLoop(void *params) {
   static const char *TAG = "dataTransmissionTask";

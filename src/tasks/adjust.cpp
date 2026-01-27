@@ -1,9 +1,8 @@
 #include "UsbPcInterface.h"
 #include "helper_functions.h"
-#include "loops.h"
-#include "loops_common.h"
+#include "tasks.h"
+#include "tasks_common.h"
 #include <esp_log.h>
-
 
 extern "C" void adjustLoop(void *unused) {
   static const char *TAG = "adjustLoop";

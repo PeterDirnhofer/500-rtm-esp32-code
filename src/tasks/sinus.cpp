@@ -1,19 +1,17 @@
 #include "UsbPcInterface.h"
 #include "globalVariables.h"
 #include "helper_functions.h"
-#include "loops.h"
-#include "loops_common.h"
+#include "tasks.h"
+#include "tasks_common.h"
 #include <cmath>
 #include <esp_log.h>
 #include <memory>
-
 
 extern "C" void sinusLoop(void *params) {
   static const char *TAG = "testLoop";
   esp_log_level_set(TAG, ESP_LOG_DEBUG);
   ESP_LOGI(TAG, "+++ START TEST LOOP");
 
-  
   std::unique_ptr<uint16_t[]> buffer(new uint16_t[BUFFER_SIZE]);
 
   for (size_t i = 0; i < BUFFER_SIZE; ++i) {

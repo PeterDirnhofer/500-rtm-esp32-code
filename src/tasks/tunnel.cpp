@@ -1,9 +1,8 @@
 #include "UsbPcInterface.h"
 #include "helper_functions.h"
-#include "loops.h"
-#include "loops_common.h"
+#include "tasks.h"
+#include "tasks_common.h"
 #include <esp_log.h>
-
 
 extern "C" void tunnelLoop(void *params) {
   uint16_t newDacZ = 0;

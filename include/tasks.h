@@ -1,5 +1,5 @@
-#ifndef LOOPS_H
-#define LOOPS_H
+#ifndef TASKS_H
+#define TASKS_H
 
 #include "UsbPcInterface.h"
 #include "adc_i2c.h"
@@ -19,4 +19,4 @@ extern "C" void tunnelLoop(void *params);
 extern "C" void setPrefix(const char *prefix);
 extern "C" void queueToPcClear();
 extern "C" void resetDac();
-#endif // LOOPS_H
+#endif // TASKS_H

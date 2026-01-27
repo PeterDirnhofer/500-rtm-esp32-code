@@ -1,7 +1,7 @@
 #include "UsbPcInterface.h"
 #include "globalVariables.h"
-#include "loops.h"
-#include "loops_common.h"
+#include "tasks.h"
+#include "tasks_common.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 #include <freertos/task.h>
