@@ -1,304 +1,266 @@
 // controller.cpp
 
+#include <algorithm>
+#include <sstream>
 #include <string>
 #include <vector>
-#include <sstream>
-#include <algorithm>
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/queue.h>
-#include <esp_log.h>
 #include <esp_err.h>
+#include <esp_log.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+#include <freertos/task.h>
 
-#include "controller.h"
-#include "project_timer.h"
-#include "globalVariables.h"
-#include "UsbPcInterface.h"
-#include "loops.h"
-#include "helper_functions.h"
 #include "ParameterSetter.h"
+#include "UsbPcInterface.h"
+#include "controller.h"
+#include "globalVariables.h"
+#include "helper_functions.h"
+#include "loops.h"
+#include "project_timer.h"
 
 static const char *TAG = "controller";
 
-extern "C" void dispatcherTask(void *unused)
-{
-    static const char *TAG = "dispatcherTask";
-    esp_log_level_set(TAG, ESP_LOG_INFO);
-    ESP_LOGI(TAG, "STARTED");
-    char rcvChars[255];
+extern "C" void dispatcherTask(void *unused) {
+  static const char *TAG = "dispatcherTask";
+  esp_log_level_set(TAG, ESP_LOG_INFO);
+  ESP_LOGI(TAG, "STARTED");
+  char rcvChars[255];
 
-    if (queueFromPc == NULL)
-    {
-        ESP_LOGE(TAG, "queueFromPc not initialized");
-        vTaskDelete(NULL); // Delete the task if queue is not initialized
-    }
-    while (1)
-    {
-        std::string receive; // Declare receive outside the if-block
-        // Wait for data to be available in the queue with a timeout of 100 ms
-        if (xQueueReceive(queueFromPc, &rcvChars, pdMS_TO_TICKS(100)) == pdPASS)
-        {
-            receive = std::string(rcvChars);
-            // Remove extra characters (whitespace, newline, etc.)
-            receive.erase(std::remove_if(receive.begin(), receive.end(), ::isspace), receive.end());
+  if (queueFromPc == NULL) {
+    ESP_LOGE(TAG, "queueFromPc not initialized");
+    vTaskDelete(NULL); // Delete the task if queue is not initialized
+  }
+  while (1) {
+    std::string receive; // Declare receive outside the if-block
+    // Wait for data to be available in the queue with a timeout of 100 ms
+    if (xQueueReceive(queueFromPc, &rcvChars, pdMS_TO_TICKS(100)) == pdPASS) {
+      receive = std::string(rcvChars);
+      // Remove extra characters (whitespace, newline, etc.)
+      receive.erase(std::remove_if(receive.begin(), receive.end(), ::isspace),
+                    receive.end());
 
-            // Only proceed if we received a complete string (not empty)
-            if (receive.empty())
-            {
+      // Only proceed if we received a complete string (not empty)
+      if (receive.empty()) {
 
-                continue; // Skip processing and check queue again
-            }
+        continue; // Skip processing and check queue again
+      }
 
-            ESP_LOGI(TAG, "Processing command: %s", receive.c_str());
+      ESP_LOGI(TAG, "Processing command: %s", receive.c_str());
 
-            if (receive == "STOP")
-            {
-                ESP_LOGI(TAG, "System restart initiated");
+      if (receive == "STOP") {
+        ESP_LOGI(TAG, "System restart initiated");
 
-                // Stop all loops but not dataTransmissionLoop
-                measureIsActive = false;
-                tunnelIsActive = false;
-                sinusIsActive = true;
-                adjustIsActive = true;
-
-                // Send rest of data before stop
-                if (queueToPc != NULL)
-                {
-                    while (uxQueueMessagesWaiting(queueToPc) > 0)
-                    {
-                        vTaskDelay(pdMS_TO_TICKS(10));
-                    }
-                }
-
-                UsbPcInterface::send("STOP\n");
-                ESP_LOGI(TAG, "STOP");
-                vTaskDelay(pdMS_TO_TICKS(1));
-
-                // stop esp
-                esp_restart();
-            }
-
-            if (receive.rfind("MEASURE", 0) == 0)
-            {
-
-                // Check if SIMULATE is present in the command and set INVERT_MODE accordingly
-                if (receive.find("SIMULATE") != std::string::npos)
-                {
-                    INVERT_MODE = -1;
-                }
-                else
-                {
-                    INVERT_MODE = 1;
-                }
-
-                measureStart();
-                continue;
-            }
-
-            if (receive.rfind("TUNNEL", 0) == 0)
-            {
-                // Check if SIMULATE is present in the command and set INVERT_MODE accordingly
-                if (receive.find("SIMULATE") != std::string::npos)
-                {
-                    INVERT_MODE = -1;
-                }
-                else
-                {
-                    INVERT_MODE = 1;
-                }
-
-                // Parse the number of loops from the command
-                std::string loops_str = "1000"; // Default value
-
-                // Look for comma to extract loops parameter
-                size_t commaPos = receive.find(',');
-                if (commaPos != std::string::npos)
-                {
-                    // Use string after the comma as loops_str
-                    loops_str = receive.substr(commaPos + 1);
-                    ESP_LOGI(TAG, "Using loops from comma: %s", loops_str.c_str());
-                }
-                tunnelStart(loops_str);
-                continue;
-            }
-
-            // Adjust and TIP
-            if (receive == "ADJUST")
-            {
-                adjustStart();
-                continue;
-            }
-
-            // Start testLoop with parameter X, Y, Z
-            if (receive == "SINUS")
-            {
-                // Create the testLoop task
-                if (handleSinusLoop != NULL)
-                {
-                    vTaskDelete(handleSinusLoop);
-                    handleSinusLoop = NULL;
-                }
-                sinusStart();
-                continue;
-            }
-
-            if (receive.rfind("TIP,", 0) == 0)
-            {
-                if (adjustIsActive)
-                {
-                    esp_err_t updateSuccess = UsbPcInterface::mUpdateTip(receive);
-                    if (updateSuccess != ESP_OK)
-                    {
-                        ESP_LOGW(TAG, "ERROR: Failed to update TIP");
-                        UsbPcInterface::send("ERROR: Failed to update TIP");
-                    }
-
-                    continue;
-                }
-                else
-                {
-                    ESP_LOGW(TAG, "ERROR: Received TIP command while adjust is not active");
-                    UsbPcInterface::send("Received TIP command while adjust is not active");
-                    continue;
-                }
-            }
-
-            // Parameter
-            if (receive == "PARAMETER,?")
-            {
-                ParameterSetting parameterSetter;
-                parameterSetter.getParametersFromFlash();
-                std::string storedParameters = parameterSetter.getParameters();
-                std::istringstream stream(storedParameters);
-                std::string line;
-                while (std::getline(stream, line))
-                {
-                    line = "PARAMETER," + line;
-                    line += "\n";
-                    UsbPcInterface::send(line.c_str());
-                    vTaskDelay(pdMS_TO_TICKS(10));
-                }
-                continue;
-            }
-
-            if (receive == "PARAMETER,DEFAULT")
-            {
-                ESP_LOGI(TAG, "parameter,default ++++");
-                ParameterSetting parameterSetter;
-                parameterSetter.putDefaultParametersToFlash();
-                // putDefaultParametersToFlash PARAMETER,0.100000,0.010000,0.001000,1.000000,0.300000,0,0,1,0,199,199,100
-                parameterSetter.getParametersFromFlash();
-                continue;
-            }
-
-            if (receive.rfind("PARAMETER,", 0) == 0)
-            {
-                ParameterSetting parameterSetter;
-                parameterSetter.putParametersToFlashFromString(receive);
-                parameterSetter.getParametersFromFlash();
-                continue;
-            }
-
-            // If none of the commands matched, send an error message
-            std::string errorMsg = "ERROR: Unknown command: " + receive + "\n";
-            UsbPcInterface::send(errorMsg.c_str());
-        }
-        // If no data received (timeout), just continue the loop without error message
-    }
-}
-
-extern "C" void dispatcherTaskStart()
-{
-    // // Initialize the queue if it hasn't been initialized
-    // // TODO
-    esp_log_level_set(TAG, ESP_LOG_INFO);
-
-    // Create the dispatcher task
-    xTaskCreatePinnedToCore(dispatcherTask, "dispatcherTask", 10000, NULL, 4, NULL, 0);
-}
-
-extern "C" void adjustStart()
-{
-    if (!adjustIsActive)
-    {
-        adjustIsActive = true;
-        xTaskCreatePinnedToCore(adjustLoop, "adjustLoop", 10000, NULL, 2, &handleAdjustLoop, 1);
-    }
-}
-
-extern "C" void sinusStart()
-{
-    static const char *TAG = "sinusStart";
-    esp_log_level_set(TAG, ESP_LOG_INFO);
-    ESP_LOGI(TAG, "sinusStart initiated");
-    if (!sinusIsActive)
-    {
+        // Stop all loops but not dataTransmissionLoop
+        measureIsActive = false;
+        tunnelIsActive = false;
         sinusIsActive = true;
-        xTaskCreatePinnedToCore(sinusLoop, "sinusLoop", 10000, NULL, 2, &handleSinusLoop, 1);
+        adjustIsActive = true;
+
+        // Send rest of data before stop
+        if (queueToPc != NULL) {
+          while (uxQueueMessagesWaiting(queueToPc) > 0) {
+            vTaskDelay(pdMS_TO_TICKS(10));
+          }
+        }
+
+        UsbPcInterface::send("STOP\n");
+        ESP_LOGI(TAG, "STOP");
+        vTaskDelay(pdMS_TO_TICKS(1));
+
+        // stop esp
+        esp_restart();
+      }
+
+      if (receive.rfind("MEASURE", 0) == 0) {
+
+        // Set simulation mode when command contains SIMULATE
+        SIMULATION_MODE = (receive.find("SIMULATE") != std::string::npos);
+
+        measureStart();
+        continue;
+      }
+
+      if (receive.rfind("TUNNEL", 0) == 0) {
+        // Set simulation mode when command contains SIMULATE
+        SIMULATION_MODE = (receive.find("SIMULATE") != std::string::npos);
+
+        // Parse the number of loops from the command
+        std::string loops_str = "1000"; // Default value
+
+        // Look for comma to extract loops parameter
+        size_t commaPos = receive.find(',');
+        if (commaPos != std::string::npos) {
+          // Use string after the comma as loops_str
+          loops_str = receive.substr(commaPos + 1);
+          ESP_LOGI(TAG, "Using loops from comma: %s", loops_str.c_str());
+        }
+        tunnelStart(loops_str);
+        continue;
+      }
+
+      // Adjust and TIP
+      if (receive == "ADJUST") {
+        adjustStart();
+        continue;
+      }
+
+      // Start testLoop with parameter X, Y, Z
+      if (receive == "SINUS") {
+        // Create the testLoop task
+        if (handleSinusLoop != NULL) {
+          vTaskDelete(handleSinusLoop);
+          handleSinusLoop = NULL;
+        }
+        sinusStart();
+        continue;
+      }
+
+      if (receive.rfind("TIP,", 0) == 0) {
+        if (adjustIsActive) {
+          esp_err_t updateSuccess = UsbPcInterface::mUpdateTip(receive);
+          if (updateSuccess != ESP_OK) {
+            ESP_LOGW(TAG, "ERROR: Failed to update TIP");
+            UsbPcInterface::send("ERROR: Failed to update TIP");
+          }
+
+          continue;
+        } else {
+          ESP_LOGW(TAG,
+                   "ERROR: Received TIP command while adjust is not active");
+          UsbPcInterface::send(
+              "Received TIP command while adjust is not active");
+          continue;
+        }
+      }
+
+      // Parameter
+      if (receive == "PARAMETER,?") {
+        ParameterSetting parameterSetter;
+        parameterSetter.getParametersFromFlash();
+        std::string storedParameters = parameterSetter.getParameters();
+        std::istringstream stream(storedParameters);
+        std::string line;
+        while (std::getline(stream, line)) {
+          line = "PARAMETER," + line;
+          line += "\n";
+          UsbPcInterface::send(line.c_str());
+          vTaskDelay(pdMS_TO_TICKS(10));
+        }
+        continue;
+      }
+
+      if (receive == "PARAMETER,DEFAULT") {
+        ESP_LOGI(TAG, "parameter,default ++++");
+        ParameterSetting parameterSetter;
+        parameterSetter.putDefaultParametersToFlash();
+        // putDefaultParametersToFlash
+        // PARAMETER,0.100000,0.010000,0.001000,1.000000,0.300000,0,0,1,0,199,199,100
+        parameterSetter.getParametersFromFlash();
+        continue;
+      }
+
+      if (receive.rfind("PARAMETER,", 0) == 0) {
+        ParameterSetting parameterSetter;
+        parameterSetter.putParametersToFlashFromString(receive);
+        parameterSetter.getParametersFromFlash();
+        continue;
+      }
+
+      // If none of the commands matched, send an error message
+      std::string errorMsg = "ERROR: Unknown command: " + receive + "\n";
+      UsbPcInterface::send(errorMsg.c_str());
     }
+    // If no data received (timeout), just continue the loop without error
+    // message
+  }
 }
 
-extern "C" void measureStart()
-{
-    measureIsActive = true;
-    static const char *TAG = "measureStart";
-    esp_log_level_set(TAG, ESP_LOG_INFO);
+extern "C" void dispatcherTaskStart() {
+  // // Initialize the queue if it hasn't been initialized
+  // // TODO
+  esp_log_level_set(TAG, ESP_LOG_INFO);
 
-    queueToPc = xQueueCreate(1000, sizeof(DataElement));
-    if (queueToPc == NULL)
-    {
-        // Handle error
-        ESP_LOGE("Queue", "Failed to create queue");
-        vTaskDelay(pdMS_TO_TICKS(100));
-        esp_restart();
-    }
-
-    if (handleDataTransmissionLoop == NULL)
-    {
-        xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000, NULL, 1, &handleDataTransmissionLoop, 0);
-    }
-
-    setPrefix("DATA");
-    xTaskCreatePinnedToCore(measureLoop, "measurementLoop", 10000, NULL, 2, &handleMeasureLoop, 1);
-    timer_initialize();
+  // Create the dispatcher task
+  xTaskCreatePinnedToCore(dispatcherTask, "dispatcherTask", 10000, NULL, 4,
+                          NULL, 0);
 }
 
-extern "C" void tunnelStart(const std::string &loops_str)
-{
-    tunnelIsActive = true;
-    static const char *TAG = "tunnelStart";
-    esp_log_level_set(TAG, ESP_LOG_INFO);
-    // ESP_LOGI(TAG, "tunnelStart initiated with %s loops", loops_str.c_str());
+extern "C" void adjustStart() {
+  if (!adjustIsActive) {
+    adjustIsActive = true;
+    xTaskCreatePinnedToCore(adjustLoop, "adjustLoop", 10000, NULL, 2,
+                            &handleAdjustLoop, 1);
+  }
+}
 
-    queueToPc = xQueueCreate(1000, sizeof(DataElement));
+extern "C" void sinusStart() {
+  static const char *TAG = "sinusStart";
+  esp_log_level_set(TAG, ESP_LOG_INFO);
+  ESP_LOGI(TAG, "sinusStart initiated");
+  if (!sinusIsActive) {
+    sinusIsActive = true;
+    xTaskCreatePinnedToCore(sinusLoop, "sinusLoop", 10000, NULL, 2,
+                            &handleSinusLoop, 1);
+  }
+}
 
-    if (queueToPc == NULL)
-    {
-        // Handle error
-        ESP_LOGE("Queue", "Failed to create queue");
-        vTaskDelay(pdMS_TO_TICKS(100));
-        esp_restart();
-    }
-    if (handleDataTransmissionLoop == NULL)
-    {
-        setPrefix("TUNNEL");
-        xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000, NULL, 1, &handleDataTransmissionLoop, 0);
-    }
+extern "C" void measureStart() {
+  measureIsActive = true;
+  static const char *TAG = "measureStart";
+  esp_log_level_set(TAG, ESP_LOG_INFO);
 
-    // Convert the string to an integer
-    int maxLoops = 1000; // Default value
-    if (!loops_str.empty() && std::all_of(loops_str.begin(), loops_str.end(), ::isdigit))
-    {
-        maxLoops = std::stoi(loops_str);
-    }
-    else
-    {
-        ESP_LOGE(TAG, "Invalid number of loops, using default value");
-    }
+  queueToPc = xQueueCreate(1000, sizeof(DataElement));
+  if (queueToPc == NULL) {
+    // Handle error
+    ESP_LOGE("Queue", "Failed to create queue");
+    vTaskDelay(pdMS_TO_TICKS(100));
+    esp_restart();
+  }
 
-    // Pass the integer value as a pointer
-    int *maxLoopsPtr = new int(maxLoops);
-    xTaskCreatePinnedToCore(tunnelLoop, "tunnelLoop", 10000, maxLoopsPtr, 2, &handleTunnelLoop, 1);
-    timer_initialize();
+  if (handleDataTransmissionLoop == NULL) {
+    xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000,
+                            NULL, 1, &handleDataTransmissionLoop, 0);
+  }
+
+  setPrefix("DATA");
+  xTaskCreatePinnedToCore(measureLoop, "measurementLoop", 10000, NULL, 2,
+                          &handleMeasureLoop, 1);
+  timer_initialize();
+}
+
+extern "C" void tunnelStart(const std::string &loops_str) {
+  tunnelIsActive = true;
+  static const char *TAG = "tunnelStart";
+  esp_log_level_set(TAG, ESP_LOG_INFO);
+  // ESP_LOGI(TAG, "tunnelStart initiated with %s loops", loops_str.c_str());
+
+  queueToPc = xQueueCreate(1000, sizeof(DataElement));
+
+  if (queueToPc == NULL) {
+    // Handle error
+    ESP_LOGE("Queue", "Failed to create queue");
+    vTaskDelay(pdMS_TO_TICKS(100));
+    esp_restart();
+  }
+  if (handleDataTransmissionLoop == NULL) {
+    setPrefix("TUNNEL");
+    xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000,
+                            NULL, 1, &handleDataTransmissionLoop, 0);
+  }
+
+  // Convert the string to an integer
+  int maxLoops = 1000; // Default value
+  if (!loops_str.empty() &&
+      std::all_of(loops_str.begin(), loops_str.end(), ::isdigit)) {
+    maxLoops = std::stoi(loops_str);
+  } else {
+    ESP_LOGE(TAG, "Invalid number of loops, using default value");
+  }
+
+  // Pass the integer value as a pointer
+  int *maxLoopsPtr = new int(maxLoops);
+  xTaskCreatePinnedToCore(tunnelLoop, "tunnelLoop", 10000, maxLoopsPtr, 2,
+                          &handleTunnelLoop, 1);
+  timer_initialize();
 }

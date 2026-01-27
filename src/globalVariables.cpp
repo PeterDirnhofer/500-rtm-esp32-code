@@ -1,7 +1,7 @@
+#include "globalVariables.h"
+#include <driver/spi_master.h>
 #include <queue>
 #include <string>
-#include <driver/spi_master.h>
-#include "globalVariables.h"
 
 int TUNNEL_REQUEST = 0;
 esp_err_t retVspi;
@@ -61,5 +61,5 @@ bool dataTransmissionIsActive = false;
 
 uint16_t modeWorking;
 
-// Global invert mode variable: 1 = normal, -1 = inverted
-int INVERT_MODE = -1; // Default to normal mode
+// Global simulation mode variable: false = normal, true = simulation/inverted
+bool SIMULATION_MODE = false; // Default to normal mode

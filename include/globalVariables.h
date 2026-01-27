@@ -2,16 +2,16 @@
 #define GLOBALVARIABLES
 
 using namespace std;
-#include <queue>
-#include <mutex>
-#include "esp_err.h"
-#include "driver/spi_slave.h"
 #include "driver/spi_master.h"
+#include "driver/spi_slave.h"
+#include "esp_err.h"
 #include "freertos/task.h"
+#include <mutex>
+#include <queue>
 
 #include "dataStoring.h"
-#include "movementXY.h"
 #include "driver/gpio.h"
+#include "movementXY.h"
 
 #include <string>
 
@@ -90,8 +90,7 @@ extern uint16_t currentZDac;
 
 #define DAC_VALUE_MAX 65535 // 2^16-1
 extern uint16_t targetTunnelAdc, toleranceTunnelAdc;
-extern double kP,
-    kI, kD, targetTunnelnA, currentTunnelnA, toleranceTunnelnA;
+extern double kP, kI, kD, targetTunnelnA, currentTunnelnA, toleranceTunnelnA;
 extern uint16_t startX, startY, multimultiplicatorGridAdc, measureMs;
 extern uint16_t nvs_maxX, nvs_maxY;
 extern bool direction;
@@ -102,7 +101,8 @@ extern QueueHandle_t queueToPc;
 
 extern scanGrid rtmGrid;
 
-extern uint16_t configExisting; // each bit stands for one config param. specifier 2 will write to second byte
+extern uint16_t configExisting; // each bit stands for one config param.
+                                // specifier 2 will write to second byte
 extern int64_t controller_start_time;
 
 extern uint16_t maxNumberAttemptsSPI;
@@ -127,7 +127,7 @@ extern bool dataTransmissionIsActive;
 // Declare the queue handle
 extern QueueHandle_t queueFromPc;
 
-// Global invert mode variable: 1 = normal, -1 = inverted
-extern int INVERT_MODE;
+// Global simulation mode variable: false = normal, true = simulation/inverted
+extern bool SIMULATION_MODE;
 
 #endif // GLOBALVARIABLES

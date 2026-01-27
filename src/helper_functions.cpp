@@ -1,14 +1,14 @@
-#include <esp_log.h>
 #include <cmath>
-#include <string>
+#include <cstdint>
+#include <esp_log.h>
+#include <iomanip>
 #include <queue>
 #include <sstream>
-#include <iomanip>
-#include <cstdint>
+#include <string>
 
-#include "helper_functions.h"
-#include "globalVariables.h"
 #include "UsbPcInterface.h"
+#include "globalVariables.h"
+#include "helper_functions.h"
 #include "project_timer.h"
 
 //=============================================================================
@@ -27,26 +27,23 @@ static const char *TAG = "helper_functions.cpp";
  * @brief Set up error message loop and display error
  * @param errormessage Error message to display
  */
-extern "C" void setupError(const char *errormessage)
-{
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-    ESP_LOGE(TAG, "%s", errormessage);
-    UsbPcInterface::send(errormessage);
-    errorBlink();
+extern "C" void setupError(const char *errormessage) {
+  esp_log_level_set(TAG, ESP_LOG_DEBUG);
+  ESP_LOGE(TAG, "%s", errormessage);
+  UsbPcInterface::send(errormessage);
+  errorBlink();
 }
 
 /**
  * @brief Infinite error blink loop - blinks blue LED
  */
-extern "C" void errorBlink()
-{
-    while (true)
-    {
-        gpio_set_level(IO_04_DAC_MAX, 1); // Turn on blue LED
-        vTaskDelay(pdMS_TO_TICKS(100));   // Delay 100 ms
-        gpio_set_level(IO_04_DAC_MAX, 0); // Turn off blue LED
-        vTaskDelay(pdMS_TO_TICKS(100));   // Delay 100 ms
-    }
+extern "C" void errorBlink() {
+  while (true) {
+    gpio_set_level(IO_04_DAC_MAX, 1); // Turn on blue LED
+    vTaskDelay(pdMS_TO_TICKS(100));   // Delay 100 ms
+    gpio_set_level(IO_04_DAC_MAX, 0); // Turn off blue LED
+    vTaskDelay(pdMS_TO_TICKS(100));   // Delay 100 ms
+  }
 }
 
 //=============================================================================
@@ -60,45 +57,39 @@ extern "C" void errorBlink()
  * @param toleranceAdc Tolerance range for target
  * @param dac Current DAC value (unused but kept for interface compatibility)
  */
-void ledStatusAdc(int16_t adcValue, uint16_t targetAdc, uint16_t toleranceAdc, uint16_t dac)
-{
-    static std::string lastLimit = "INIT";
-    static const char *TAG = "ledStatus";
-    esp_log_level_set(TAG, ESP_LOG_INFO);
+void ledStatusAdc(int16_t adcValue, uint16_t targetAdc, uint16_t toleranceAdc,
+                  uint16_t dac) {
+  static std::string lastLimit = "INIT";
+  static const char *TAG = "ledStatus";
+  esp_log_level_set(TAG, ESP_LOG_INFO);
 
-    // Within tolerance - Yellow LED
-    if (abs(targetAdc - adcValue) <= toleranceAdc)
-    {
-        if (lastLimit != "LIMIT")
-        {
-            gpio_set_level(IO_25_RED, 0);    // Red LED off
-            gpio_set_level(IO_27_YELLOW, 1); // Yellow LED on
-            gpio_set_level(IO_02_GREEN, 0);  // Green LED off
-            lastLimit = "LIMIT";
-        }
+  // Within tolerance - Yellow LED
+  if (abs(targetAdc - adcValue) <= toleranceAdc) {
+    if (lastLimit != "LIMIT") {
+      gpio_set_level(IO_25_RED, 0);    // Red LED off
+      gpio_set_level(IO_27_YELLOW, 1); // Yellow LED on
+      gpio_set_level(IO_02_GREEN, 0);  // Green LED off
+      lastLimit = "LIMIT";
     }
-    // Above target - Red LED
-    else if (adcValue > targetAdc)
-    {
-        if (lastLimit != "HI")
-        {
-            gpio_set_level(IO_25_RED, 1);    // Red LED on
-            gpio_set_level(IO_27_YELLOW, 0); // Yellow LED off
-            gpio_set_level(IO_02_GREEN, 0);  // Green LED off
-            lastLimit = "HI";
-        }
+  }
+  // Above target - Red LED
+  else if (adcValue > targetAdc) {
+    if (lastLimit != "HI") {
+      gpio_set_level(IO_25_RED, 1);    // Red LED on
+      gpio_set_level(IO_27_YELLOW, 0); // Yellow LED off
+      gpio_set_level(IO_02_GREEN, 0);  // Green LED off
+      lastLimit = "HI";
     }
-    // Below target - Green LED
-    else
-    {
-        if (lastLimit != "LO")
-        {
-            gpio_set_level(IO_25_RED, 0);    // Red LED off
-            gpio_set_level(IO_27_YELLOW, 0); // Yellow LED off
-            gpio_set_level(IO_02_GREEN, 1);  // Green LED on
-            lastLimit = "LO";
-        }
+  }
+  // Below target - Green LED
+  else {
+    if (lastLimit != "LO") {
+      gpio_set_level(IO_25_RED, 0);    // Red LED off
+      gpio_set_level(IO_27_YELLOW, 0); // Yellow LED off
+      gpio_set_level(IO_02_GREEN, 1);  // Green LED on
+      lastLimit = "LO";
     }
+  }
 }
 
 //=============================================================================
@@ -110,17 +101,18 @@ void ledStatusAdc(int16_t adcValue, uint16_t targetAdc, uint16_t toleranceAdc, u
  * @param targetNa Target current in nA
  * @return Calculated ADC value (16-bit)
  */
-uint16_t calculateAdcFromnA(double targetNa)
-{
-    static const char *TAG = "calculateAdcFromnA";
-    esp_log_level_set(TAG, ESP_LOG_INFO);
+uint16_t calculateAdcFromnA(double targetNa) {
+  static const char *TAG = "calculateAdcFromnA";
+  esp_log_level_set(TAG, ESP_LOG_INFO);
 
-    // Calculate ADC value based on target current and voltage divider
-    double adcValueD = (targetNa / ADC_VOLTAGE_DIVIDER) * (ADC_VALUE_MAX / ADC_VOLTAGE_MAX);
-    uint16_t adcValue = static_cast<uint16_t>(std::round(adcValueD));
+  // Calculate ADC value based on target current and voltage divider
+  double adcValueD =
+      (targetNa / ADC_VOLTAGE_DIVIDER) * (ADC_VALUE_MAX / ADC_VOLTAGE_MAX);
+  uint16_t adcValue = static_cast<uint16_t>(std::round(adcValueD));
 
-    // ESP_LOGI(TAG, "Target nA: %f, Calculated ADC Value: %d", targetNa, adcValue);
-    return adcValue;
+  // ESP_LOGI(TAG, "Target nA: %f, Calculated ADC Value: %d", targetNa,
+  // adcValue);
+  return adcValue;
 }
 
 /**
@@ -128,12 +120,12 @@ uint16_t calculateAdcFromnA(double targetNa)
  * @param adcValue ADC reading value
  * @return Current in nanoamperes
  */
-double calculateTunnelNa(int16_t adcValue)
-{
-    // Calculate current based on ADC value and voltage divider
-    double currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX) / ADC_VALUE_MAX;
-    currentTunnelnA = currentTunnelnA * ADC_VOLTAGE_DIVIDER; // Apply voltage divider
-    return currentTunnelnA;
+double calculateTunnelNa(int16_t adcValue) {
+  // Calculate current based on ADC value and voltage divider
+  double currentTunnelnA = (adcValue * ADC_VOLTAGE_MAX) / ADC_VALUE_MAX;
+  currentTunnelnA =
+      currentTunnelnA * ADC_VOLTAGE_DIVIDER; // Apply voltage divider
+  return currentTunnelnA;
 }
 
 //=============================================================================
@@ -154,57 +146,54 @@ double calculateTunnelNa(int16_t adcValue)
  * @param targetAdc Target ADC value
  * @return Computed DAC value (16-bit)
  */
-uint16_t computePiDac(int16_t adcValue, int16_t targetAdc)
-{
-    static const char *TAG = "computePiDac";
-    esp_log_level_set(TAG, ESP_LOG_INFO);
+uint16_t computePiDac(int16_t adcValue, int16_t targetAdc) {
+  static const char *TAG = "computePiDac";
+  esp_log_level_set(TAG, ESP_LOG_INFO);
 
-    // TODO: Handle simulation with wired DAC_Z to ADC inverted
+  // TODO: Handle simulation with wired DAC_Z to ADC inverted
 
-    // Calculate the error
-    int error = targetAdc - adcValue;
-    error *= INVERT_MODE;
+  // Calculate the error
+  int error = targetAdc - adcValue;
 
-    integralError += error;
+  // Apply sign inversion when simulation mode is active
+  error *= (SIMULATION_MODE ? -1 : 1);
 
-    // Proportional term with clamping
-    int32_t proportional = kP * error;
-    if (proportional < -MAX_PROPORTIONAL)
-    {
-        proportional = -MAX_PROPORTIONAL;
-    }
-    if (proportional > MAX_PROPORTIONAL)
-    {
-        proportional = MAX_PROPORTIONAL;
-    }
+  integralError += error;
 
-    // Integral term with clamping
-    int32_t integral = kI * integralError;
-    if (integral < -MAX_INTEGRAL)
-    {
-        integral = -MAX_INTEGRAL;
-    }
-    if (integral > MAX_INTEGRAL)
-    {
-        integral = MAX_INTEGRAL;
-    }
+  // Proportional term with clamping
+  int32_t proportional = kP * error;
+  if (proportional < -MAX_PROPORTIONAL) {
+    proportional = -MAX_PROPORTIONAL;
+  }
+  if (proportional > MAX_PROPORTIONAL) {
+    proportional = MAX_PROPORTIONAL;
+  }
 
-    // Compute the DAC value
-    int32_t dacValue = currentZDac - proportional - integral;
+  // Integral term with clamping
+  int32_t integral = kI * integralError;
+  if (integral < -MAX_INTEGRAL) {
+    integral = -MAX_INTEGRAL;
+  }
+  if (integral > MAX_INTEGRAL) {
+    integral = MAX_INTEGRAL;
+  }
 
-    // Log the calculation details
-    ESP_LOGD(TAG, "ADC Value: %d, Target ADC: %d, Proportional: %" PRId32 ", Integral: %" PRId32 ", DAC Value: %" PRId32,
-             adcValue, targetAdc, proportional, integral, dacValue);
+  // Compute the DAC value
+  int32_t dacValue = currentZDac - proportional - integral;
 
-    // Clamp the DAC value to valid range
-    if (dacValue < 0)
-    {
-        dacValue = 0;
-    }
-    if (dacValue > DAC_VALUE_MAX)
-    {
-        dacValue = DAC_VALUE_MAX;
-    }
+  // Log the calculation details
+  ESP_LOGD(TAG,
+           "ADC Value: %d, Target ADC: %d, Proportional: %" PRId32
+           ", Integral: %" PRId32 ", DAC Value: %" PRId32,
+           adcValue, targetAdc, proportional, integral, dacValue);
 
-    return static_cast<uint16_t>(dacValue);
+  // Clamp the DAC value to valid range
+  if (dacValue < 0) {
+    dacValue = 0;
+  }
+  if (dacValue > DAC_VALUE_MAX) {
+    dacValue = DAC_VALUE_MAX;
+  }
+
+  return static_cast<uint16_t>(dacValue);
 }
