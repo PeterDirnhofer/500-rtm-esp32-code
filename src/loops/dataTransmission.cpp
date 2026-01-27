@@ -1,0 +1,35 @@
+#include "UsbPcInterface.h"
+#include "loops.h"
+#include "loops_common.h"
+#include <esp_log.h>
+#include <sstream>
+
+
+extern "C" void dataTransmissionLoop(void *params) {
+  static const char *TAG = "dataTransmissionTask";
+  esp_log_level_set(TAG, ESP_LOG_INFO);
+
+  dataTransmissionIsActive = true;
+
+  while (dataTransmissionIsActive) {
+    DataElement element;
+    if (xQueueReceive(queueToPc, &element, portMAX_DELAY) == pdPASS) {
+      uint16_t X = element.getDataX();
+      uint16_t Y = element.getDataY();
+      uint16_t Z = element.getDataZ();
+
+      if (X == DATA_COMPLETE) {
+        UsbPcInterface::send("%s,DONE\n", prefix);
+        dataTransmissionIsActive = false;
+      } else {
+        std::ostringstream oss;
+        oss << prefix << "," << X << "," << Y << "," << Z << "\n";
+        UsbPcInterface::send(oss.str().c_str());
+        vTaskDelay(pdMS_TO_TICKS(1));
+      }
+    } else {
+      ESP_LOGE(TAG, "Failed to receive from queue");
+    }
+  }
+  vTaskDelete(NULL);
+}

@@ -1,14 +1,15 @@
 #ifndef LOOPS_H
 #define LOOPS_H
 
-#include <stdint.h>
-#include "esp_log.h"
-#include <stdarg.h>
-#include "globalVariables.h"
 #include "UsbPcInterface.h"
 #include "adc_i2c.h"
 #include "dac_spi.h"
 #include "dataStoring.h"
+#include "esp_log.h"
+#include "globalVariables.h"
+#include <stdarg.h>
+#include <stdint.h>
+
 
 extern "C" void dataTransmissionLoop(void *params);
 extern "C" void adjustLoop(void *unused);
