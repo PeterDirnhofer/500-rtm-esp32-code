@@ -21,6 +21,9 @@
 
 static const char *TAG = "controller";
 
+// Queue for TIP commands forwarded to the running adjust loop
+QueueHandle_t tipQueue = NULL;
+
 extern "C" void dispatcherTask(void *unused) {
   static const char *TAG = "dispatcherTask";
   esp_log_level_set(TAG, ESP_LOG_INFO);
@@ -118,18 +121,28 @@ extern "C" void dispatcherTask(void *unused) {
 
       if (receive.rfind("TIP,", 0) == 0) {
         if (adjustIsActive) {
-          esp_err_t updateSuccess = UsbPcInterface::mUpdateTip(receive);
-          if (updateSuccess != ESP_OK) {
-            ESP_LOGW(TAG, "ERROR: Failed to update TIP");
-            UsbPcInterface::send("ERROR: Failed to update TIP");
+          if (tipQueue == NULL) {
+            tipQueue = xQueueCreate(8, 256);
+            if (tipQueue == NULL) {
+              ESP_LOGW(TAG, "Failed to create tipQueue");
+              UsbPcInterface::send("ERROR: TIP handling unavailable\n");
+              continue;
+            }
           }
-
+          BaseType_t q =
+              xQueueSend(tipQueue, receive.c_str(), pdMS_TO_TICKS(50));
+          if (q != pdPASS) {
+            ESP_LOGW(TAG, "TIP queue full — dropping TIP command");
+            UsbPcInterface::send("ERROR: TIP queue full\n");
+          } else {
+            ESP_LOGI(TAG, "TIP enqueued for adjust loop");
+          }
           continue;
         } else {
           ESP_LOGW(TAG,
                    "ERROR: Received TIP command while adjust is not active");
           UsbPcInterface::send(
-              "Received TIP command while adjust is not active");
+              "Received TIP command while adjust is not active\n");
           continue;
         }
       }
