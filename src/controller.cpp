@@ -18,6 +18,7 @@
 #include "helper_functions.h"
 #include "project_timer.h"
 #include "tasks.h"
+#include "tasks_common.h"
 
 static const char *TAG = "controller";
 
@@ -52,27 +53,40 @@ extern "C" void dispatcherTask(void *unused) {
       ESP_LOGI(TAG, "Processing command: %s", receive.c_str());
 
       if (receive == "STOP") {
-        ESP_LOGI(TAG, "System restart initiated");
+        ESP_LOGI(TAG,
+                 "STOP received — stopping active loops (except receive loop)");
 
-        // Stop all loops but not dataTransmissionLoop
+        // Stop running loops so the system becomes idle but keep the
+        // receive (UART/WebSocket) loop alive to accept further commands.
+        adjustIsActive = false;
+
+        // Stop measure loop and wake it so it can exit cleanly if suspended
         measureIsActive = false;
-        tunnelIsActive = false;
-        sinusIsActive = true;
-        adjustIsActive = true;
-
-        // Send rest of data before stop
-        if (queueToPc != NULL) {
-          while (uxQueueMessagesWaiting(queueToPc) > 0) {
-            vTaskDelay(pdMS_TO_TICKS(10));
-          }
+        if (handleMeasureLoop != NULL) {
+          vTaskResume(handleMeasureLoop);
         }
 
-        UsbPcInterface::send("STOP\n");
-        ESP_LOGI(TAG, "STOP");
-        vTaskDelay(pdMS_TO_TICKS(1));
+        // Stop any running tunnel loop and wake it
+        tunnelIsActive = false;
+        if (handleTunnelLoop != NULL) {
+          vTaskResume(handleTunnelLoop);
+        }
 
-        // stop esp
-        esp_restart();
+        // Stop sinus (test) loop
+        sinusIsActive = false;
+
+        // Stop data transmission loop: send DATA_COMPLETE to unblock it
+        dataTransmissionIsActive = false;
+        if (queueToPc != NULL) {
+          DataElement endSignal(DATA_COMPLETE, 0, 0);
+          xQueueSend(queueToPc, &endSignal, pdMS_TO_TICKS(50));
+        }
+
+        // Notify controller/clients that loops were stopped
+        UsbPcInterface::send("STOPPED\n");
+        ESP_LOGI(TAG, "Active loops stopped");
+
+        continue;
       }
 
       if (receive.rfind("MEASURE", 0) == 0) {
@@ -223,17 +237,22 @@ extern "C" void measureStart() {
   static const char *TAG = "measureStart";
   esp_log_level_set(TAG, ESP_LOG_INFO);
 
-  queueToPc = xQueueCreate(1000, sizeof(DataElement));
-  if (queueToPc == NULL) {
-    // Handle error
-    ESP_LOGE("Queue", "Failed to create queue");
-    vTaskDelay(pdMS_TO_TICKS(100));
-    esp_restart();
-  }
-
+  // Create queue only if the data transmission task is not yet running.
+  // If the task already exists, reuse the existing queue and clear any
+  // leftover messages so the new run starts with a clean queue.
   if (handleDataTransmissionLoop == NULL) {
+    queueToPc = xQueueCreate(1000, sizeof(DataElement));
+    if (queueToPc == NULL) {
+      ESP_LOGE("Queue", "Failed to create queue");
+      vTaskDelay(pdMS_TO_TICKS(100));
+      esp_restart();
+    }
+
     xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000,
                             NULL, 1, &handleDataTransmissionLoop, 0);
+  } else {
+    // Clear existing queue contents before reusing it for this run.
+    queueToPcClear();
   }
 
   setPrefix("DATA");
@@ -248,19 +267,27 @@ extern "C" void tunnelStart(const std::string &loops_str) {
   esp_log_level_set(TAG, ESP_LOG_INFO);
   // ESP_LOGI(TAG, "tunnelStart initiated with %s loops", loops_str.c_str());
 
-  queueToPc = xQueueCreate(1000, sizeof(DataElement));
-
-  if (queueToPc == NULL) {
-    // Handle error
-    ESP_LOGE("Queue", "Failed to create queue");
-    vTaskDelay(pdMS_TO_TICKS(100));
-    esp_restart();
-  }
+  // Create queue only if the data transmission task is not yet running.
+  // If it already exists, reuse the existing queue and clear any pending
+  // messages to avoid sending stale data.
   if (handleDataTransmissionLoop == NULL) {
-    setPrefix("TUNNEL");
+    queueToPc = xQueueCreate(1000, sizeof(DataElement));
+
+    if (queueToPc == NULL) {
+      ESP_LOGE("Queue", "Failed to create queue");
+      vTaskDelay(pdMS_TO_TICKS(100));
+      esp_restart();
+    }
+
     xTaskCreatePinnedToCore(dataTransmissionLoop, "dataTransmissionTask", 10000,
                             NULL, 1, &handleDataTransmissionLoop, 0);
+  } else {
+    queueToPcClear();
   }
+
+  // Ensure prefix is set for the data transmission task so outputs are
+  // formatted as TUNNEL.
+  setPrefix("TUNNEL");
 
   // Convert the string to an integer
   int maxLoops = 1000; // Default value

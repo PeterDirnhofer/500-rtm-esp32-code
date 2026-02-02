@@ -68,7 +68,11 @@ extern "C" void measureLoop(void *unused) {
         vTaskDelay(pdMS_TO_TICKS(10));
       }
 
-      esp_restart();
+      ESP_LOGI(TAG, "measureLoop finished, exiting task");
+      // Mark loop inactive and clear execution flag, then delete this task
+      measureIsActive = false;
+      isLoopExecution = false;
+      vTaskDelete(NULL);
     }
 
     // not within tolerance -> compute correction, report and resume

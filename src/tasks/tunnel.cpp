@@ -23,20 +23,31 @@ extern "C" void tunnelLoop(void *params) {
   while (tunnelIsActive && counter < maxLoops) {
     vTaskSuspend(NULL);
     int16_t adcValue = readAdc();
+    ESP_LOGI(TAG, "woke: counter=%d/%d, adc=%d, Z=%d", counter, maxLoops,
+             adcValue, currentZDac);
     ledStatusAdc(adcValue, targetTunnelAdc, toleranceTunnelAdc, currentZDac);
     int16_t errorAdc = targetTunnelAdc - adcValue;
 
     if (abs(errorAdc) <= toleranceTunnelAdc) {
       gpio_set_level(IO_17_DAC_NULL, 0);
+      ESP_LOGI(TAG, "Within tolerance: adc=%d, Z=%d -> enqueue LIMIT", adcValue,
+               currentZDac);
       DataElement dataElement(LIMIT, adcValue, currentZDac);
       if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS) {
-        ESP_LOGE("Queue", "Failed to send to queue");
+        ESP_LOGE(TAG, "Failed to enqueue LIMIT into queueToPc");
+      } else {
+        ESP_LOGD(TAG, "Enqueued LIMIT for X=%d Z=%d", adcValue, currentZDac);
       }
     } else {
       gpio_set_level(IO_17_DAC_NULL, 1);
+      ESP_LOGI(TAG, "Off limits: adc=%d, Z=%d -> enqueue OFF_LIMITS", adcValue,
+               currentZDac);
       DataElement dataElement(OFF_LIMITS, adcValue, currentZDac);
       if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS) {
-        ESP_LOGE("Queue", "Failed to send to queue");
+        ESP_LOGE(TAG, "Failed to enqueue OFF_LIMITS into queueToPc");
+      } else {
+        ESP_LOGD(TAG, "Enqueued OFF_LIMITS for adc=%d Z=%d", adcValue,
+                 currentZDac);
       }
 
       newDacZ = computePiDac(adcValue, targetTunnelAdc);
@@ -51,13 +62,18 @@ extern "C" void tunnelLoop(void *params) {
     }
   }
 
+  ESP_LOGI(TAG, "tunnelLoop finished, sending DATA_COMPLETE");
   DataElement dataElement(DATA_COMPLETE, 0, 0);
   if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS) {
-    ESP_LOGE("Queue", "Failed to send to queue");
+    ESP_LOGE(TAG, "Failed to enqueue DATA_COMPLETE into queueToPc");
+  } else {
+    ESP_LOGD(TAG, "Enqueued DATA_COMPLETE");
   }
   while (uxQueueMessagesWaiting(queueToPc) > 0) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
   vTaskDelay(pdMS_TO_TICKS(1));
-  esp_restart();
+  ESP_LOGI(TAG, "tunnelLoop finished, exiting task");
+  tunnelIsActive = false;
+  vTaskDelete(NULL);
 }
