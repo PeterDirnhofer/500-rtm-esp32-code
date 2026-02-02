@@ -6,12 +6,12 @@
 #include <cstdarg>
 #include <cstdlib>
 #include <cstring>
+#include <esp_log.h>
 #include <globalVariables.h>
 #include <helper_functions.h>
 #include <sstream>
 #include <string>
 #include <vector>
-
 
 // Define the queue handle
 QueueHandle_t queueFromPc = NULL;
@@ -40,6 +40,8 @@ void UsbPcInterface::start() {
       .flags = 0, // Initialize the flags member to zero
   };
 
+  ESP_LOGI(TAG, "FOOO1");
+
   // Install UART driver
   uart_driver_install(UART_NUM_1, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
   uart_param_config(UART_NUM_1, &uart_config);
@@ -53,6 +55,7 @@ void UsbPcInterface::start() {
 }
 
 void UsbPcInterface::mUartRcvLoop(void *unused) {
+  ESP_LOGI(TAG, "FOOO2");
   if (queueFromPc == NULL) {
     // Create the queue with a size of 10 and a maximum string length of 255
     // characters
@@ -117,6 +120,7 @@ int UsbPcInterface::send(const char *fmt, ...) {
   vsprintf(s, fmt, ap);
 
   const int len = strlen(s);
+  ESP_LOGI(TAG, "FOOO3");
 
   // Debug: Print each character being sent with its ASCII value
   // ESP_LOGI(TAG, "TX String: %s", s);

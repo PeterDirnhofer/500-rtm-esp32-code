@@ -89,8 +89,8 @@ extern "C" void app_main(void) {
   gpio_set_level(IO_17_DAC_NULL, 1);
   vTaskDelay(pdMS_TO_TICKS(100));
 
-  // Send "IDLE" message
-  usb.send("IDLE\n");
+  // Send "STOP" message
+  usb.send("STOP\n");
   // Initialize GPIO levels
   gpio_set_level(IO_17_DAC_NULL, 0); // white LED
   gpio_set_level(IO_04_DAC_MAX, 0);  // blue LED
