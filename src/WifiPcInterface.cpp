@@ -429,6 +429,29 @@ static esp_err_t ws_handler(httpd_req_t *req) {
 static httpd_uri_t send_uri;
 static httpd_uri_t ws_uri;
 
+// Initialize and register HTTP URI handlers (centralized to avoid duplication)
+static void init_and_register_uris(httpd_handle_t server) {
+  // populate send_uri
+  memset(&send_uri, 0, sizeof(send_uri));
+  send_uri.uri = "/send";
+  send_uri.method = HTTP_POST;
+  send_uri.handler = post_send_handler;
+  send_uri.user_ctx = NULL;
+
+  // populate ws_uri
+  memset(&ws_uri, 0, sizeof(ws_uri));
+  ws_uri.uri = "/ws";
+  ws_uri.method = HTTP_GET;
+  ws_uri.handler = ws_handler;
+  ws_uri.user_ctx = NULL;
+  ws_uri.is_websocket = false;
+  ws_uri.handle_ws_control_frames = 0;
+  ws_uri.supported_subprotocol = NULL;
+
+  httpd_register_uri_handler(server, &send_uri);
+  httpd_register_uri_handler(server, &ws_uri);
+}
+
 static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data) {
   // retry counter to detect repeated failures
@@ -491,27 +514,7 @@ void WifiPcInterface::startStation(const char *ssid, const char *password) {
   // Start HTTP server so services are available once connected
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   if (httpd_start(&http_server, &config) == ESP_OK) {
-    // populate send_uri and ws_uri to ensure all fields are initialized
-    memset(&send_uri, 0, sizeof(send_uri));
-    send_uri.uri = "/send";
-    send_uri.method = HTTP_POST;
-    send_uri.handler = post_send_handler;
-    send_uri.user_ctx = NULL;
-
-    memset(&ws_uri, 0, sizeof(ws_uri));
-    ws_uri.uri = "/ws";
-    ws_uri.method = HTTP_GET;
-    ws_uri.handler = ws_handler;
-    ws_uri.user_ctx = NULL;
-    // We perform the Upgrade and then hand the raw socket to a queued
-    // worker (example-style). Disable the httpd built-in websocket
-    // handling so it doesn't also read/close the socket.
-    ws_uri.is_websocket = false;
-    ws_uri.handle_ws_control_frames = 0;
-    ws_uri.supported_subprotocol = NULL;
-
-    httpd_register_uri_handler(http_server, &send_uri);
-    httpd_register_uri_handler(http_server, &ws_uri);
+    init_and_register_uris(http_server);
     active = true;
     ESP_LOGI(TAG, "HTTP server started (STA mode)");
     // Note: raw WebSocket listener removed — using httpd helper only
@@ -558,24 +561,7 @@ void WifiPcInterface::start() {
   // Start HTTP server
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   if (httpd_start(&http_server, &config) == ESP_OK) {
-    // populate send_uri and ws_uri to ensure all fields are initialized
-    memset(&send_uri, 0, sizeof(send_uri));
-    send_uri.uri = "/send";
-    send_uri.method = HTTP_POST;
-    send_uri.handler = post_send_handler;
-    send_uri.user_ctx = NULL;
-
-    memset(&ws_uri, 0, sizeof(ws_uri));
-    ws_uri.uri = "/ws";
-    ws_uri.method = HTTP_GET;
-    ws_uri.handler = ws_handler;
-    ws_uri.user_ctx = NULL;
-    ws_uri.is_websocket = false;
-    ws_uri.handle_ws_control_frames = 0;
-    ws_uri.supported_subprotocol = NULL;
-
-    httpd_register_uri_handler(http_server, &send_uri);
-    httpd_register_uri_handler(http_server, &ws_uri);
+    init_and_register_uris(http_server);
     active = true;
     ESP_LOGI(TAG, "HTTP server started");
     // Note: raw WebSocket listener removed — using httpd helper only
