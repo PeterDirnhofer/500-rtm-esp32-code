@@ -95,7 +95,7 @@ try:
         opcode = b1 & 0x0F
         if opcode == 1:
             txt = data.decode('utf-8', errors='ignore')
-            print('RECV:', txt)
+            print('RECV:', txt.rstrip('\r\n'))
             if 'DONE' in txt or 'DATA_COMPLETE' in txt or 'DATA,DONE' in txt:
                 print('Measurement finished')
                 break

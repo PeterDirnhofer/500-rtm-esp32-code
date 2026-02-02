@@ -426,22 +426,8 @@ static esp_err_t ws_handler(httpd_req_t *req) {
   return ESP_OK;
 }
 
-static httpd_uri_t send_uri = {.uri = "/send",
-                               .method = HTTP_POST,
-                               .handler = post_send_handler,
-                               .user_ctx = NULL};
-
-static httpd_uri_t ws_uri = {.uri = "/ws",
-                             .method = HTTP_GET,
-                             .handler = ws_handler,
-                             .user_ctx = NULL,
-                             /* We perform the Upgrade and then hand the raw
-                               socket to a queued worker (example-style).
-                               Disable the httpd built-in websocket handling so
-                               it doesn't also read/close the socket. */
-                             .is_websocket = false,
-                             .handle_ws_control_frames = false,
-                             .supported_subprotocol = NULL};
+static httpd_uri_t send_uri;
+static httpd_uri_t ws_uri;
 
 static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data) {
@@ -505,6 +491,25 @@ void WifiPcInterface::startStation(const char *ssid, const char *password) {
   // Start HTTP server so services are available once connected
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   if (httpd_start(&http_server, &config) == ESP_OK) {
+    // populate send_uri and ws_uri to ensure all fields are initialized
+    memset(&send_uri, 0, sizeof(send_uri));
+    send_uri.uri = "/send";
+    send_uri.method = HTTP_POST;
+    send_uri.handler = post_send_handler;
+    send_uri.user_ctx = NULL;
+
+    memset(&ws_uri, 0, sizeof(ws_uri));
+    ws_uri.uri = "/ws";
+    ws_uri.method = HTTP_GET;
+    ws_uri.handler = ws_handler;
+    ws_uri.user_ctx = NULL;
+    // We perform the Upgrade and then hand the raw socket to a queued
+    // worker (example-style). Disable the httpd built-in websocket
+    // handling so it doesn't also read/close the socket.
+    ws_uri.is_websocket = false;
+    ws_uri.handle_ws_control_frames = 0;
+    ws_uri.supported_subprotocol = NULL;
+
     httpd_register_uri_handler(http_server, &send_uri);
     httpd_register_uri_handler(http_server, &ws_uri);
     active = true;
@@ -553,6 +558,22 @@ void WifiPcInterface::start() {
   // Start HTTP server
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   if (httpd_start(&http_server, &config) == ESP_OK) {
+    // populate send_uri and ws_uri to ensure all fields are initialized
+    memset(&send_uri, 0, sizeof(send_uri));
+    send_uri.uri = "/send";
+    send_uri.method = HTTP_POST;
+    send_uri.handler = post_send_handler;
+    send_uri.user_ctx = NULL;
+
+    memset(&ws_uri, 0, sizeof(ws_uri));
+    ws_uri.uri = "/ws";
+    ws_uri.method = HTTP_GET;
+    ws_uri.handler = ws_handler;
+    ws_uri.user_ctx = NULL;
+    ws_uri.is_websocket = false;
+    ws_uri.handle_ws_control_frames = 0;
+    ws_uri.supported_subprotocol = NULL;
+
     httpd_register_uri_handler(http_server, &send_uri);
     httpd_register_uri_handler(http_server, &ws_uri);
     active = true;
