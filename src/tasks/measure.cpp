@@ -11,10 +11,32 @@ extern "C" void measureLoop(void *unused) {
   esp_log_level_set(TAG, ESP_LOG_INFO);
   ESP_LOGI(TAG, "+++ STARTED");
 
+  // Log actual grid DAC bounds (min/max) for X and Y at start
+  uint16_t minXDac = gridToDacValue(0, rtmGrid.getMaxX(), DAC_VALUE_MAX,
+                                    rtmGrid.getMultiplicatorGridAdc());
+  uint16_t maxXDac =
+      gridToDacValue(rtmGrid.getMaxX(), rtmGrid.getMaxX(), DAC_VALUE_MAX,
+                     rtmGrid.getMultiplicatorGridAdc());
+  uint16_t minYDac = gridToDacValue(0, rtmGrid.getMaxY(), DAC_VALUE_MAX,
+                                    rtmGrid.getMultiplicatorGridAdc());
+  uint16_t maxYDac =
+      gridToDacValue(rtmGrid.getMaxY(), rtmGrid.getMaxY(), DAC_VALUE_MAX,
+                     rtmGrid.getMultiplicatorGridAdc());
+  ESP_LOGI(TAG, "Grid DAC bounds Xmin=%u Xmax=%u Ymin=%u Ymax=%u", minXDac,
+           maxXDac, minYDac, maxYDac);
+  // Also log configured grid min indices (start positions)
+  ESP_LOGI(TAG, "Grid indices startX=%u startY=%u maxX=%u maxY=%u", startX,
+           startY, rtmGrid.getMaxX(), rtmGrid.getMaxY());
+
+  
+
   uint16_t newDacZ = 0;
+
+
   static uint32_t reportCounter =
       0; // counts measurements for throttled reporting
 
+  tunnel_found = false;
   setPrefix("FIND");
 
   while (measureIsActive) {
@@ -63,7 +85,8 @@ extern "C" void measureLoop(void *unused) {
         ESP_LOGE("Queue", "Failed to send to queue");
       }
 
-      timer_stop();
+      // Stop and free the timer now that measurement finished
+      timer_deinitialize();
       while (uxQueueMessagesWaiting(queueToPc) > 0) {
         vTaskDelay(pdMS_TO_TICKS(10));
       }
@@ -99,6 +122,8 @@ extern "C" void measureLoop(void *unused) {
   }
 
   // Ensure flag is cleared before deleting the task.
+  // Free timer if the loop was terminated by STOP
+  timer_deinitialize();
   isLoopExecution = false;
   vTaskDelete(NULL);
 }

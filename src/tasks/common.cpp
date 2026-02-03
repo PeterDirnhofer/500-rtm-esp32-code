@@ -31,8 +31,13 @@ extern "C" void queueToPcClear() {
 }
 
 extern "C" void resetDac() {
-  currentXDac = 0;
-  currentYDac = 0;
+  // Set DAC X/Y to the current grid positions (min/start) instead of zero.
+  currentXDac =
+      gridToDacValue(rtmGrid.getCurrentX(), rtmGrid.getMaxX(), DAC_VALUE_MAX,
+                     rtmGrid.getMultiplicatorGridAdc());
+  currentYDac =
+      gridToDacValue(rtmGrid.getCurrentY(), rtmGrid.getMaxY(), DAC_VALUE_MAX,
+                     rtmGrid.getMultiplicatorGridAdc());
   currentZDac = DAC_VALUE_MAX / 2;
   vTaskResume(handleVspiLoop);
 }

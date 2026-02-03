@@ -1,8 +1,10 @@
 #include "UsbPcInterface.h"
 #include "helper_functions.h"
+#include "project_timer.h"
 #include "tasks.h"
 #include "tasks_common.h"
 #include <esp_log.h>
+
 
 extern "C" void tunnelLoop(void *params) {
   uint16_t newDacZ = 0;
@@ -75,5 +77,7 @@ extern "C" void tunnelLoop(void *params) {
   vTaskDelay(pdMS_TO_TICKS(1));
   ESP_LOGI(TAG, "tunnelLoop finished, exiting task");
   tunnelIsActive = false;
+  // Free timer resource used by tunnel/measure
+  timer_deinitialize();
   vTaskDelete(NULL);
 }

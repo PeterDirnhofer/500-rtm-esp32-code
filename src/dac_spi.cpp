@@ -4,18 +4,15 @@
 #include <stdio.h>
 #include <string.h>
 
-
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
 
-
 #include <lwip/dns.h>
 #include <lwip/igmp.h>
 #include <lwip/netdb.h>
 #include <lwip/sockets.h>
-
 
 #include <driver/gpio.h>
 #include <driver/spi_master.h>
@@ -26,11 +23,9 @@
 #include <soc/rtc_periph.h>
 #include <spi_flash_mmap.h>
 
-
 #include "controller.h"
 #include "dac_spi.h"
 #include "globalVariables.h"
-
 
 static const char *TAG = "spi.cpp";
 
@@ -155,8 +150,14 @@ void vspiDacLoop(void *unused) {
   uint16_t lastYDac = DAC_VALUE_MAX;
   uint16_t lastZDac = 0;
 
-  currentXDac = 0;
-  currentYDac = 0;
+  // Initialize DAC X/Y to the DAC values corresponding to the current grid
+  // positions (min / start positions) so the piezos start at grid min.
+  currentXDac =
+      gridToDacValue(rtmGrid.getCurrentX(), rtmGrid.getMaxX(), DAC_VALUE_MAX,
+                     rtmGrid.getMultiplicatorGridAdc());
+  currentYDac =
+      gridToDacValue(rtmGrid.getCurrentY(), rtmGrid.getMaxY(), DAC_VALUE_MAX,
+                     rtmGrid.getMultiplicatorGridAdc());
   currentZDac = DAC_VALUE_MAX;
 
   while (1) {

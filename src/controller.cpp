@@ -80,6 +80,9 @@ extern "C" void dispatcherTask(void *unused) {
           xQueueSend(queueToPc, &endSignal, pdMS_TO_TICKS(50));
         }
 
+        // Ensure timer is stopped and freed when stopping measurement/tunnel
+        timer_deinitialize();
+
         // Notify controller/clients that loops were stopped
         UsbPcInterface::send("STOPPED\n");
         ESP_LOGI(TAG, "Stopped");
@@ -234,6 +237,10 @@ extern "C" void measureStart() {
   measureIsActive = true;
   static const char *TAG = "measureStart";
   esp_log_level_set(TAG, ESP_LOG_INFO);
+
+  // Ensure grid current position is reset to configured start indices
+  rtmGrid.setStartX(startX);
+  rtmGrid.setStartY(startY);
 
   // Create queue only if the data transmission task is not yet running.
   // If the task already exists, reuse the existing queue and clear any
