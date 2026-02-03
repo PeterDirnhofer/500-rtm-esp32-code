@@ -17,8 +17,6 @@ extern "C" void dataTransmissionLoop(void *params) {
       uint16_t Y = element.getDataY();
       uint16_t Z = element.getDataZ();
 
-      ESP_LOGI(TAG, "dataTransmission: got element X=%u Y=%u Z=%u", X, Y, Z);
-
       if (X == DATA_COMPLETE) {
         ESP_LOGI(TAG, "dataTransmission: DATA_COMPLETE received, sending DONE");
         UsbPcInterface::send("%s,DONE\n", prefix);
@@ -26,7 +24,6 @@ extern "C" void dataTransmissionLoop(void *params) {
       } else {
         std::ostringstream oss;
         oss << prefix << "," << X << "," << Y << "," << Z << "\n";
-        ESP_LOGI(TAG, "dataTransmission: sending -> %s", oss.str().c_str());
         UsbPcInterface::send(oss.str().c_str());
         vTaskDelay(pdMS_TO_TICKS(1));
       }

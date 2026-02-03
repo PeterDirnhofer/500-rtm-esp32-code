@@ -32,6 +32,8 @@
 #include "dataStoring.h"
 #include "globalVariables.h"
 #include "helper_functions.h"
+#include "my_data.h"
+
 
 extern "C" void app_main(void) {
   esp_log_level_set("*", ESP_LOG_WARN);
@@ -68,8 +70,8 @@ extern "C" void app_main(void) {
   UsbPcInterface usb;
   usb.start();
 
-  // Start WiFi interface in STA mode (connect to FRITZ!Box)
-  WifiPcInterface::startStation("FRITZ!Box 75902", "04562358016988474025");
+  // Start WiFi interface in STA mode using credentials from my_data.h
+  WifiPcInterface::startStation(SSID, PASS);
 
   gpio_set_level(IO_25_RED, 1);
   // initAdc();

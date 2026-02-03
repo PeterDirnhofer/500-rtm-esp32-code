@@ -12,6 +12,7 @@
 #include <esp_system.h>
 #include <esp_wifi.h>
 #include <freertos/FreeRTOS.h>
+#include <freertos/event_groups.h>
 #include <freertos/queue.h>
 #include <freertos/task.h>
 #include <lwip/inet.h>
@@ -21,6 +22,7 @@
 #include <string>
 #include <sys/socket.h>
 #include <vector>
+
 
 static const char *TAG = "WifiPcInterface";
 
@@ -33,6 +35,11 @@ struct ClientInfo {
 };
 static std::vector<ClientInfo> clients;
 static std::mutex clients_mutex;
+
+// Event group to signal when station has obtained an IP
+static EventGroupHandle_t s_wifi_event_group = NULL;
+#define WIFI_CONNECTED_BIT BIT0
+static char s_ip_str[16] = {0};
 
 // No raw fallback: use esp_http_server helper APIs only for WebSocket handling
 
@@ -474,6 +481,9 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     }
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
+    // store IP and signal waiting task
+    snprintf(s_ip_str, sizeof(s_ip_str), IPSTR, IP2STR(&event->ip_info.ip));
+    xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
     s_retry_num = 0;
   }
@@ -507,9 +517,12 @@ void WifiPcInterface::startStation(const char *ssid, const char *password) {
 
   esp_wifi_set_mode(WIFI_MODE_STA);
   esp_wifi_set_config(WIFI_IF_STA, &sta_config);
-  esp_wifi_start();
+  // create event group before starting WiFi so handler can signal
+  if (s_wifi_event_group == NULL) {
+    s_wifi_event_group = xEventGroupCreate();
+  }
 
-  ESP_LOGI(TAG, "Started WiFi STA: '%s' (attempting connect)", ssid);
+  esp_wifi_start();
 
   // Start HTTP server so services are available once connected
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -517,6 +530,15 @@ void WifiPcInterface::startStation(const char *ssid, const char *password) {
     init_and_register_uris(http_server);
     active = true;
     ESP_LOGI(TAG, "HTTP server started (STA mode)");
+    // Wait a short time for IP event so we can log IP alongside startup
+    EventBits_t bits =
+        xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE,
+                            pdFALSE, pdMS_TO_TICKS(5000));
+    if (bits & WIFI_CONNECTED_BIT) {
+      ESP_LOGI(TAG, "Started WiFi STA: '%s')", ssid);
+    } else {
+      ESP_LOGI(TAG, "Started WiFi STA: '%s' (attempting connect)", ssid);
+    }
     // Note: raw WebSocket listener removed — using httpd helper only
   } else {
     ESP_LOGE(TAG, "Failed to start HTTP server");

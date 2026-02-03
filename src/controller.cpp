@@ -53,8 +53,6 @@ extern "C" void dispatcherTask(void *unused) {
       ESP_LOGI(TAG, "Processing command: %s", receive.c_str());
 
       if (receive == "STOP") {
-        ESP_LOGI(TAG,
-                 "STOP received — stopping active loops (except receive loop)");
 
         // Stop running loops so the system becomes idle but keep the
         // receive (UART/WebSocket) loop alive to accept further commands.
@@ -84,7 +82,7 @@ extern "C" void dispatcherTask(void *unused) {
 
         // Notify controller/clients that loops were stopped
         UsbPcInterface::send("STOPPED\n");
-        ESP_LOGI(TAG, "Active loops stopped");
+        ESP_LOGI(TAG, "Stopped");
 
         continue;
       }
