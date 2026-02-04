@@ -5,7 +5,6 @@
 #include "tasks_common.h"
 #include <esp_log.h>
 
-// Helper wrappers for common tunnel operations
 static inline bool enqueueData(const DataElement &el) {
   if (xQueueSend(queueToPc, &el, portMAX_DELAY) != pdPASS) {
     ESP_LOGE("tunnelLoop/main", "Failed to enqueue data element");
@@ -41,7 +40,6 @@ extern "C" void tunnelLoop(void *params) {
       continue;
     }
 
-    // Start run
     int counter = 0;
     resetDac();
     tunnelIsActive = true;
