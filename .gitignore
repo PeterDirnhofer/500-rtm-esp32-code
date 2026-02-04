@@ -1,7 +1,5 @@
 # Ignore the build directories
 /.pio
-# But track the firmware.bin file
-!/.pio/build/esp32dev/firmware.bin
 /.build
 /.vscode
 /build

@@ -10,7 +10,7 @@
 extern "C" void sinusLoop(void *params) {
   static const char *TAG = "testLoop";
   esp_log_level_set(TAG, ESP_LOG_DEBUG);
-  ESP_LOGI(TAG, "+++ START TEST LOOP");
+  ESP_LOGI(TAG, "+++ START SINUS");
 
   std::unique_ptr<uint16_t[]> buffer(new uint16_t[BUFFER_SIZE]);
 
@@ -19,7 +19,6 @@ extern "C" void sinusLoop(void *params) {
                                       (1 + sin(2.0 * M_PI * i / BUFFER_SIZE)));
   }
 
-  ESP_LOGI(TAG, "FOO: Sinus loop is running");
   while (sinusIsActive) {
     for (size_t i = 0; i < BUFFER_SIZE; ++i) {
       if (!sinusIsActive)

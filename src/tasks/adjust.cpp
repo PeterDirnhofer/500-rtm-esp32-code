@@ -1,5 +1,6 @@
 #include "UsbPcInterface.h"
 #include "helper_functions.h"
+#include "project_timer.h"
 #include "tasks.h"
 #include "tasks_common.h"
 #include <cstdlib>
@@ -8,7 +9,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
 
 // TIP queue provided by dispatcher
 extern QueueHandle_t tipQueue;
@@ -86,5 +86,7 @@ extern "C" void adjustLoop(void *unused) {
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
   resetDac();
+  // Free timer in case adjust used the shared timer
+  timer_deinitialize();
   vTaskDelete(NULL);
 }

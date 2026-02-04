@@ -7,10 +7,12 @@
 extern "C" void dataTransmissionLoop(void *params) {
   static const char *TAG = "dataTransmissionTask";
   esp_log_level_set(TAG, ESP_LOG_INFO);
-
+  // Keep the data transmission task persistent to avoid repeated
+  // create/delete cycles which fragment the heap. The task will
+  // continuously process queueToPc messages and send them out.
   dataTransmissionIsActive = true;
 
-  while (dataTransmissionIsActive) {
+  while (1) {
     DataElement element;
     if (xQueueReceive(queueToPc, &element, portMAX_DELAY) == pdPASS) {
       uint16_t X = element.getDataX();
@@ -19,7 +21,7 @@ extern "C" void dataTransmissionLoop(void *params) {
 
       if (X == DATA_COMPLETE) {
         UsbPcInterface::send("%s,DONE\n", prefix);
-        dataTransmissionIsActive = false;
+        // Do not delete the task; just continue waiting for next run
       } else {
         std::ostringstream oss;
         oss << prefix << "," << X << "," << Y << "," << Z << "\n";
@@ -30,5 +32,4 @@ extern "C" void dataTransmissionLoop(void *params) {
       ESP_LOGE(TAG, "Failed to receive from queue");
     }
   }
-  vTaskDelete(NULL);
 }

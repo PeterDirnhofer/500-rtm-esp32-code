@@ -45,6 +45,8 @@ uint16_t sendDataAfterXDatasets = 100;
 
 // Define the queue handle
 QueueHandle_t queueToPc;
+// Queue for tunnel commands (send int maxLoops)
+QueueHandle_t queueTunnelCmd = NULL;
 
 scanGrid rtmGrid(200, 200); // default grid
 
