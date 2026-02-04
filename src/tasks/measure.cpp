@@ -10,18 +10,6 @@ extern "C" void measureLoop(void *unused) {
   static const char *TAG = "measureLoop";
   esp_log_level_set(TAG, ESP_LOG_INFO);
 
-  // Log actual grid DAC bounds (min/max) for X and Y at start
-  uint16_t minXDac = gridToDacValue(0, rtmGrid.getMaxX(), DAC_VALUE_MAX,
-                                    rtmGrid.getMultiplicatorGridAdc());
-  uint16_t maxXDac =
-      gridToDacValue(rtmGrid.getMaxX(), rtmGrid.getMaxX(), DAC_VALUE_MAX,
-                     rtmGrid.getMultiplicatorGridAdc());
-  uint16_t minYDac = gridToDacValue(0, rtmGrid.getMaxY(), DAC_VALUE_MAX,
-                                    rtmGrid.getMultiplicatorGridAdc());
-  uint16_t maxYDac =
-      gridToDacValue(rtmGrid.getMaxY(), rtmGrid.getMaxY(), DAC_VALUE_MAX,
-                     rtmGrid.getMultiplicatorGridAdc());
-
   ESP_LOGI(TAG, "+++ START MEASURE startX=%u startY=%u maxX=%u maxY=%u", startX,
            startY, rtmGrid.getMaxX(), rtmGrid.getMaxY());
 
