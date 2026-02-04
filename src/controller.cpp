@@ -14,11 +14,13 @@
 #include "ParameterSetter.h"
 #include "UsbPcInterface.h"
 #include "controller.h"
+#include "esp_heap_caps.h"
 #include "globalVariables.h"
 #include "helper_functions.h"
 #include "project_timer.h"
 #include "tasks.h"
 #include "tasks_common.h"
+
 
 static const char *TAG = "controller";
 
@@ -272,6 +274,8 @@ extern "C" void tunnelStart(const std::string &loops_str) {
   esp_log_level_set(TAG, ESP_LOG_INFO);
   // ESP_LOGI(TAG, "tunnelStart initiated with %s loops", loops_str.c_str());
 
+  ESP_LOGI(TAG, "FOO1 started");
+
   // Create queue only if the data transmission task is not yet running.
   // If it already exists, reuse the existing queue and clear any pending
   // messages to avoid sending stale data.
@@ -293,7 +297,7 @@ extern "C" void tunnelStart(const std::string &loops_str) {
   // Ensure prefix is set for the data transmission task so outputs are
   // formatted as TUNNEL.
   setPrefix("TUNNEL");
-
+  ESP_LOGI(TAG, "FOO2 ");
   // Convert the string to an integer
   int maxLoops = 1000; // Default value
   if (!loops_str.empty() &&
@@ -303,9 +307,41 @@ extern "C" void tunnelStart(const std::string &loops_str) {
     ESP_LOGE(TAG, "Invalid number of loops, using default value");
   }
 
-  // Pass the integer value as a pointer
-  int *maxLoopsPtr = new int(maxLoops);
-  xTaskCreatePinnedToCore(tunnelLoop, "tunnelLoop", 10000, maxLoopsPtr, 2,
-                          &handleTunnelLoop, 1);
+  // Ensure the tunnel command queue exists
+  if (queueTunnelCmd == NULL) {
+    queueTunnelCmd = xQueueCreate(4, sizeof(int));
+    if (queueTunnelCmd == NULL) {
+      ESP_LOGE(TAG, "Failed to create queueTunnelCmd");
+      tunnelIsActive = false;
+      return;
+    }
+  }
+
+  // Create the persistent tunnel task if it doesn't exist
+  if (handleTunnelLoop == NULL) {
+    BaseType_t createResult = xTaskCreatePinnedToCore(
+        tunnelLoop, "tunnelLoop", 4096, NULL, 2, &handleTunnelLoop, 1);
+    if (createResult != pdPASS) {
+      ESP_LOGE(TAG, "Unable to create persistent tunnelLoop task");
+      tunnelIsActive = false;
+      return;
+    }
+  }
+
+  // Send the requested loop count to the persistent task
+  BaseType_t q = xQueueSend(queueTunnelCmd, &maxLoops, pdMS_TO_TICKS(50));
+  if (q != pdPASS) {
+    ESP_LOGW(TAG, "Failed to enqueue tunnel command");
+    tunnelIsActive = false;
+    return;
+  }
+
+  // Ensure the task is resumed so it can read the command
+  if (handleTunnelLoop != NULL) {
+    vTaskResume(handleTunnelLoop);
+  }
+
+  ESP_LOGI(TAG, "FOO3 timer_initialize");
   timer_initialize();
+  ESP_LOGI(TAG, "FOO4 timer_initialize after");
 }

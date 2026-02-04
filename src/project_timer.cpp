@@ -113,10 +113,9 @@ extern "C" void timer_initialize() {
 
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
 
-    gptimer_event_callbacks_t cbs = {};
-    cbs.on_alarm = tickMeasure;
-    ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, NULL));
-
+    // Do not re-register callbacks here — registering callbacks multiple
+    // times can allocate driver resources repeatedly. Only update the
+    // alarm action and ensure the timer is enabled/started.
     if (!gptimer_enabled) {
       ESP_ERROR_CHECK(gptimer_enable(gptimer));
       gptimer_enabled = true;
@@ -125,14 +124,6 @@ extern "C" void timer_initialize() {
       ESP_ERROR_CHECK(gptimer_start(gptimer));
       gptimer_running = true;
     }
-    return;
-  }
-
-  // Prevent double initialization: if a timer handle already exists,
-  // assume it's been created and skip creating a new one.
-  if (gptimer != NULL) {
-    ESP_LOGW("timer_initialize",
-             "gptimer already exists, skipping new creation");
     return;
   }
 

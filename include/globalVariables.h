@@ -98,6 +98,8 @@ extern uint16_t sendDataAfterXDatasets;
 
 // Declare the queue handle as an extern variable
 extern QueueHandle_t queueToPc;
+// Queue for tunnel commands (send int maxLoops)
+extern QueueHandle_t queueTunnelCmd;
 
 extern scanGrid rtmGrid;
 
