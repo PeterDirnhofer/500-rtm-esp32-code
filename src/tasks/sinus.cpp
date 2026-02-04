@@ -10,7 +10,7 @@
 extern "C" void sinusLoop(void *params) {
   static const char *TAG = "testLoop";
   esp_log_level_set(TAG, ESP_LOG_DEBUG);
-  ESP_LOGI(TAG, "+++ START TEST LOOP");
+  ESP_LOGI(TAG, "+++ START SINUS");
 
   std::unique_ptr<uint16_t[]> buffer(new uint16_t[BUFFER_SIZE]);
 

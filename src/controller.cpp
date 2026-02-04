@@ -112,7 +112,6 @@ extern "C" void dispatcherTask(void *unused) {
         if (commaPos != std::string::npos) {
           // Use string after the comma as loops_str
           loops_str = receive.substr(commaPos + 1);
-          ESP_LOGI(TAG, "Using loops from comma: %s", loops_str.c_str());
         }
         tunnelStart(loops_str);
         continue;

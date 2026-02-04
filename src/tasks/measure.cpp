@@ -9,7 +9,6 @@
 extern "C" void measureLoop(void *unused) {
   static const char *TAG = "measureLoop";
   esp_log_level_set(TAG, ESP_LOG_INFO);
-  ESP_LOGI(TAG, "+++ STARTED");
 
   // Log actual grid DAC bounds (min/max) for X and Y at start
   uint16_t minXDac = gridToDacValue(0, rtmGrid.getMaxX(), DAC_VALUE_MAX,
@@ -22,16 +21,11 @@ extern "C" void measureLoop(void *unused) {
   uint16_t maxYDac =
       gridToDacValue(rtmGrid.getMaxY(), rtmGrid.getMaxY(), DAC_VALUE_MAX,
                      rtmGrid.getMultiplicatorGridAdc());
-  ESP_LOGI(TAG, "Grid DAC bounds Xmin=%u Xmax=%u Ymin=%u Ymax=%u", minXDac,
-           maxXDac, minYDac, maxYDac);
-  // Also log configured grid min indices (start positions)
-  ESP_LOGI(TAG, "Grid indices startX=%u startY=%u maxX=%u maxY=%u", startX,
+
+  ESP_LOGI(TAG, "+++ START MEASURE startX=%u startY=%u maxX=%u maxY=%u", startX,
            startY, rtmGrid.getMaxX(), rtmGrid.getMaxY());
 
-  
-
   uint16_t newDacZ = 0;
-
 
   static uint32_t reportCounter =
       0; // counts measurements for throttled reporting

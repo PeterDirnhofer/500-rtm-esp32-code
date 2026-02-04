@@ -5,6 +5,24 @@
 #include "tasks_common.h"
 #include <esp_log.h>
 
+// Helper wrappers for common tunnel operations
+static inline bool enqueueData(const DataElement &el) {
+  if (xQueueSend(queueToPc, &el, portMAX_DELAY) != pdPASS) {
+    ESP_LOGE("tunnelLoop/main", "Failed to enqueue data element");
+    return false;
+  }
+  return true;
+}
+
+static inline void handleOffLimitsAndResume(int16_t adcValue) {
+  uint16_t newDacZ = computePiDac(adcValue, targetTunnelAdc);
+  currentZDac = newDacZ;
+  // Resume VSPI worker to apply new Z value
+  if (handleVspiLoop != NULL) {
+    vTaskResume(handleVspiLoop);
+  }
+}
+
 extern "C" void tunnelLoop(void *params) {
   uint16_t newDacZ = 0;
   resetDac();
@@ -27,7 +45,7 @@ extern "C" void tunnelLoop(void *params) {
     int counter = 0;
     resetDac();
     tunnelIsActive = true;
-    ESP_LOGI(TAG, "+++ Start Tunnel loop (maxLoops=%d)", maxLoops);
+    ESP_LOGI(TAG, "+++ Start TUNNEL (maxLoops=%d)", maxLoops);
 
     while (tunnelIsActive && counter < maxLoops) {
       vTaskSuspend(NULL);
