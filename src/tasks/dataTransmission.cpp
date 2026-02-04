@@ -20,7 +20,6 @@ extern "C" void dataTransmissionLoop(void *params) {
       uint16_t Z = element.getDataZ();
 
       if (X == DATA_COMPLETE) {
-        ESP_LOGI(TAG, "dataTransmission: DATA_COMPLETE received, sending DONE");
         UsbPcInterface::send("%s,DONE\n", prefix);
         // Do not delete the task; just continue waiting for next run
       } else {

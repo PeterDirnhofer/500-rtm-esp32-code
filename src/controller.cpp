@@ -21,7 +21,6 @@
 #include "tasks.h"
 #include "tasks_common.h"
 
-
 static const char *TAG = "controller";
 
 // Queue for TIP commands forwarded to the running adjust loop
@@ -274,8 +273,6 @@ extern "C" void tunnelStart(const std::string &loops_str) {
   esp_log_level_set(TAG, ESP_LOG_INFO);
   // ESP_LOGI(TAG, "tunnelStart initiated with %s loops", loops_str.c_str());
 
-  ESP_LOGI(TAG, "FOO1 started");
-
   // Create queue only if the data transmission task is not yet running.
   // If it already exists, reuse the existing queue and clear any pending
   // messages to avoid sending stale data.
@@ -297,7 +294,6 @@ extern "C" void tunnelStart(const std::string &loops_str) {
   // Ensure prefix is set for the data transmission task so outputs are
   // formatted as TUNNEL.
   setPrefix("TUNNEL");
-  ESP_LOGI(TAG, "FOO2 ");
   // Convert the string to an integer
   int maxLoops = 1000; // Default value
   if (!loops_str.empty() &&
@@ -341,7 +337,5 @@ extern "C" void tunnelStart(const std::string &loops_str) {
     vTaskResume(handleTunnelLoop);
   }
 
-  ESP_LOGI(TAG, "FOO3 timer_initialize");
   timer_initialize();
-  ESP_LOGI(TAG, "FOO4 timer_initialize after");
 }
