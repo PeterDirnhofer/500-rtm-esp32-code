@@ -11,6 +11,8 @@
 #include <esp_netif.h>
 #include <esp_system.h>
 #include <esp_wifi.h>
+#include <nvs.h>
+#include <nvs_flash.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 #include <freertos/queue.h>
@@ -435,6 +437,7 @@ static esp_err_t ws_handler(httpd_req_t *req) {
 
 static httpd_uri_t send_uri;
 static httpd_uri_t ws_uri;
+static httpd_uri_t setwifi_uri;
 
 // Initialize and register HTTP URI handlers (centralized to avoid duplication)
 static void init_and_register_uris(httpd_handle_t server) {
@@ -457,6 +460,143 @@ static void init_and_register_uris(httpd_handle_t server) {
 
   httpd_register_uri_handler(server, &send_uri);
   httpd_register_uri_handler(server, &ws_uri);
+  // handler to receive new WiFi credentials for provisioning
+  memset(&setwifi_uri, 0, sizeof(setwifi_uri));
+  setwifi_uri.uri = "/setwifi";
+  setwifi_uri.method = HTTP_POST;
+  setwifi_uri.handler = [](httpd_req_t *req) -> esp_err_t {
+    // delegate to concrete handler below
+    extern esp_err_t post_setwifi_handler(httpd_req_t *req);
+    return post_setwifi_handler(req);
+  };
+  setwifi_uri.user_ctx = NULL;
+  httpd_register_uri_handler(server, &setwifi_uri);
+}
+
+// Read saved credentials from NVS (namespace "nvsparam")
+static bool read_saved_credentials(std::string &out_ssid, std::string &out_pass) {
+  nvs_handle_t h;
+  esp_err_t err = nvs_open("nvsparam", NVS_READONLY, &h);
+  if (err != ESP_OK) return false;
+  size_t required = 0;
+  if (nvs_get_str(h, "wifi_ssid", NULL, &required) != ESP_OK) {
+    nvs_close(h);
+    return false;
+  }
+  std::vector<char> buf(required);
+  if (nvs_get_str(h, "wifi_ssid", buf.data(), &required) != ESP_OK) {
+    nvs_close(h);
+    return false;
+  }
+  out_ssid.assign(buf.data());
+
+  required = 0;
+  if (nvs_get_str(h, "wifi_pass", NULL, &required) != ESP_OK) {
+    nvs_close(h);
+    return false;
+  }
+  buf.resize(required);
+  if (nvs_get_str(h, "wifi_pass", buf.data(), &required) != ESP_OK) {
+    nvs_close(h);
+    return false;
+  }
+  out_pass.assign(buf.data());
+  nvs_close(h);
+  return true;
+}
+
+// Save credentials to NVS
+static bool save_credentials(const char *ssid, const char *pass) {
+  nvs_handle_t h;
+  esp_err_t err = nvs_open("nvsparam", NVS_READWRITE, &h);
+  if (err != ESP_OK) return false;
+  if ((err = nvs_set_str(h, "wifi_ssid", ssid)) != ESP_OK) {
+    nvs_close(h);
+    return false;
+  }
+  if ((err = nvs_set_str(h, "wifi_pass", pass)) != ESP_OK) {
+    nvs_close(h);
+    return false;
+  }
+  if ((err = nvs_commit(h)) != ESP_OK) {
+    nvs_close(h);
+    return false;
+  }
+  nvs_close(h);
+  return true;
+}
+
+// Attempt a single STA connect attempt with a timeout (ms). Returns true if got IP.
+static bool try_connect_sta_once(const char *ssid, const char *password, uint32_t timeout_ms) {
+  // Ensure station netif exists
+  esp_netif_create_default_wifi_sta();
+
+  wifi_config_t sta_config = {};
+  strncpy((char *)sta_config.sta.ssid, ssid, sizeof(sta_config.sta.ssid));
+  strncpy((char *)sta_config.sta.password, password,
+          sizeof(sta_config.sta.password));
+  sta_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+
+  esp_wifi_set_mode(WIFI_MODE_APSTA); // keep AP if already running
+  esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+  esp_wifi_start();
+  esp_wifi_connect();
+
+  if (s_wifi_event_group == NULL) {
+    s_wifi_event_group = xEventGroupCreate();
+  }
+
+  EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT,
+                                         pdFALSE, pdFALSE,
+                                         pdMS_TO_TICKS(timeout_ms));
+  return (bits & WIFI_CONNECTED_BIT) != 0;
+}
+
+// Handler to receive and validate credentials, then persist them on success
+esp_err_t post_setwifi_handler(httpd_req_t *req) {
+  char buf[256];
+  int ret = httpd_req_recv(req, buf, sizeof(buf) - 1);
+  if (ret <= 0) {
+    httpd_resp_send_500(req);
+    return ESP_FAIL;
+  }
+  buf[ret] = '\0';
+
+  // Expect body in form: ssid=...&pass=...
+  std::string body(buf);
+  auto find_kv = [&](const std::string &k)->std::string{
+    size_t p = body.find(k + "=");
+    if (p == std::string::npos) return std::string();
+    p += k.size() + 1;
+    size_t e = body.find('&', p);
+    if (e == std::string::npos) e = body.size();
+    return body.substr(p, e - p);
+  };
+
+  std::string ssid = find_kv("ssid");
+  std::string pass = find_kv("pass");
+  if (ssid.empty()) {
+    httpd_resp_send_404(req);
+    return ESP_FAIL;
+  }
+
+  ESP_LOGI(TAG, "Provisioning: received SSID='%s' PASS='%s'", ssid.c_str(), pass.c_str());
+
+  bool ok = try_connect_sta_once(ssid.c_str(), pass.c_str(), 10000);
+  if (ok) {
+    if (!save_credentials(ssid.c_str(), pass.c_str())) {
+      ESP_LOGW(TAG, "Provisioning: connected but failed to save credentials");
+    } else {
+      ESP_LOGI(TAG, "Provisioning: credentials saved to NVS");
+    }
+    // Try to switch to STA-only mode
+    esp_wifi_set_mode(WIFI_MODE_STA);
+    httpd_resp_send(req, "OK", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+  } else {
+    httpd_resp_send_500(req);
+    return ESP_FAIL;
+  }
 }
 
 static void wifi_event_handler(void *arg, esp_event_base_t event_base,
@@ -497,51 +637,67 @@ void WifiPcInterface::startStation(const char *ssid, const char *password) {
   esp_netif_init();
   esp_event_loop_create_default();
 
-  // Create default WiFi station
-  esp_netif_create_default_wifi_sta();
-
-  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-  esp_wifi_init(&cfg);
-
   // Register event handlers for WiFi and IP events
   esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler,
                              NULL);
   esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler,
                              NULL);
 
-  wifi_config_t sta_config = {};
-  strncpy((char *)sta_config.sta.ssid, ssid, sizeof(sta_config.sta.ssid));
-  strncpy((char *)sta_config.sta.password, password,
-          sizeof(sta_config.sta.password));
-  sta_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
-
-  esp_wifi_set_mode(WIFI_MODE_STA);
-  esp_wifi_set_config(WIFI_IF_STA, &sta_config);
-  // create event group before starting WiFi so handler can signal
   if (s_wifi_event_group == NULL) {
     s_wifi_event_group = xEventGroupCreate();
   }
 
+  // Initialize WiFi driver
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  esp_wifi_init(&cfg);
+
+  // 1) Try saved credentials from NVS first (if present)
+  std::string saved_ssid, saved_pass;
+  const char *use_ssid = ssid;
+  const char *use_pass = password;
+  if (read_saved_credentials(saved_ssid, saved_pass)) {
+    ESP_LOGI(TAG, "Found saved WiFi credentials, trying saved SSID '%s'",
+             saved_ssid.c_str());
+    use_ssid = saved_ssid.c_str();
+    use_pass = saved_pass.c_str();
+  }
+
+  // Configure STA and attempt connect (short attempt)
+  wifi_config_t sta_config = {};
+  strncpy((char *)sta_config.sta.ssid, use_ssid, sizeof(sta_config.sta.ssid));
+  strncpy((char *)sta_config.sta.password, use_pass,
+          sizeof(sta_config.sta.password));
+  sta_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+
+  // create default WiFi station netif and apply config
+  esp_netif_create_default_wifi_sta();
+  esp_wifi_set_mode(WIFI_MODE_STA);
+  esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+
   esp_wifi_start();
 
-  // Start HTTP server so services are available once connected
-  httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-  if (httpd_start(&http_server, &config) == ESP_OK) {
-    init_and_register_uris(http_server);
-    active = true;
-    ESP_LOGI(TAG, "HTTP server started (STA mode)");
-    // Wait a short time for IP event so we can log IP alongside startup
-    EventBits_t bits =
-        xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE,
-                            pdFALSE, pdMS_TO_TICKS(5000));
-    if (bits & WIFI_CONNECTED_BIT) {
-      ESP_LOGI(TAG, "Started WiFi STA: '%s')", ssid);
+  // Wait up to 10s for a connection
+  EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT,
+                                         pdFALSE, pdFALSE,
+                                         pdMS_TO_TICKS(10000));
+  if (bits & WIFI_CONNECTED_BIT) {
+    // Success: start HTTP server and enable services
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    if (httpd_start(&http_server, &config) == ESP_OK) {
+      init_and_register_uris(http_server);
+      active = true;
+      ESP_LOGI(TAG, "HTTP server started (STA mode)");
+      ESP_LOGI(TAG, "Started WiFi STA: '%s'", use_ssid);
     } else {
-      ESP_LOGI(TAG, "Started WiFi STA: '%s' (attempting connect)", ssid);
+      ESP_LOGE(TAG, "Failed to start HTTP server");
     }
-    // Note: raw WebSocket listener removed — using httpd helper only
   } else {
-    ESP_LOGE(TAG, "Failed to start HTTP server");
+    // Failed to connect as STA -> fall back to AP provisioning
+    ESP_LOGW(TAG, "Failed to connect as STA (tried '%s'), starting AP for provisioning",
+             use_ssid);
+    // Stop wifi to ensure AP start() does its own init
+    esp_wifi_stop();
+    start();
   }
 
   if (queueFromPc == NULL) {
