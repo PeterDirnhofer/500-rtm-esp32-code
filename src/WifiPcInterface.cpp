@@ -472,61 +472,8 @@ static void init_and_register_uris(httpd_handle_t server) {
   httpd_register_uri_handler(server, &setwifi_uri);
 }
 
-// Read saved credentials from NVS (namespace "nvsparam")
-static bool read_saved_credentials(std::string &out_ssid,
-                                   std::string &out_pass) {
-  nvs_handle_t h;
-  esp_err_t err = nvs_open("nvsparam", NVS_READONLY, &h);
-  if (err != ESP_OK)
-    return false;
-  size_t required = 0;
-  if (nvs_get_str(h, "wifi_ssid", NULL, &required) != ESP_OK) {
-    nvs_close(h);
-    return false;
-  }
-  std::vector<char> buf(required);
-  if (nvs_get_str(h, "wifi_ssid", buf.data(), &required) != ESP_OK) {
-    nvs_close(h);
-    return false;
-  }
-  out_ssid.assign(buf.data());
-
-  required = 0;
-  if (nvs_get_str(h, "wifi_pass", NULL, &required) != ESP_OK) {
-    nvs_close(h);
-    return false;
-  }
-  buf.resize(required);
-  if (nvs_get_str(h, "wifi_pass", buf.data(), &required) != ESP_OK) {
-    nvs_close(h);
-    return false;
-  }
-  out_pass.assign(buf.data());
-  nvs_close(h);
-  return true;
-}
-
-// Save credentials to NVS
-static bool save_credentials(const char *ssid, const char *pass) {
-  nvs_handle_t h;
-  esp_err_t err = nvs_open("nvsparam", NVS_READWRITE, &h);
-  if (err != ESP_OK)
-    return false;
-  if ((err = nvs_set_str(h, "wifi_ssid", ssid)) != ESP_OK) {
-    nvs_close(h);
-    return false;
-  }
-  if ((err = nvs_set_str(h, "wifi_pass", pass)) != ESP_OK) {
-    nvs_close(h);
-    return false;
-  }
-  if ((err = nvs_commit(h)) != ESP_OK) {
-    nvs_close(h);
-    return false;
-  }
-  nvs_close(h);
-  return true;
-}
+// Use lightweight NVS helpers (see include/nvs_helpers.h)
+#include "nvs_helpers.h"
 
 // Attempt a single STA connect attempt with a timeout (ms). Returns true if got
 // IP.
@@ -591,7 +538,7 @@ esp_err_t post_setwifi_handler(httpd_req_t *req) {
 
   bool ok = try_connect_sta_once(ssid.c_str(), pass.c_str(), 10000);
   if (ok) {
-    if (!save_credentials(ssid.c_str(), pass.c_str())) {
+    if (!nvs_write_wifi_credentials(ssid.c_str(), pass.c_str())) {
       ESP_LOGW(TAG, "Provisioning: connected but failed to save credentials");
     } else {
       ESP_LOGI(TAG, "Provisioning: credentials saved to NVS");
@@ -662,7 +609,7 @@ void WifiPcInterface::startStation(const char *ssid, const char *password) {
   std::string saved_ssid, saved_pass;
   const char *use_ssid = ssid;
   const char *use_pass = password;
-  if (read_saved_credentials(saved_ssid, saved_pass)) {
+  if (nvs_read_wifi_credentials(saved_ssid, saved_pass)) {
     ESP_LOGI(TAG, "Found saved WiFi credentials, trying saved SSID '%s'",
              saved_ssid.c_str());
     use_ssid = saved_ssid.c_str();
@@ -743,8 +690,8 @@ void WifiPcInterface::start() {
   esp_wifi_set_config(WIFI_IF_AP, &ap_config);
   esp_wifi_start();
 
-  ESP_LOGI(TAG, "Started AP '%s' IP='192.168.4.1' SSID='%s' PASS='%s'",
-           AP_SSID, AP_SSID, AP_PASS);
+  ESP_LOGI(TAG, "Started AP '%s' IP='192.168.4.1' SSID='%s' PASS='%s'", AP_SSID,
+           AP_SSID, AP_PASS);
 
   // Start HTTP server
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();

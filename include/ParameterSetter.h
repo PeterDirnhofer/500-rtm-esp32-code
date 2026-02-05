@@ -3,24 +3,23 @@
 
 #pragma once
 
+#include "nvs_helpers.h"
+#include <cstring>
+#include <esp_err.h>
+#include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <cstring>
 #include <string>
-#include <vector>
 #include <utility> // For std::pair
-#include "NvsStorageClass.h"
-#include <esp_log.h>
-#include <esp_err.h>
+#include <vector>
+
 
 static const int size_keys = 12;
 
-class ParameterSetting : public NvsStorageClass
-{
-protected:
+class ParameterSetting {
 public:
-  ParameterSetting();  
-  ~ParameterSetting(); 
+  ParameterSetting();
+  ~ParameterSetting();
   esp_err_t putParametersToFlash(std::vector<std::string> params);
   esp_err_t getParametersFromFlash();
   esp_err_t putParametersToFlashFromString(std::string receive);
