@@ -11,8 +11,6 @@
 #include <esp_netif.h>
 #include <esp_system.h>
 #include <esp_wifi.h>
-#include <nvs.h>
-#include <nvs_flash.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 #include <freertos/queue.h>
@@ -21,10 +19,11 @@
 #include <mbedtls/base64.h>
 #include <mbedtls/sha1.h>
 #include <mutex>
+#include <nvs.h>
+#include <nvs_flash.h>
 #include <string>
 #include <sys/socket.h>
 #include <vector>
-
 
 static const char *TAG = "WifiPcInterface";
 
@@ -466,7 +465,7 @@ static void init_and_register_uris(httpd_handle_t server) {
   setwifi_uri.method = HTTP_POST;
   setwifi_uri.handler = [](httpd_req_t *req) -> esp_err_t {
     // delegate to concrete handler below
-    extern esp_err_t post_setwifi_handler(httpd_req_t *req);
+    extern esp_err_t post_setwifi_handler(httpd_req_t * req);
     return post_setwifi_handler(req);
   };
   setwifi_uri.user_ctx = NULL;
@@ -474,10 +473,12 @@ static void init_and_register_uris(httpd_handle_t server) {
 }
 
 // Read saved credentials from NVS (namespace "nvsparam")
-static bool read_saved_credentials(std::string &out_ssid, std::string &out_pass) {
+static bool read_saved_credentials(std::string &out_ssid,
+                                   std::string &out_pass) {
   nvs_handle_t h;
   esp_err_t err = nvs_open("nvsparam", NVS_READONLY, &h);
-  if (err != ESP_OK) return false;
+  if (err != ESP_OK)
+    return false;
   size_t required = 0;
   if (nvs_get_str(h, "wifi_ssid", NULL, &required) != ESP_OK) {
     nvs_close(h);
@@ -509,7 +510,8 @@ static bool read_saved_credentials(std::string &out_ssid, std::string &out_pass)
 static bool save_credentials(const char *ssid, const char *pass) {
   nvs_handle_t h;
   esp_err_t err = nvs_open("nvsparam", NVS_READWRITE, &h);
-  if (err != ESP_OK) return false;
+  if (err != ESP_OK)
+    return false;
   if ((err = nvs_set_str(h, "wifi_ssid", ssid)) != ESP_OK) {
     nvs_close(h);
     return false;
@@ -526,8 +528,10 @@ static bool save_credentials(const char *ssid, const char *pass) {
   return true;
 }
 
-// Attempt a single STA connect attempt with a timeout (ms). Returns true if got IP.
-static bool try_connect_sta_once(const char *ssid, const char *password, uint32_t timeout_ms) {
+// Attempt a single STA connect attempt with a timeout (ms). Returns true if got
+// IP.
+static bool try_connect_sta_once(const char *ssid, const char *password,
+                                 uint32_t timeout_ms) {
   // Ensure station netif exists
   esp_netif_create_default_wifi_sta();
 
@@ -546,9 +550,9 @@ static bool try_connect_sta_once(const char *ssid, const char *password, uint32_
     s_wifi_event_group = xEventGroupCreate();
   }
 
-  EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT,
-                                         pdFALSE, pdFALSE,
-                                         pdMS_TO_TICKS(timeout_ms));
+  EventBits_t bits =
+      xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE,
+                          pdFALSE, pdMS_TO_TICKS(timeout_ms));
   return (bits & WIFI_CONNECTED_BIT) != 0;
 }
 
@@ -564,12 +568,14 @@ esp_err_t post_setwifi_handler(httpd_req_t *req) {
 
   // Expect body in form: ssid=...&pass=...
   std::string body(buf);
-  auto find_kv = [&](const std::string &k)->std::string{
+  auto find_kv = [&](const std::string &k) -> std::string {
     size_t p = body.find(k + "=");
-    if (p == std::string::npos) return std::string();
+    if (p == std::string::npos)
+      return std::string();
     p += k.size() + 1;
     size_t e = body.find('&', p);
-    if (e == std::string::npos) e = body.size();
+    if (e == std::string::npos)
+      e = body.size();
     return body.substr(p, e - p);
   };
 
@@ -580,7 +586,8 @@ esp_err_t post_setwifi_handler(httpd_req_t *req) {
     return ESP_FAIL;
   }
 
-  ESP_LOGI(TAG, "Provisioning: received SSID='%s' PASS='%s'", ssid.c_str(), pass.c_str());
+  ESP_LOGI(TAG, "Provisioning: received SSID='%s' PASS='%s'", ssid.c_str(),
+           pass.c_str());
 
   bool ok = try_connect_sta_once(ssid.c_str(), pass.c_str(), 10000);
   if (ok) {
@@ -677,9 +684,9 @@ void WifiPcInterface::startStation(const char *ssid, const char *password) {
   esp_wifi_start();
 
   // Wait up to 10s for a connection
-  EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT,
-                                         pdFALSE, pdFALSE,
-                                         pdMS_TO_TICKS(10000));
+  EventBits_t bits =
+      xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE,
+                          pdFALSE, pdMS_TO_TICKS(10000));
   if (bits & WIFI_CONNECTED_BIT) {
     // Success: start HTTP server and enable services
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -693,8 +700,10 @@ void WifiPcInterface::startStation(const char *ssid, const char *password) {
     }
   } else {
     // Failed to connect as STA -> fall back to AP provisioning
-    ESP_LOGW(TAG, "Failed to connect as STA (tried '%s'), starting AP for provisioning",
-             use_ssid);
+    ESP_LOGW(
+        TAG,
+        "Failed to connect as STA (tried '%s'), starting AP for provisioning",
+        use_ssid);
     // Stop wifi to ensure AP start() does its own init
     esp_wifi_stop();
     start();
@@ -734,7 +743,8 @@ void WifiPcInterface::start() {
   esp_wifi_set_config(WIFI_IF_AP, &ap_config);
   esp_wifi_start();
 
-  ESP_LOGI(TAG, "Started AP '%s' (AP IP: 192.168.4.1)", AP_SSID);
+  ESP_LOGI(TAG, "Started AP '%s' IP='192.168.4.1' SSID='%s' PASS='%s'",
+           AP_SSID, AP_SSID, AP_PASS);
 
   // Start HTTP server
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();

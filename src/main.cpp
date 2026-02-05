@@ -34,7 +34,6 @@
 #include "helper_functions.h"
 #include "my_data.h"
 
-
 extern "C" void app_main(void) {
   esp_log_level_set("*", ESP_LOG_WARN);
   esp_log_level_set("efuse", ESP_LOG_WARN);     // Suppress efuse logs
