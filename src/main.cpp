@@ -34,6 +34,12 @@
 #include "helper_functions.h"
 #include "my_data.h"
 
+// Background task to start WiFi so app_main isn't blocked
+static void wifi_init_task(void *pvParameters) {
+  WifiPcInterface::startStation(SSID, PASS);
+  vTaskDelete(NULL);
+}
+
 extern "C" void app_main(void) {
   esp_log_level_set("*", ESP_LOG_WARN);
   esp_log_level_set("efuse", ESP_LOG_WARN);     // Suppress efuse logs
@@ -70,7 +76,9 @@ extern "C" void app_main(void) {
   usb.start();
 
   // Start WiFi interface in STA mode using credentials from my_data.h
-  WifiPcInterface::startStation(SSID, PASS);
+  // Run WiFi start in a background FreeRTOS task so other init isn't blocked
+  xTaskCreate(wifi_init_task, "wifi_init", 4096, NULL, tskIDLE_PRIORITY + 1,
+              NULL);
 
   gpio_set_level(IO_25_RED, 1);
   // initAdc();
