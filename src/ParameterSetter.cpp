@@ -149,7 +149,7 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params) {
            (int)params.size());
 
   // Check if all parameters are numbers
-  float f = 0;
+
   for (size_t i = 1; i <= size_keys; i++) {
     if (!nvs_is_key(keys[i])) {
       ESP_LOGE("putParametersToFlash", "Parameter %s is no number",

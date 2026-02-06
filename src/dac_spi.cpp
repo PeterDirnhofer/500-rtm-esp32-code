@@ -173,18 +173,18 @@ void vspiDacLoop(void *unused) {
       vspiSendDac(currentZDac, buffer.get(), handleDacZ);
       lastZDac = currentZDac;
 
-      // Set LED
-      if (currentZDac == 0) {
-        gpio_set_level(IO_17_DAC_NULL, 1);
-      } else {
-        gpio_set_level(IO_17_DAC_NULL, 0);
-      }
+      // // Set LED
+      // if (currentZDac == 0) {
+      //   gpio_set_level(LED_4, 1);
+      // } else {
+      //   gpio_set_level(LED_4, 0);
+      // }
 
-      if (currentZDac >= DAC_VALUE_MAX) {
-        gpio_set_level(IO_04_DAC_MAX, 1);
-      } else {
-        gpio_set_level(IO_04_DAC_MAX, 0);
-      }
+      // if (currentZDac >= DAC_VALUE_MAX) {
+      //   gpio_set_level(LED_5, 1);
+      // } else {
+      //   gpio_set_level(LED_5, 0);
+      // }
     }
     vTaskSuspend(NULL);
   }

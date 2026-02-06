@@ -65,11 +65,11 @@ extern "C" void app_main(void) {
   }
 
   // GPIO configuration for Monitoring on Jumper J3 GPIO_RESERVE
-  gpio_set_direction(IO_17_DAC_NULL, GPIO_MODE_OUTPUT);
-  gpio_set_direction(IO_04_DAC_MAX, GPIO_MODE_OUTPUT);
-  gpio_set_direction(IO_25_RED, GPIO_MODE_OUTPUT);
-  gpio_set_direction(IO_27_YELLOW, GPIO_MODE_OUTPUT);
-  gpio_set_direction(IO_02_GREEN, GPIO_MODE_OUTPUT);
+  gpio_set_direction(LED_RED, GPIO_MODE_OUTPUT);    // LED1
+  gpio_set_direction(LED_YELLOW, GPIO_MODE_OUTPUT); // LED2
+  gpio_set_direction(LED_GREEN, GPIO_MODE_OUTPUT);  // LED3
+  gpio_set_direction(LED_4, GPIO_MODE_OUTPUT);      // LED4
+  gpio_set_direction(LED_5, GPIO_MODE_OUTPUT);      // LED5
 
   // USB Interface initialization
   UsbPcInterface usb;
@@ -80,32 +80,26 @@ extern "C" void app_main(void) {
   xTaskCreate(wifi_init_task, "wifi_init", 4096, NULL, tskIDLE_PRIORITY + 1,
               NULL);
 
-  gpio_set_level(IO_25_RED, 1);
+  gpio_set_level(LED_RED, 1);
   // initAdc();
   i2cAdcInit();
-  gpio_set_level(IO_27_YELLOW, 1);
+  gpio_set_level(LED_YELLOW, 1);
 
   vspiDacStart();
   // Turn on the green LED to indicate system is ready
-  gpio_set_level(IO_02_GREEN, 1);
+  gpio_set_level(LED_GREEN, 1);
 
   // Parameter settings
   ParameterSetting parameterSetter;
-  gpio_set_level(IO_04_DAC_MAX, 1);
+ 
   // Start read from PC and Start Dispatcher
   dispatcherTaskStart();
-  gpio_set_level(IO_04_DAC_MAX, 1);
-  gpio_set_level(IO_17_DAC_NULL, 1);
+ 
   vTaskDelay(pdMS_TO_TICKS(100));
 
   // Send "STOP" message
   usb.send("STOP\n");
-  // Initialize GPIO levels
-  gpio_set_level(IO_17_DAC_NULL, 0); // white LED
-  gpio_set_level(IO_04_DAC_MAX, 0);  // blue LED
-  gpio_set_level(IO_25_RED, 0);      // red LED
-  gpio_set_level(IO_27_YELLOW, 0);   // yellow LED
-  gpio_set_level(IO_02_GREEN, 0);    // green LED
+ 
 
   while (true) {
     if (!measureIsActive) {

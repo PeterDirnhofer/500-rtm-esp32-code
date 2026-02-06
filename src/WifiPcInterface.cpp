@@ -642,6 +642,7 @@ void WifiPcInterface::startStation(const char *ssid, const char *password) {
       active = true;
       ESP_LOGI(TAG, "HTTP server started (STA mode)");
       ESP_LOGI(TAG, "Started WiFi STA: '%s'", use_ssid);
+      gpio_set_level(LED_5, 1);
     } else {
       ESP_LOGE(TAG, "Failed to start HTTP server");
     }

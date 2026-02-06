@@ -39,10 +39,10 @@ extern "C" void setupError(const char *errormessage) {
  */
 extern "C" void errorBlink() {
   while (true) {
-    gpio_set_level(IO_04_DAC_MAX, 1); // Turn on blue LED
-    vTaskDelay(pdMS_TO_TICKS(100));   // Delay 100 ms
-    gpio_set_level(IO_04_DAC_MAX, 0); // Turn off blue LED
-    vTaskDelay(pdMS_TO_TICKS(100));   // Delay 100 ms
+    gpio_set_level(LED_5, 1);       // Turn on blue LED
+    vTaskDelay(pdMS_TO_TICKS(100)); // Delay 100 ms
+    gpio_set_level(LED_5, 0);       // Turn off blue LED
+    vTaskDelay(pdMS_TO_TICKS(100)); // Delay 100 ms
   }
 }
 
@@ -66,27 +66,27 @@ void ledStatusAdc(int16_t adcValue, uint16_t targetAdc, uint16_t toleranceAdc,
   // Within tolerance - Yellow LED
   if (abs(targetAdc - adcValue) <= toleranceAdc) {
     if (lastLimit != "LIMIT") {
-      gpio_set_level(IO_25_RED, 0);    // Red LED off
-      gpio_set_level(IO_27_YELLOW, 1); // Yellow LED on
-      gpio_set_level(IO_02_GREEN, 0);  // Green LED off
+      gpio_set_level(LED_RED, 0);    // Red LED off
+      gpio_set_level(LED_YELLOW, 1); // Yellow LED on
+      gpio_set_level(LED_GREEN, 0);  // Green LED off
       lastLimit = "LIMIT";
     }
   }
   // Above target - Red LED
   else if (adcValue > targetAdc) {
     if (lastLimit != "HI") {
-      gpio_set_level(IO_25_RED, 1);    // Red LED on
-      gpio_set_level(IO_27_YELLOW, 0); // Yellow LED off
-      gpio_set_level(IO_02_GREEN, 0);  // Green LED off
+      gpio_set_level(LED_RED, 1);    // Red LED on
+      gpio_set_level(LED_YELLOW, 0); // Yellow LED off
+      gpio_set_level(LED_GREEN, 0);  // Green LED off
       lastLimit = "HI";
     }
   }
   // Below target - Green LED
   else {
     if (lastLimit != "LO") {
-      gpio_set_level(IO_25_RED, 0);    // Red LED off
-      gpio_set_level(IO_27_YELLOW, 0); // Yellow LED off
-      gpio_set_level(IO_02_GREEN, 1);  // Green LED on
+      gpio_set_level(LED_RED, 0);    // Red LED off
+      gpio_set_level(LED_YELLOW, 0); // Yellow LED off
+      gpio_set_level(LED_GREEN, 1);  // Green LED on
       lastLimit = "LO";
     }
   }

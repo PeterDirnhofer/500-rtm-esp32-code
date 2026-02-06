@@ -53,14 +53,14 @@ extern "C" void tunnelLoop(void *params) {
       int16_t errorAdc = targetTunnelAdc - adcValue;
 
       if (abs(errorAdc) <= toleranceTunnelAdc) {
-        gpio_set_level(IO_17_DAC_NULL, 0);
+        gpio_set_level(LED_4, 0);
 
         DataElement dataElement(LIMIT, adcValue, currentZDac);
         if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS) {
           ESP_LOGE(TAG, "Failed to enqueue LIMIT into queueToPc");
         }
       } else {
-        gpio_set_level(IO_17_DAC_NULL, 1);
+        gpio_set_level(LED_4, 1);
 
         DataElement dataElement(OFF_LIMITS, adcValue, currentZDac);
         if (xQueueSend(queueToPc, &dataElement, portMAX_DELAY) != pdPASS) {
