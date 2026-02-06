@@ -4,6 +4,7 @@
 #include <string.h>
 #include <string>
 
+#include "nvs_helpers.h"
 #include <driver/gpio.h>
 #include <driver/spi_slave.h>
 #include <esp_event.h>
@@ -32,11 +33,13 @@
 #include "dataStoring.h"
 #include "globalVariables.h"
 #include "helper_functions.h"
-#include "my_data.h"
+// Do not use compile-time credentials
 
 // Background task to start WiFi so app_main isn't blocked
 static void wifi_init_task(void *pvParameters) {
-  WifiPcInterface::startStation(SSID, PASS);
+
+  // Delegate credential selection to WifiPcInterface (it will read NVS)
+  WifiPcInterface::startStation();
   vTaskDelete(NULL);
 }
 
@@ -91,15 +94,14 @@ extern "C" void app_main(void) {
 
   // Parameter settings
   ParameterSetting parameterSetter;
- 
+
   // Start read from PC and Start Dispatcher
   dispatcherTaskStart();
- 
+
   vTaskDelay(pdMS_TO_TICKS(100));
 
   // Send "STOP" message
   usb.send("STOP\n");
- 
 
   while (true) {
     if (!measureIsActive) {

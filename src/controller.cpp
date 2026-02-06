@@ -17,6 +17,7 @@
 #include "esp_heap_caps.h"
 #include "globalVariables.h"
 #include "helper_functions.h"
+#include "nvs_helpers.h"
 #include "project_timer.h"
 #include "tasks.h"
 #include "tasks_common.h"
@@ -41,19 +42,27 @@ extern "C" void dispatcherTask(void *unused) {
     // Wait for data to be available in the queue with a timeout of 100 ms
     if (xQueueReceive(queueFromPc, &rcvChars, pdMS_TO_TICKS(100)) == pdPASS) {
       receive = std::string(rcvChars);
-      // Remove extra characters (whitespace, newline, etc.)
-      receive.erase(std::remove_if(receive.begin(), receive.end(), ::isspace),
-                    receive.end());
+      // Trim leading/trailing whitespace but preserve internal spaces
+      const std::string whitespace = " \t\n\r\f\v";
+      auto start = receive.find_first_not_of(whitespace);
+      if (start == std::string::npos) {
+        continue; // string is all whitespace
+      }
+      auto end = receive.find_last_not_of(whitespace);
+      receive = receive.substr(start, end - start + 1);
 
-      // Only proceed if we received a complete string (not empty)
+      // Only proceed if we received a non-empty string
       if (receive.empty()) {
-
-        continue; // Skip processing and check queue again
+        continue;
       }
 
       ESP_LOGI(TAG, "Processing command: %s", receive.c_str());
 
-      if (receive == "STOP") {
+      // Create an uppercase copy for case-insensitive command matching
+      std::string norm = receive;
+      std::transform(norm.begin(), norm.end(), norm.begin(), ::toupper);
+
+      if (norm == "STOP") {
 
         // Stop running loops so the system becomes idle but keep the
         // receive (UART/WebSocket) loop alive to accept further commands.
@@ -91,18 +100,18 @@ extern "C" void dispatcherTask(void *unused) {
         continue;
       }
 
-      if (receive.rfind("MEASURE", 0) == 0) {
+      if (norm.rfind("MEASURE", 0) == 0) {
 
         // Set simulation mode when command contains SIMULATE
-        SIMULATION_MODE = (receive.find("SIMULATE") != std::string::npos);
+        SIMULATION_MODE = (norm.find("SIMU") != std::string::npos);
 
         measureStart();
         continue;
       }
 
-      if (receive.rfind("TUNNEL", 0) == 0) {
+      if (norm.rfind("TUNNEL", 0) == 0) {
         // Set simulation mode when command contains SIMULATE
-        SIMULATION_MODE = (receive.find("SIMULATE") != std::string::npos);
+        SIMULATION_MODE = (norm.find("SIMU") != std::string::npos);
 
         // Parse the number of loops from the command
         std::string loops_str = "1000"; // Default value
@@ -118,13 +127,13 @@ extern "C" void dispatcherTask(void *unused) {
       }
 
       // Adjust and TIP
-      if (receive == "ADJUST") {
+      if (norm == "ADJUST") {
         adjustStart();
         continue;
       }
 
       // Start testLoop with parameter X, Y, Z
-      if (receive == "SINUS") {
+      if (norm == "SINUS") {
         // Create the testLoop task
         if (handleSinusLoop != NULL) {
           vTaskDelete(handleSinusLoop);
@@ -134,7 +143,7 @@ extern "C" void dispatcherTask(void *unused) {
         continue;
       }
 
-      if (receive.rfind("TIP,", 0) == 0) {
+      if (norm.rfind("TIP,", 0) == 0) {
         if (adjustIsActive) {
           if (tipQueue == NULL) {
             tipQueue = xQueueCreate(8, 256);
@@ -163,7 +172,7 @@ extern "C" void dispatcherTask(void *unused) {
       }
 
       // Parameter
-      if (receive == "PARAMETER,?") {
+      if (norm == "PARAMETER,?") {
         ParameterSetting parameterSetter;
         parameterSetter.getParametersFromFlash();
         std::string storedParameters = parameterSetter.getParameters();
@@ -178,7 +187,7 @@ extern "C" void dispatcherTask(void *unused) {
         continue;
       }
 
-      if (receive == "PARAMETER,DEFAULT") {
+      if (norm == "PARAMETER,DEFAULT") {
         ESP_LOGI(TAG, "parameter,default ++++");
         ParameterSetting parameterSetter;
         parameterSetter.putDefaultParametersToFlash();
@@ -188,10 +197,93 @@ extern "C" void dispatcherTask(void *unused) {
         continue;
       }
 
-      if (receive.rfind("PARAMETER,", 0) == 0) {
+      if (norm.rfind("PARAMETER,", 0) == 0) {
         ParameterSetting parameterSetter;
         parameterSetter.putParametersToFlashFromString(receive);
         parameterSetter.getParametersFromFlash();
+        continue;
+      }
+
+      // Set WiFi SSID in NVS: format SET_SSID,<ssid>
+      if (norm.rfind("SET_SSID,", 0) == 0) {
+        std::string new_ssid = receive.substr(strlen("SET_SSID,"));
+        if (new_ssid.empty()) {
+          UsbPcInterface::send("ERROR: SET_SSID requires a value\n");
+          continue;
+        }
+        if (!nvs_begin()) {
+          ESP_LOGW(TAG, "SET_SSID: nvs_begin() failed");
+          UsbPcInterface::send("ERROR: NVS init failed\n");
+          continue;
+        }
+        std::string cur_ssid, cur_pass;
+        bool had = nvs_read_wifi_credentials(cur_ssid, cur_pass);
+        ESP_LOGI(TAG,
+                 "SET_SSID: current NVS values before write: present=%d "
+                 "SSID='%s' PASS='%s'",
+                 had, cur_ssid.c_str(), cur_pass.c_str());
+        if (cur_pass.empty())
+          cur_pass = "";
+        ESP_LOGI(TAG, "SET_SSID: writing SSID='%s' (preserving PASS)",
+                 new_ssid.c_str());
+        if (!nvs_write_wifi_credentials(new_ssid.c_str(), cur_pass.c_str())) {
+          ESP_LOGW(TAG, "SET_SSID: nvs_write_wifi_credentials failed");
+          UsbPcInterface::send("ERROR: Failed to store SSID\n");
+        } else {
+          ESP_LOGI(TAG,
+                   "SET_SSID: write succeeded, verifying by re-reading NVS");
+          std::string verify_ssid, verify_pass;
+          if (nvs_read_wifi_credentials(verify_ssid, verify_pass)) {
+            ESP_LOGI(TAG, "SET_SSID: verification read SSID='%s' PASS='%s'",
+                     verify_ssid.c_str(), verify_pass.c_str());
+          } else {
+            ESP_LOGW(TAG, "SET_SSID: verification read failed");
+          }
+          UsbPcInterface::send("OK: SSID saved: %s PASS: %s\n",
+                               new_ssid.c_str(), cur_pass.c_str());
+        }
+        continue;
+      }
+
+      // Set WiFi PASSWORD in NVS: format SET_PASSWORD,<password>
+      if (norm.rfind("SET_PASSWORD,", 0) == 0) {
+        std::string new_pass = receive.substr(strlen("SET_PASSWORD,"));
+        if (new_pass.empty()) {
+          UsbPcInterface::send("ERROR: SET_PASSWORD requires a value\n");
+          continue;
+        }
+        if (!nvs_begin()) {
+          ESP_LOGW(TAG, "SET_PASSWORD: nvs_begin() failed");
+          UsbPcInterface::send("ERROR: NVS init failed\n");
+          continue;
+        }
+        std::string cur_ssid, cur_pass;
+        bool had2 = nvs_read_wifi_credentials(cur_ssid, cur_pass);
+        ESP_LOGI(TAG,
+                 "SET_PASSWORD: current NVS values before write: present=%d "
+                 "SSID='%s' PASS='%s'",
+                 had2, cur_ssid.c_str(), cur_pass.c_str());
+        if (cur_ssid.empty())
+          cur_ssid = "";
+        ESP_LOGI(TAG, "SET_PASSWORD: writing PASS (preserving SSID='%s')",
+                 cur_ssid.c_str());
+        if (!nvs_write_wifi_credentials(cur_ssid.c_str(), new_pass.c_str())) {
+          ESP_LOGW(TAG, "SET_PASSWORD: nvs_write_wifi_credentials failed");
+          UsbPcInterface::send("ERROR: Failed to store password\n");
+        } else {
+          ESP_LOGI(
+              TAG,
+              "SET_PASSWORD: write succeeded, verifying by re-reading NVS");
+          std::string verify_ssid2, verify_pass2;
+          if (nvs_read_wifi_credentials(verify_ssid2, verify_pass2)) {
+            ESP_LOGI(TAG, "SET_PASSWORD: verification read SSID='%s' PASS='%s'",
+                     verify_ssid2.c_str(), verify_pass2.c_str());
+          } else {
+            ESP_LOGW(TAG, "SET_PASSWORD: verification read failed");
+          }
+          UsbPcInterface::send("OK: Password saved: SSID: %s PASS: %s\n",
+                               cur_ssid.c_str(), new_pass.c_str());
+        }
         continue;
       }
 

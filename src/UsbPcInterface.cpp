@@ -40,7 +40,6 @@ void UsbPcInterface::start() {
       .flags = 0, // Initialize the flags member to zero
   };
 
-
   // Install UART driver
   uart_driver_install(UART_NUM_1, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
   uart_param_config(UART_NUM_1, &uart_config);
@@ -80,14 +79,7 @@ void UsbPcInterface::mUartRcvLoop(void *unused) {
         if (receivedChar == '\n') {
           // Only process if received string is not empty
           if (!receivedString.empty()) {
-            // Null-terminate the received string
-            receivedString += '\0';
-
-            // Convert receivedString to uppercase
-            std::transform(receivedString.begin(), receivedString.end(),
-                           receivedString.begin(), ::toupper);
-
-            // Send the received string to the queue
+            // Send the received string to the queue (preserve case/spaces)
             if (xQueueSend(queueFromPc, receivedString.c_str(),
                            portMAX_DELAY) != pdPASS) {
               ESP_LOGE(TAG, "Failed to send to queue");

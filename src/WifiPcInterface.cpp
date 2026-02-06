@@ -25,6 +25,8 @@
 #include <sys/socket.h>
 #include <vector>
 
+// Do NOT use compile-time credentials; read from NVS instead
+
 static const char *TAG = "WifiPcInterface";
 
 static bool active = false;
@@ -141,9 +143,17 @@ static esp_err_t post_send_handler(httpd_req_t *req) {
   }
   buf[ret] = '\0';
 
-  // Trim newline, whitespace
+  // Trim leading/trailing whitespace but preserve internal spaces and case
   std::string s(buf);
-  s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
+  const std::string whitespace = " \t\n\r\f\v";
+  auto start = s.find_first_not_of(whitespace);
+  if (start == std::string::npos) {
+    httpd_resp_set_status(req, "200 OK");
+    httpd_resp_send(req, "OK", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+  }
+  auto end = s.find_last_not_of(whitespace);
+  s = s.substr(start, end - start + 1);
 
   // ensure queueFromPc exists
   if (queueFromPc == NULL) {
@@ -292,7 +302,15 @@ static void raw_ws_worker(void *a) {
     if (opcode == 0x1) {
       ESP_LOGI(TAG, "raw worker: TEXT '%s'", buf);
       std::string s(buf);
-      s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
+      const std::string whitespace = " \t\n\r\f\v";
+      auto start = s.find_first_not_of(whitespace);
+      if (start == std::string::npos) {
+        // nothing to process
+        vTaskDelay(pdMS_TO_TICKS(1));
+        continue;
+      }
+      auto end = s.find_last_not_of(whitespace);
+      s = s.substr(start, end - start + 1);
       if (!s.empty()) {
         if (queueFromPc == NULL)
           queueFromPc = xQueueCreate(2, sizeof(char) * 255);
@@ -583,7 +601,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
   }
 }
 
-void WifiPcInterface::startStation(const char *ssid, const char *password) {
+void WifiPcInterface::startStation() {
   if (active)
     return;
   esp_log_level_set(TAG, ESP_LOG_DEBUG);
@@ -605,55 +623,70 @@ void WifiPcInterface::startStation(const char *ssid, const char *password) {
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   esp_wifi_init(&cfg);
 
-  // 1) Try saved credentials from NVS first (if present)
-  std::string saved_ssid, saved_pass;
-  const char *use_ssid = ssid;
-  const char *use_pass = password;
-  if (nvs_read_wifi_credentials(saved_ssid, saved_pass)) {
-    ESP_LOGI(TAG, "Found saved WiFi credentials, trying saved SSID '%s'",
-             saved_ssid.c_str());
-    use_ssid = saved_ssid.c_str();
-    use_pass = saved_pass.c_str();
-  }
+  // Read credentials from NVS and prefer them if present; otherwise use
+  // compile-time values from my_data.h
+  std::string nvs_ssid, nvs_pass;
+  bool have_nvs = nvs_read_wifi_credentials(nvs_ssid, nvs_pass);
+  if (have_nvs && !nvs_ssid.empty()) {
+    ESP_LOGD(TAG, "startStation: attempting STA with NVS SSID='%s'",
+             nvs_ssid.c_str());
 
-  // Configure STA and attempt connect (short attempt)
-  wifi_config_t sta_config = {};
-  strncpy((char *)sta_config.sta.ssid, use_ssid, sizeof(sta_config.sta.ssid));
-  strncpy((char *)sta_config.sta.password, use_pass,
-          sizeof(sta_config.sta.password));
-  sta_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+    // Configure AP (always) so device exposes AP regardless of STA outcome
+    wifi_config_t ap_config = {};
+    strncpy((char *)ap_config.ap.ssid, AP_SSID, sizeof(ap_config.ap.ssid));
+    ap_config.ap.ssid_len = strlen(AP_SSID);
+    ap_config.ap.channel = 1;
+    ap_config.ap.max_connection = 4;
+    strncpy((char *)ap_config.ap.password, AP_PASS,
+            sizeof(ap_config.ap.password));
+    ap_config.ap.authmode = WIFI_AUTH_WPA_WPA2_PSK;
+    esp_netif_create_default_wifi_ap();
+    esp_wifi_set_config(WIFI_IF_AP, &ap_config);
 
-  // create default WiFi station netif and apply config
-  esp_netif_create_default_wifi_sta();
-  esp_wifi_set_mode(WIFI_MODE_STA);
-  esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+    // Configure STA and attempt connect (short attempt)
+    wifi_config_t sta_config = {};
+    strncpy((char *)sta_config.sta.ssid, nvs_ssid.c_str(),
+            sizeof(sta_config.sta.ssid));
+    strncpy((char *)sta_config.sta.password, nvs_pass.c_str(),
+            sizeof(sta_config.sta.password));
+    sta_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 
-  esp_wifi_start();
+    // create default WiFi station netif and apply configs
+    esp_netif_create_default_wifi_sta();
+    // Use AP+STA mode so AP is always available
+    esp_wifi_set_mode(WIFI_MODE_APSTA);
+    esp_wifi_set_config(WIFI_IF_STA, &sta_config);
 
-  // Wait up to 10s for a connection
-  EventBits_t bits =
-      xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE,
-                          pdFALSE, pdMS_TO_TICKS(10000));
-  if (bits & WIFI_CONNECTED_BIT) {
-    // Success: start HTTP server and enable services
+    esp_wifi_start();
+
+    // Wait up to 10s for a connection
+    EventBits_t bits =
+        xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE,
+                            pdFALSE, pdMS_TO_TICKS(10000));
+    bool connected = (bits & WIFI_CONNECTED_BIT) != 0;
+    if (!connected) {
+      ESP_LOGW(
+          TAG,
+          "Failed to connect as STA (tried '%s'), AP active for provisioning",
+          nvs_ssid.c_str());
+    }
+
+    // Start HTTP server (for provisioning or normal operation)
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     if (httpd_start(&http_server, &config) == ESP_OK) {
       init_and_register_uris(http_server);
       active = true;
-      ESP_LOGI(TAG, "HTTP server started (STA mode)");
-      ESP_LOGI(TAG, "Started WiFi STA: '%s'", use_ssid);
-      gpio_set_level(LED_5, 1);
+      ESP_LOGI(TAG, "HTTP server started (AP+STA mode)");
+      if (connected) {
+        ESP_LOGI(TAG, "Started WiFi STA: '%s'", nvs_ssid.c_str());
+        gpio_set_level(LED_5, 1);
+      }
     } else {
       ESP_LOGE(TAG, "Failed to start HTTP server");
     }
   } else {
-    // Failed to connect as STA -> fall back to AP provisioning
-    ESP_LOGW(
-        TAG,
-        "Failed to connect as STA (tried '%s'), starting AP for provisioning",
-        use_ssid);
-    // Stop wifi to ensure AP start() does its own init
-    esp_wifi_stop();
+    ESP_LOGI(TAG,
+             "No NVS WiFi credentials found — starting AP for provisioning");
     start();
   }
 

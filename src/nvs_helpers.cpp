@@ -41,6 +41,7 @@ bool nvs_read_wifi_credentials(std::string &out_ssid, std::string &out_pass) {
 }
 
 bool nvs_write_wifi_credentials(const char *ssid, const char *pass) {
+
   nvs_handle_t h;
   esp_err_t err = nvs_open("nvsparam", NVS_READWRITE, &h);
   if (err != ESP_OK) {

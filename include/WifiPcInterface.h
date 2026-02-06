@@ -6,8 +6,10 @@
 class WifiPcInterface {
 public:
   static void start();
-  static void startStation(const char *ssid, const char *password);
+  static void startStation();
   static int send(const char *fmt, ...);
+  static const char *getApSsid();
+  static const char *getApPass();
   static bool isActive();
 };
 
