@@ -358,6 +358,11 @@ static void raw_ws_worker(void *a) {
 }
 
 static esp_err_t ws_handler(httpd_req_t *req) {
+  if (req == NULL) {
+    ESP_LOGW(TAG, "ws_handler: null request pointer");
+    return ESP_FAIL;
+  }
+
   ESP_LOGI(TAG, "ws_handler: new connection (using example-style worker)");
 
   // Log common headers for debugging the upgrade request
@@ -458,7 +463,18 @@ static httpd_uri_t setwifi_uri;
 
 // Initialize and register HTTP URI handlers (centralized to avoid duplication)
 static void init_and_register_uris(httpd_handle_t server) {
+  if (server == NULL) {
+    ESP_LOGW(TAG, "init_and_register_uris: server handle is NULL");
+    return;
+  }
+  static bool uris_registered = false;
+  if (uris_registered) {
+    ESP_LOGI(TAG, "init_and_register_uris: URIs already registered, skipping");
+    return;
+  }
   // populate send_uri
+  ESP_LOGI(TAG, "init_and_register_uris: registering URIs, server=%p",
+           (void *)server);
   memset(&send_uri, 0, sizeof(send_uri));
   send_uri.uri = "/send";
   send_uri.method = HTTP_POST;
@@ -475,8 +491,12 @@ static void init_and_register_uris(httpd_handle_t server) {
   ws_uri.handle_ws_control_frames = 0;
   ws_uri.supported_subprotocol = NULL;
 
-  httpd_register_uri_handler(server, &send_uri);
-  httpd_register_uri_handler(server, &ws_uri);
+  if (httpd_register_uri_handler(server, &send_uri) != ESP_OK) {
+    ESP_LOGW(TAG, "init_and_register_uris: failed to register /send");
+  }
+  if (httpd_register_uri_handler(server, &ws_uri) != ESP_OK) {
+    ESP_LOGW(TAG, "init_and_register_uris: failed to register /ws");
+  }
   // handler to receive new WiFi credentials for provisioning
   memset(&setwifi_uri, 0, sizeof(setwifi_uri));
   setwifi_uri.uri = "/setwifi";
@@ -487,7 +507,10 @@ static void init_and_register_uris(httpd_handle_t server) {
     return post_setwifi_handler(req);
   };
   setwifi_uri.user_ctx = NULL;
-  httpd_register_uri_handler(server, &setwifi_uri);
+  if (httpd_register_uri_handler(server, &setwifi_uri) != ESP_OK) {
+    ESP_LOGW(TAG, "init_and_register_uris: failed to register /setwifi");
+  }
+  uris_registered = true;
 }
 
 // Use lightweight NVS helpers (see include/nvs_helpers.h)
@@ -592,6 +615,11 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
       s_retry_num = 0; // reset to avoid spamming
     }
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+    if (event_data == NULL) {
+      ESP_LOGW(TAG,
+               "wifi_event_handler: IP_EVENT_STA_GOT_IP with null event_data");
+      return;
+    }
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
     // store IP and signal waiting task
     snprintf(s_ip_str, sizeof(s_ip_str), IPSTR, IP2STR(&event->ip_info.ip));
@@ -606,14 +634,36 @@ void WifiPcInterface::startStation() {
     return;
   esp_log_level_set(TAG, ESP_LOG_DEBUG);
 
-  esp_netif_init();
-  esp_event_loop_create_default();
+  esp_err_t err;
+  err = esp_netif_init();
+  if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+    ESP_LOGE(TAG, "esp_netif_init failed: %s", esp_err_to_name(err));
+    return;
+  } else if (err == ESP_ERR_INVALID_STATE) {
+    ESP_LOGI(TAG, "esp_netif_init: already initialized");
+  }
+  err = esp_event_loop_create_default();
+  if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+    ESP_LOGE(TAG, "esp_event_loop_create_default failed: %s",
+             esp_err_to_name(err));
+    return;
+  } else if (err == ESP_ERR_INVALID_STATE) {
+    ESP_LOGI(TAG, "esp_event_loop_create_default: already created");
+  }
 
   // Register event handlers for WiFi and IP events
-  esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler,
-                             NULL);
-  esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler,
-                             NULL);
+  err = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
+                                   &wifi_event_handler, NULL);
+  if (err != ESP_OK) {
+    ESP_LOGW(TAG, "esp_event_handler_register(WIFI_EVENT) failed: %s",
+             esp_err_to_name(err));
+  }
+  err = esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
+                                   &wifi_event_handler, NULL);
+  if (err != ESP_OK) {
+    ESP_LOGW(TAG, "esp_event_handler_register(IP_EVENT) failed: %s",
+             esp_err_to_name(err));
+  }
 
   if (s_wifi_event_group == NULL) {
     s_wifi_event_group = xEventGroupCreate();
@@ -621,7 +671,11 @@ void WifiPcInterface::startStation() {
 
   // Initialize WiFi driver
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-  esp_wifi_init(&cfg);
+  err = esp_wifi_init(&cfg);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "esp_wifi_init failed: %s", esp_err_to_name(err));
+    return;
+  }
 
   // Read credentials from NVS and prefer them if present; otherwise use
   // compile-time values from my_data.h
@@ -640,8 +694,13 @@ void WifiPcInterface::startStation() {
     strncpy((char *)ap_config.ap.password, AP_PASS,
             sizeof(ap_config.ap.password));
     ap_config.ap.authmode = WIFI_AUTH_WPA_WPA2_PSK;
-    esp_netif_create_default_wifi_ap();
-    esp_wifi_set_config(WIFI_IF_AP, &ap_config);
+    if (esp_netif_create_default_wifi_ap() == NULL) {
+      ESP_LOGW(TAG, "esp_netif_create_default_wifi_ap returned NULL");
+    }
+    err = esp_wifi_set_config(WIFI_IF_AP, &ap_config);
+    if (err != ESP_OK) {
+      ESP_LOGW(TAG, "esp_wifi_set_config(AP) failed: %s", esp_err_to_name(err));
+    }
 
     // Configure STA and attempt connect (short attempt)
     wifi_config_t sta_config = {};
@@ -652,12 +711,25 @@ void WifiPcInterface::startStation() {
     sta_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 
     // create default WiFi station netif and apply configs
-    esp_netif_create_default_wifi_sta();
+    if (esp_netif_create_default_wifi_sta() == NULL) {
+      ESP_LOGW(TAG, "esp_netif_create_default_wifi_sta returned NULL");
+    }
     // Use AP+STA mode so AP is always available
-    esp_wifi_set_mode(WIFI_MODE_APSTA);
-    esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+    err = esp_wifi_set_mode(WIFI_MODE_APSTA);
+    if (err != ESP_OK) {
+      ESP_LOGW(TAG, "esp_wifi_set_mode failed: %s", esp_err_to_name(err));
+    }
+    err = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+    if (err != ESP_OK) {
+      ESP_LOGW(TAG, "esp_wifi_set_config(STA) failed: %s",
+               esp_err_to_name(err));
+    }
 
-    esp_wifi_start();
+    err = esp_wifi_start();
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "esp_wifi_start failed: %s", esp_err_to_name(err));
+      // Continue — HTTP server can still run in AP mode
+    }
 
     // Wait up to 10s for a connection
     EventBits_t bits =
@@ -673,19 +745,25 @@ void WifiPcInterface::startStation() {
 
     // Start HTTP server (for provisioning or normal operation)
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    if (httpd_start(&http_server, &config) == ESP_OK) {
+    ESP_LOGI(TAG,
+             "Starting HTTP server (startStation) with config stack_size=%d",
+             config.stack_size);
+    esp_err_t hs = httpd_start(&http_server, &config);
+    if (hs == ESP_OK) {
+      ESP_LOGI(TAG, "httpd_start returned OK, server handle=%p",
+               (void *)http_server);
       init_and_register_uris(http_server);
       active = true;
       ESP_LOGI(TAG,
-               "HTTP server started\nAP SSID: %s\nAP Password: "
-               "%s\nAP IP: 192.168.4.1",
+               "HTTP server started\nAP SSID: %s\nAP Password: %s\nAP IP: "
+               "192.168.4.1",
                AP_SSID, AP_PASS);
       if (connected) {
         ESP_LOGI(TAG, "Started WiFi STATION: '%s'", nvs_ssid.c_str());
         gpio_set_level(LED_5, 1);
       }
     } else {
-      ESP_LOGE(TAG, "Failed to start HTTP server");
+      ESP_LOGE(TAG, "Failed to start HTTP server: %s", esp_err_to_name(hs));
     }
   } else {
     ESP_LOGI(TAG,
@@ -703,16 +781,35 @@ void WifiPcInterface::start() {
     return;
 
   esp_log_level_set(TAG, ESP_LOG_DEBUG);
-
   // Initialize TCP/IP stack and default event loop
-  esp_netif_init();
-  esp_event_loop_create_default();
+  esp_err_t err;
+  err = esp_netif_init();
+  if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+    ESP_LOGE(TAG, "esp_netif_init failed: %s", esp_err_to_name(err));
+    return;
+  } else if (err == ESP_ERR_INVALID_STATE) {
+    ESP_LOGI(TAG, "esp_netif_init: already initialized");
+  }
+  err = esp_event_loop_create_default();
+  if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+    ESP_LOGE(TAG, "esp_event_loop_create_default failed: %s",
+             esp_err_to_name(err));
+    return;
+  } else if (err == ESP_ERR_INVALID_STATE) {
+    ESP_LOGI(TAG, "esp_event_loop_create_default: already created");
+  }
 
   // Create default AP
-  esp_netif_create_default_wifi_ap();
+  if (esp_netif_create_default_wifi_ap() == NULL) {
+    ESP_LOGW(TAG, "esp_netif_create_default_wifi_ap returned NULL");
+  }
 
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-  esp_wifi_init(&cfg);
+  err = esp_wifi_init(&cfg);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "esp_wifi_init failed: %s", esp_err_to_name(err));
+    return;
+  }
 
   wifi_config_t ap_config = {};
   strncpy((char *)ap_config.ap.ssid, AP_SSID, sizeof(ap_config.ap.ssid));
@@ -723,22 +820,34 @@ void WifiPcInterface::start() {
           sizeof(ap_config.ap.password));
   ap_config.ap.authmode = WIFI_AUTH_WPA_WPA2_PSK;
 
-  esp_wifi_set_mode(WIFI_MODE_AP);
-  esp_wifi_set_config(WIFI_IF_AP, &ap_config);
-  esp_wifi_start();
+  esp_err_t r;
+  r = esp_wifi_set_mode(WIFI_MODE_AP);
+  if (r != ESP_OK)
+    ESP_LOGW(TAG, "esp_wifi_set_mode(AP) failed: %s", esp_err_to_name(r));
+  r = esp_wifi_set_config(WIFI_IF_AP, &ap_config);
+  if (r != ESP_OK)
+    ESP_LOGW(TAG, "esp_wifi_set_config(AP) failed: %s", esp_err_to_name(r));
+  r = esp_wifi_start();
+  if (r != ESP_OK)
+    ESP_LOGW(TAG, "esp_wifi_start(AP) failed: %s", esp_err_to_name(r));
 
   ESP_LOGI(TAG, "Started AP '%s' IP='192.168.4.1' SSID='%s' PASS='%s'", AP_SSID,
            AP_SSID, AP_PASS);
 
   // Start HTTP server
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-  if (httpd_start(&http_server, &config) == ESP_OK) {
+  ESP_LOGI(TAG, "Starting HTTP server (start AP) with config stack_size=%d",
+           config.stack_size);
+  esp_err_t hs2 = httpd_start(&http_server, &config);
+  if (hs2 == ESP_OK) {
+    ESP_LOGI(TAG, "httpd_start returned OK, server handle=%p",
+             (void *)http_server);
     init_and_register_uris(http_server);
     active = true;
     ESP_LOGI(TAG, "HTTP server started");
     // Note: raw WebSocket listener removed — using httpd helper only
   } else {
-    ESP_LOGE(TAG, "Failed to start HTTP server");
+    ESP_LOGE(TAG, "Failed to start HTTP server: %s", esp_err_to_name(hs2));
   }
 
   // Ensure queueFromPc exists so dispatcher can read incoming WiFi commands

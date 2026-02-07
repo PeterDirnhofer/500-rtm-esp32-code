@@ -12,7 +12,6 @@
 #include <sstream>
 #include <stdio.h>
 
-
 static const char *TAG = "ParameterSetting";
 
 // Define the keys for the parameters
@@ -148,12 +147,13 @@ esp_err_t ParameterSetting::putParametersToFlash(vector<string> params) {
            "Start Put parameters to flash with size  %d ... \n",
            (int)params.size());
 
-  // Check if all parameters are numbers
-
+  // Validate parameters are numeric (params[0] == "PARAMETER")
+  float tmp = 0;
   for (size_t i = 1; i <= size_keys; i++) {
-    if (!nvs_is_key(keys[i])) {
-      ESP_LOGE("putParametersToFlash", "Parameter %s is no number",
+    if (convertStoFloat(params[i].c_str(), &tmp) != ESP_OK) {
+      ESP_LOGE("putParametersToFlash", "Parameter %s is not a number",
                params[i].c_str());
+      UsbPcInterface::send("ESP_ERR_INVALID_ARG\n");
       return ESP_ERR_INVALID_ARG;
     }
   }
@@ -221,25 +221,37 @@ esp_err_t ParameterSetting::getParametersFromFlash() {
   uint16_t mMultiplicator = (uint16_t)nvs_get_float(keys[11], __FLT_MAX__);
   rtmGrid.setMultiplicatorGridAdc(mMultiplicator);
 
-  // Create a string to store all parameters
-  std::string parameters;
-  parameters += std::string(keys[0]) + "," + std::to_string(kP) + "\n";
-  parameters += std::string(keys[1]) + "," + std::to_string(kI) + "\n";
-  parameters += std::string(keys[2]) + "," + std::to_string(kD) + "\n";
-  parameters +=
+  // Build storedParameters in-place to avoid temporaries
+  this->storedParameters.clear();
+  this->storedParameters.reserve(256);
+  this->storedParameters +=
+      std::string(keys[0]) + "," + std::to_string(kP) + "\n";
+  this->storedParameters +=
+      std::string(keys[1]) + "," + std::to_string(kI) + "\n";
+  this->storedParameters +=
+      std::string(keys[2]) + "," + std::to_string(kD) + "\n";
+  this->storedParameters +=
       std::string(keys[3]) + "," + std::to_string(targetTunnelnA) + "\n";
-  parameters +=
+  this->storedParameters +=
       std::string(keys[4]) + "," + std::to_string(toleranceTunnelnA) + "\n";
-  parameters += std::string(keys[5]) + "," + std::to_string(startX) + "\n";
-  parameters += std::string(keys[6]) + "," + std::to_string(startY) + "\n";
-  parameters += std::string(keys[7]) + "," + std::to_string(measureMs) + "\n";
-  parameters += std::string(keys[8]) + "," + std::to_string(direction) + "\n";
-  parameters += std::string(keys[9]) + "," + std::to_string(mMaxX) + "\n";
-  parameters += std::string(keys[10]) + "," + std::to_string(mMaxY) + "\n";
-  parameters +=
+  this->storedParameters +=
+      std::string(keys[5]) + "," + std::to_string(startX) + "\n";
+  this->storedParameters +=
+      std::string(keys[6]) + "," + std::to_string(startY) + "\n";
+  this->storedParameters +=
+      std::string(keys[7]) + "," + std::to_string(measureMs) + "\n";
+  this->storedParameters +=
+      std::string(keys[8]) + "," + std::to_string(direction) + "\n";
+  this->storedParameters +=
+      std::string(keys[9]) + "," + std::to_string(mMaxX) + "\n";
+  this->storedParameters +=
+      std::string(keys[10]) + "," + std::to_string(mMaxY) + "\n";
+  this->storedParameters +=
       std::string(keys[11]) + "," + std::to_string(mMultiplicator) + "\n";
 
-  this->storedParameters = parameters;
+  // Log parameters; avoid calling UsbPcInterface::send here (constructor
+  // context)
+  ESP_LOGI(TAG, "Parameters:\n%s", this->storedParameters.c_str());
 
   return ESP_OK;
 }
