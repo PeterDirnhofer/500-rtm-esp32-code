@@ -676,9 +676,12 @@ void WifiPcInterface::startStation() {
     if (httpd_start(&http_server, &config) == ESP_OK) {
       init_and_register_uris(http_server);
       active = true;
-      ESP_LOGI(TAG, "HTTP server started (AP+STA mode)");
+      ESP_LOGI(TAG,
+               "HTTP server started\nAP SSID: %s\nAP Password: "
+               "%s\nAP IP: 192.168.4.1",
+               AP_SSID, AP_PASS);
       if (connected) {
-        ESP_LOGI(TAG, "Started WiFi STA: '%s'", nvs_ssid.c_str());
+        ESP_LOGI(TAG, "Started WiFi STATION: '%s'", nvs_ssid.c_str());
         gpio_set_level(LED_5, 1);
       }
     } else {

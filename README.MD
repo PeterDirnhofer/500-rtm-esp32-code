@@ -11,185 +11,172 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
-- [VS Code](https://code.visualstudio.com/) with [PlatformIO extension](https://platformio.org/install/ide?install=vscode)
+- VS Code with the PlatformIO extension
 - ESP32 development board
 - USB cable for programming and communication
 
 ### Installation
+1. Install VS Code and PlatformIO extension.
+2. Clone the repository and open it in VS Code:
 
-1. **🔧 Install Development Environment**
-   ```bash
-   # Install VS Code and PlatformIO extension
-   # Follow the official PlatformIO installation guide
-   ```
+```bash
+git clone https://github.com/PeterDirnhofer/500-rtm-esp32-code.git
+cd 500-rtm-esp32-code
+code .
+```
 
-2. **📥 Clone Repository**
-   ```bash
-   cd C:\your\desired\installation\path
-   git clone https://github.com/PeterDirnhofer/500-rtm-esp32-code.git
-   cd 500-rtm-esp32-code
-   ```
-
-3. **🗂️ Open Project**
-   ```bash
-   code .
-   ```
-   > ⏱️ **Note:** PlatformIO may take a few moments to initialize the project on first open. Wait for the toolbar to appear before proceeding.
-
-4. **🔨 Build & Upload**
-   - **Build**: Click the ✅ checkmark icon in the status bar
-   - **Upload**: Click the ➡️ right arrow icon to flash firmware
-   - **Monitor**: Click the 🔌 plug icon for serial monitoring
+3. Build & Upload using the PlatformIO toolbar (checkmark = build, arrow = upload, plug = monitor).
 
 ---
 
-## 📡 Communication between Controller and PC
+## Communication betwenn Computer and ESP32
 
-### Additional Hardware Communication Interface
-> **Important**: Communication to the controller uses a **separate USB interface**, not the ESP32's built-in programming USB interface. This dedicated interface ensures reliable communication between the computer and the microscope controller.
+Communication to the ESP32 can be done via three paths. Choose the one that best fits your setup:
 
-### Serial Configuration Communication Interface
-- **Baud Rate**: `460800 bps`
-- **Termination**: Line Feed (`\n` / `LF` / `0x0A`)
-- **Flow**: ESP32 ↔ Computer bidirectional communication
+### 1) USB Interface
+- Direct serial connection to the additional USB serial interface on the board (not the programming USB some dev boards expose).
+- Serial Baud Rate: `460800`
+- Line termination: LF (`\n`)
 
-### Protocol Flow
-```
-ESP32 → Computer: Sends cyclic "IDLE" status
-Computer → ESP32: Responds with commands (ADJUST/MEASURE/PARAMETER)
-```
-  
----
+### 2) ESP Access Point (AP)
+- The ESP always advertises the Access Point. ESP spans its own Wi‑Fi network. To use it, your computer must disconnect from your normal WLAN and connect to the ESP's Wi‑Fi network instead.
+- SSID: `ESP_Server`
+- Password: `esp12345`
+- Device IP: `192.168.4.1` 
 
-## 📋 Command Reference
 
-### 🔍 **MEASURE** Command
-**Function**: Initiates measurement cycle for scanning tunnel microscope grid
+### 3) ESP as Station (join your WLAN)
+- The ESP connects to your existing local WLAN so other devices like your computer can reach ESP.
+- To join your WLAN, the ESP needs your WLAN `SSID` and `Password`.
+- You have to store your `SSID` and `Password` in the ESP before you can use ESP as Station. 
+- Storing `SSID` and `Password` can be done by using Interface 1) or 2) above and using the commands `SET_SSID` and `SET_PASSWORD` 
 
-```
-Computer → ESP32: MEASURE
-```
-
-**Behavior**:
-- Starts measurement cycle for max **200 × 200** grid points
-- Sends real-time data during measurement in two packet types:
-
-**Data Packets**:
-```
-DATA, currentX, currentY, currentZDac          // Valid measurement
-DATA, targetTunnelAdc, adcValue, currentZDac   // Out of tunnel range
-1, adcValue, currentZDac                       // Within tunnel limits
-```
-
-**Completion**: ESP32 sends `"DONE"` when measurement cycle finishes
+Notes:
+- After setting Password and SSID reset the ESP. ESP then tries to access your WLAN using the stored SSID and PASSWORD and if successfull, LED5 gets on. 
 
 ---
 
-### ⚙️ **ADJUST** Command
-**Function**: Continuous setup mode for tunnel current monitoring
+## 📋 Command Reference (selected)
+
+### MEASURE
+Start a measurement cycle:
 
 ```
-Computer → ESP32: ADJUST
+MEASURE
 ```
 
-**Behavior**:
-- Starts infinite loop sending cyclic tunnel current data
-- Used for system calibration and setup
-- **Termination**: Send `CTRL-C` to stop
+Sends data packets and finishes with `DONE`.
 
----
-
-### 🔧 **TUNNEL** Command  
-**Function**: Diagnostic mode for tip positioning and tunnel contact adjustment
+### ADJUST
+Enter continuous monitoring mode:
 
 ```
-Computer → ESP32: TUNNEL
+ADJUST
 ```
 
-**Response Packets**:
+Terminate with `CTRL-C`.
+
+### TUNNEL
+Diagnostic mode for tip positioning:
+
 ```
-TUNNEL, 0, adcValue, currentZDac    // Out of tunnel limits
-TUNNEL, 1, adcValue, currentZDac    // Within tunnel limits
+TUNNEL
 ```
 
-**Termination**: Send `CTRL-C` to stop
+### PARAMETER
+Set parameters:
 
----
-
-### 📊 **PARAMETER** Commands
-
-#### Set Parameters
 ```
-Computer → ESP32: PARAMETER,kI,kP,targetCurrent,tolerance,startX,startY,direction,maxX,maxY,multiplier
+PARAMETER,kI,kP,targetCurrent,tolerance,startX,startY,direction,maxX,maxY,multiplier
 ```
 
-**Example**:
-```
-PARAMETER,10,1000,10.0,0.01,0,0,0,199,199,10
-```
+Query current parameters:
 
-#### Load Default Parameters
 ```
-Computer → ESP32: PARAMETER,DEFAULT
-```
-
-**Default Values**:
-| Parameter | Value | Description |
-|-----------|--------|-------------|
-| `kI` | 10 | Integral gain |
-| `kP` | 1000 | Proportional gain |
-| `targetTunnelCurrentnA` | 10.0 | Target tunnel current (nA) |
-| `toleranceTunnelCurrentnA` | 0.01 | Current tolerance (nA) |
-| `startX` | 0 | Starting X position |
-| `startY` | 0 | Starting Y position |
-| `direction` | 0 | Scan direction |
-| `maxX` | 199 | Maximum X coordinate |
-| `maxY` | 199 | Maximum Y coordinate |
-| `multiplicator` | 10 | Scaling factor |
-
-#### Query Current Parameters
-```
-Computer → ESP32: PARAMETER,?
-ESP32 → Computer: [Current parameter values]
+PARAMETER,?
 ```
 
 ---
 
-### 🛑 **Emergency Stop**
-**Function**: Immediately halt ESP32 program execution and restart
+### SET_SSID / SET_PASSWORD
+Set Wi‑Fi credentials via the serial command interface. Send each command on its own line (terminated with `\n`).
+
+Set SSID:
+```
+SET_SSID,MyWlanName
+```
+
+Set password:
+```
+SET_PASSWORD,MyWlanPassword
+```
+
+Notes:
+- After providing both commands over USB serial, reboot the device to apply the new credentials (the device reads saved values from NVS on boot).
+- The HTTP provisioning endpoint (`/setwifi`) can also be used to set these credentials without a reboot.
+
+## 🔐 WiFi Provisioning (set credentials to enter STATION mode)
+
+You can configure WiFi credentials in two ways: via the USB serial command interface or via the device HTTP provisioning endpoint. The device stores credentials in NVS and will attempt to connect as a station on next boot while keeping an AP available for provisioning.
+
+1) USB (serial)
+
+- Connect to the device serial port at `460800` (PlatformIO Monitor, `picocom`, `miniterm`, etc.).
+- Send these two lines (each terminated with newline `\n`):
 
 ```
-Computer → ESP32: CTRL-C (or Strg-C)
+SET_SSID MyNetworkName
+SET_PASSWORD MySecretPass
 ```
 
-**Behavior**:
-- Can be sent **any time** during operation
-- Forces immediate program termination and ESP32 restart
-- Use for emergency stops or system reset
+- The input preserves case and internal spaces; do not alter your SSID casing or spacing.
+- After both commands succeed, power-cycle or reboot the device so it reads the new credentials and attempts STA connect.
+
+2) HTTP provisioning (AP mode)
+
+- While the device is in AP/provisioning mode (default AP IP: `192.168.4.1`), POST to `/setwifi` with form body `ssid=...&pass=...`.
+
+Example using curl:
+
+```bash
+curl -X POST http://192.168.4.1/setwifi \
+  -d "ssid=MyNetworkName&pass=MySecretPass"
+```
+
+- On success the device will attempt to connect immediately and saves the credentials to NVS.
+
+Notes:
+- After saving credentials via USB you must reboot the device to cause the STA connection attempt (HTTP provisioning triggers an immediate try).
+- The device runs in AP+STA mode (AP remains available for provisioning even when STA is connected).
+- Credentials are stored in NVS and persist across reboots.
 
 ---
 
-## 🏗️ Project Structure
+## 🔎 Verify saved credentials (serial monitor)
+
+After issuing `SET_SSID` and `SET_PASSWORD` you can verify the device read the values on next boot via the serial monitor:
+
+1. Reboot the device (power-cycle or send `CTRL-C` over serial to restart).
+2. Open the serial monitor at `460800`.
+3. Look for these startup lines indicating the NVS-read credentials and STA attempt:
 
 ```
-500-rtm-esp32-code/
-├── 📁 include/          # Header files
-├── 📁 src/              # Source code
-├── 📁 lib/              # Libraries
-├── 📄 platformio.ini    # PlatformIO configuration
-├── 📄 CMakeLists.txt    # CMake build configuration
-└── 📄 README.MD         # This file
+I (XXX) app_main: NVS initialized
+I (YYY) WifiPcInterface: startStation: attempting STA with NVS SSID='MyNetworkName'
+I (ZZZ) WifiPcInterface: Started WiFi STA: 'MyNetworkName'
 ```
+
+If the device fails to connect as STA you'll see a warning and the AP will remain available for provisioning.
 
 ---
+
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Commit your changes
+4. Push and open a Pull Request
 
 ---
 
@@ -201,11 +188,6 @@ This project is licensed under the terms specified in the [LICENSE](LICENSE) fil
 
 ## 👨‍💻 Author
 
-**Peter Dirnhofer**  
-📧 Contact: [GitHub Profile](https://github.com/PeterDirnhofer)
+**Peter Dirnhofer**
 
 ---
-
-<div align="center">
-  <strong>🔬 Built for precision microscopy control with ESP32 🔬</strong>
-</div>

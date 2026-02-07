@@ -61,3 +61,5 @@ __pycache__
 # NetBeans
 nbproject/
 web-client/
+
+my_data.h
