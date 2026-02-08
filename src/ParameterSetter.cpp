@@ -249,9 +249,8 @@ esp_err_t ParameterSetting::getParametersFromFlash() {
   this->storedParameters +=
       std::string(keys[11]) + "," + std::to_string(mMultiplicator) + "\n";
 
-  // Log parameters; avoid calling UsbPcInterface::send here (constructor
-  // context)
-  ESP_LOGI(TAG, "Parameters:\n%s", this->storedParameters.c_str());
+  // Do not log or send parameters here to avoid spamming the monitor at
+  // startup; `getParameters()` can be used later to retrieve them.
 
   return ESP_OK;
 }

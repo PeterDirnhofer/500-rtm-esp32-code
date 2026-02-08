@@ -31,7 +31,7 @@ code .
 
 ## Communication betwenn Computer and ESP32
 
-Communication to the ESP32 can be done via three paths. Choose the one that best fits your setup:
+Communication to the ESP32 can be done via three paths:
 
 ### 1) USB Interface
 - Direct serial connection to the additional USB serial interface on the board (not the programming USB some dev boards expose).
@@ -52,7 +52,7 @@ Communication to the ESP32 can be done via three paths. Choose the one that best
 - Storing `SSID` and `Password` can be done by using Interface 1) or 2) above and using the commands `SET_SSID` and `SET_PASSWORD` 
 
 Notes:
-- After setting Password and SSID reset the ESP. ESP then tries to access your WLAN using the stored SSID and PASSWORD and if successfull, LED5 gets on. 
+- After setting Password and SSID reset the ESP. ESP then tries to access your WLAN using the stored SSID and PASSWORD and if successfull, LED5 turns on. 
 
 ---
 
@@ -99,7 +99,7 @@ PARAMETER,?
 ---
 
 ### SET_SSID / SET_PASSWORD
-Set Wi‑Fi credentials via the serial command interface. Send each command on its own line (terminated with `\n`).
+Set Wi‑Fi credentials via the serial command interface and saves it into ESP
 
 Set SSID:
 ```
@@ -112,8 +112,7 @@ SET_PASSWORD,MyWlanPassword
 ```
 
 Notes:
-- After providing both commands over USB serial, reboot the device to apply the new credentials (the device reads saved values from NVS on boot).
-- The HTTP provisioning endpoint (`/setwifi`) can also be used to set these credentials without a reboot.
+- After providing both commands over USB serial, reboot the ESP to apply the new credentials (the device reads saved values from NVS on boot).
 
 ## 🔐 WiFi Provisioning (set credentials to enter STATION mode)
 
@@ -152,23 +151,7 @@ Notes:
 
 ---
 
-## 🔎 Verify saved credentials (serial monitor)
 
-After issuing `SET_SSID` and `SET_PASSWORD` you can verify the device read the values on next boot via the serial monitor:
-
-1. Reboot the device (power-cycle or send `CTRL-C` over serial to restart).
-2. Open the serial monitor at `460800`.
-3. Look for these startup lines indicating the NVS-read credentials and STA attempt:
-
-```
-I (XXX) app_main: NVS initialized
-I (YYY) WifiPcInterface: startStation: attempting STA with NVS SSID='MyNetworkName'
-I (ZZZ) WifiPcInterface: Started WiFi STA: 'MyNetworkName'
-```
-
-If the device fails to connect as STA you'll see a warning and the AP will remain available for provisioning.
-
----
 
 
 ## 🤝 Contributing
